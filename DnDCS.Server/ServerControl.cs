@@ -1,17 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
-namespace DnDCS
+namespace DnDCS.Server
 {
-    public partial class Form1 : Form
+    public partial class ServerControl : UserControl
     {
-        public Form1()
+        public ServerControl()
         {
             InitializeComponent();
         }
