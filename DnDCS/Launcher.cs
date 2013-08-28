@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using DnDCS.Client;
 using DnDCS.Server;
+using DnDCS.Libs;
 
 namespace DnDCS
 {
@@ -23,6 +24,7 @@ namespace DnDCS
             spltLauncher.Panel1Collapsed = true;
             var client = new ClientControl();
 
+            InitializeControl(client);
             AddToPanel2(client);
         }
 
@@ -30,7 +32,14 @@ namespace DnDCS
         {
             spltLauncher.Panel1Collapsed = true;
             var server = new ServerControl();
+
+            InitializeControl(server);
             AddToPanel2(server);
+        }
+
+        private void InitializeControl(IDnDCSControl control)
+        {
+            this.Menu = control.GetMainMenu();
         }
 
         private void AddToPanel2(Control control)

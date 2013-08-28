@@ -48,7 +48,27 @@
     <Compile Include="ClientControl.Designer.cs">
       <DependentUpon>ClientControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="GetConnectIPDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GetConnectIPDialog.Designer.cs">
+      <DependentUpon>GetConnectIPDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DnDCS.Libs\DnDCS.Libs.csproj">
+      <Project>{EAB1B144-0E8B-4BA2-958A-42B1E70B32AB}</Project>
+      <Name>DnDCS.Libs</Name>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="ClientControl.resx">
+      <DependentUpon>ClientControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GetConnectIPDialog.resx">
+      <DependentUpon>GetConnectIPDialog.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
