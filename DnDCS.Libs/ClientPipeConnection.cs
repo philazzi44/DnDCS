@@ -1,15 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Principal;
 using System.Text;
 using System.Threading;
 using System.IO.Pipes;
 using System.Drawing;
 using System.IO;
+using System.Security.AccessControl;
 
 namespace DnDCS.Libs
 {
-    public class ClientConnection
+    public class ClientPipeConnection
     {
         private const int TIMEOUT = 1000;
 
@@ -22,14 +24,18 @@ namespace DnDCS.Libs
         public event Action<Image> OnFogUpdateReceived;
         public event Action OnExitReceived;
 
-        public ClientConnection()
+        public ClientPipeConnection()
         {
             clientThread = new Thread(Start);
         }
 
-        public void ConnectToServer(string address)
+        public void StartConnectToServer(string address)
         {
-            pipe = new NamedPipeClientStream(address, PipeConstants.PIPE_NAME, PipeDirection.In);
+            //var security = new PipeSecurity();
+            //security.AddAccessRule(new PipeAccessRule("pazzi", PipeAccessRights.Read, AccessControlType.Allow));
+            pipe = new NamedPipeClientStream(address, PipeConstants.PIPE_NAME, PipeDirection.In, PipeOptions.None);
+            //pipe.SetAccessControl(security);
+
             clientThread.Start();
         }
 
@@ -42,6 +48,8 @@ namespace DnDCS.Libs
                 var ack = Read();
                 if (ack != PipeConstants.PipeAction.ACK)
                     throw new InvalidOperationException("ACK not received.");
+
+                Logger.LogDebug("Client Connection - Received Ack.");
 
                 try
                 {
@@ -77,17 +85,18 @@ namespace DnDCS.Libs
                         }
                     }
                 }
-                catch (ThreadInterruptedException)
+                catch (ThreadInterruptedException e)
                 {
+                    Logger.LogWarning("Client Connection - Thread Interrupted while trying to connect to server.", e);
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
-                    // Log this bad boy.
+                    Logger.LogError("Client Connection - Failed to parse received message.", e);
                 }
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                // Log this bad boy.
+                Logger.LogError("Client Connection - Failed to start Client Connection.", e);
             }
         }
 
@@ -99,7 +108,9 @@ namespace DnDCS.Libs
 
         public PipeConstants.PipeAction Read(out byte[] dataBytes)
         {
+            Logger.LogDebug("Client Connection - Waiting for data on the pipe...");
             var pipeAction = (PipeConstants.PipeAction)(byte)pipe.ReadByte();
+            Logger.LogDebug(string.Format("Client Connection - Pipe Action '{0}' received.", pipeAction));
             switch (pipeAction)
             {
                 case PipeConstants.PipeAction.ACK:
@@ -110,13 +121,18 @@ namespace DnDCS.Libs
                 case PipeConstants.PipeAction.FOG:
                 case PipeConstants.PipeAction.FOG_UPDATE:
                     // The next Int32 will be the size of the data bytes following it.
+                    Logger.LogDebug("Client Connection - Reading Data Size from pipe...");
                     var messageSizeBuffer = new byte[4];
                     pipe.Read(messageSizeBuffer, 0, messageSizeBuffer.Length);
 
                     var messageSize = BitConverter.ToInt32(messageSizeBuffer, 0);
+                    Logger.LogDebug(string.Format("Client Connection - {0} bytes expected on pipe. Reading....", messageSize));
+
                     dataBytes = new byte[messageSize];
-                    pipe.Read(dataBytes, 0, messageSize);
+                    var actualReadBytes = pipe.Read(dataBytes, 0, messageSize);
+                    Logger.LogDebug(string.Format("Client Connection - {0} bytes read from pipe ({1} expected).", actualReadBytes, messageSize));
                     break;
+
 
                 case PipeConstants.PipeAction.EXIT:
                     dataBytes = null;
@@ -139,9 +155,11 @@ namespace DnDCS.Libs
 
         public void Stop()
         {
+            Logger.LogDebug("Client Connection - Stopping...");
             stop = true;
             clientThread.Interrupt();
             clientThread.Join();
+            Logger.LogDebug("Client Connection - Stopped.");
         }
     }
 }

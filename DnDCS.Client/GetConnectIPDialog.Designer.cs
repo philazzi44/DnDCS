@@ -129,7 +129,6 @@
             this.rdoIP.TabIndex = 1;
             this.rdoIP.Text = "IP";
             this.rdoIP.UseVisualStyleBackColor = true;
-            this.rdoIP.Visible = false;
             this.rdoIP.CheckedChanged += new System.EventHandler(this.rdoIP_CheckedChanged);
             // 
             // rdoName

@@ -9,6 +9,7 @@ using System.Windows.Forms;
 using DnDCS.Libs;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
+using DnDCS.Libs.SocketObjects;
 
 namespace DnDCS.Server
 {
@@ -31,7 +32,7 @@ namespace DnDCS.Server
         private readonly Brush newFogBrush = Brushes.Blue;
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
-        private ServerConnection connection;
+        private ServerSocketConnection connection;
 
         public ServerControl()
         {
@@ -45,7 +46,7 @@ namespace DnDCS.Server
 
             ToggleTools(btnSelectTool);
 
-            connection = new ServerConnection();
+            connection = new ServerSocketConnection(SocketConstants.Port);
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -55,7 +56,7 @@ namespace DnDCS.Server
             if (fog != null)
                 fog.Dispose();
             if (connection != null)
-                connection.Dispose();
+                connection.Stop();
         }
         
         public MainMenu GetMainMenu()
@@ -111,6 +112,7 @@ namespace DnDCS.Server
             // Prompt for save
             // Save if needed
             // Send quit message to client
+            connection.Stop();
             this.ParentForm.Close();
         }
 
@@ -160,6 +162,7 @@ namespace DnDCS.Server
                 isBlackOutSet = true;
                 btnToggleBlackout.Text = "Stop Blackout";
             }
+            connection.WriteBlackout(isBlackOutSet);
         }
         
         private void btnFogAll_Click(object sender, EventArgs e)
@@ -209,6 +212,7 @@ namespace DnDCS.Server
             // Keep track of the old fog to support an Undo functionality. Make a new image for the New Fog to track the updates being made.
             oldFog = (Bitmap)fog.Clone();
             newFog = new Bitmap(fog.Width, fog.Height);
+            // TODO: Do we need to forcibly set the newfog as all transparent?
 
             // Start tracking all the points the mouse moves.
             newFogToolPoints = new LinkedList<Point>();
@@ -234,9 +238,8 @@ namespace DnDCS.Server
 
             // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether.
             newFogToolPoints.AddLast(e.Location);
-            UpdateFogImage(fog, (e.Button == System.Windows.Forms.MouseButtons.Left) ? fogClearBrush : fogBrush, newFogToolPoints.ToArray());
+            UpdateFogImage(fog, (newFogIsClearing) ? fogClearBrush : fogBrush, newFogToolPoints.ToArray());
 
-            newFogToolPoints = null;
             newFog.Dispose();
             newFog = null;
 
@@ -245,8 +248,8 @@ namespace DnDCS.Server
 
             pbxMap.Refresh();
 
-            // TODO: Send the Updated Fog to the client
-            // connection.WriteFogUpdate(null);
+            connection.WriteFogUpdate(newFogToolPoints.ToArray(), newFogIsClearing);
+            newFogToolPoints = null;
         }
 
         private void UnsetFogTool()
@@ -315,7 +318,6 @@ namespace DnDCS.Server
             pbxMap.Image = map;
             pbxMap.Refresh();
 
-            // TODO: Send the Map image to the client.
             connection.WriteMap(map);
         }
 
@@ -333,6 +335,8 @@ namespace DnDCS.Server
                                       new float[] {0, 0, 0, 0, 1}
                                     };
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+
+            connection.WriteFog(fog);
         }
 
         private void UpdateFogImage(Bitmap fogImage, Brush brush, Point[] fogToolPoints)

@@ -18,9 +18,23 @@ namespace DnDCS
         {
             InitializeComponent();
         }
+        
+        private void Launcher_Load(object sender, EventArgs e)
+        {
+            this.Disposed += new EventHandler(Launcher_Disposed);
+        }
+
+        private void Launcher_Disposed(object sender, EventArgs e)
+        {
+            Logger.LogInfo("Application closing.");
+        }
 
         private void btnClient_Click(object sender, EventArgs e)
         {
+            Logger.FileSuffix = "Client";
+            this.Text = "DnDCS - Client";
+            Logger.LogInfo("Initializing Client Mode");
+
             spltLauncher.Panel1Collapsed = true;
             var client = new ClientControl();
 
@@ -30,6 +44,10 @@ namespace DnDCS
 
         private void btnServer_Click(object sender, EventArgs e)
         {
+            Logger.FileSuffix = "Server";
+            this.Text = "DnDCS - Server";
+            Logger.LogInfo("Initializing Server Mode");
+
             spltLauncher.Panel1Collapsed = true;
             var server = new ServerControl();
 

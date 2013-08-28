@@ -92,6 +92,7 @@
             this.Controls.Add(this.spltLauncher);
             this.Name = "Launcher";
             this.Text = "DnDCS - Launcher";
+            this.Load += new System.EventHandler(this.Launcher_Load);
             this.spltLauncher.Panel1.ResumeLayout(false);
             this.spltLauncher.Panel1.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.spltLauncher)).EndInit();

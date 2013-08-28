@@ -45,6 +45,7 @@
             // 
             // pbxMap
             // 
+            this.pbxMap.BackColor = System.Drawing.Color.Black;
             this.pbxMap.Location = new System.Drawing.Point(0, 0);
             this.pbxMap.Name = "pbxMap";
             this.pbxMap.Size = new System.Drawing.Size(320, 240);
@@ -59,6 +60,7 @@
             this.Controls.Add(this.pnlMap);
             this.Name = "ClientControl";
             this.Size = new System.Drawing.Size(659, 384);
+            this.Load += new System.EventHandler(this.ClientControl_Load);
             this.pnlMap.ResumeLayout(false);
             this.pnlMap.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).EndInit();
