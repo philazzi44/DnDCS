@@ -28,14 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerControl));
             this.pbxMap = new System.Windows.Forms.PictureBox();
             this.spltServer = new System.Windows.Forms.SplitContainer();
             this.pnlMap = new System.Windows.Forms.Panel();
             this.gbxCommands = new System.Windows.Forms.GroupBox();
             this.btnSelectTool = new System.Windows.Forms.Button();
             this.btnFogTool = new System.Windows.Forms.Button();
-            this.btnToggleBlackout = new System.Windows.Forms.Button();
             this.btnFogAll = new System.Windows.Forms.Button();
+            this.btnToggleBlackout = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
@@ -90,6 +91,7 @@
             this.gbxCommands.Controls.Add(this.btnFogAll);
             this.gbxCommands.Controls.Add(this.btnToggleBlackout);
             this.gbxCommands.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.gbxCommands.Enabled = false;
             this.gbxCommands.Location = new System.Drawing.Point(0, 0);
             this.gbxCommands.Name = "gbxCommands";
             this.gbxCommands.Size = new System.Drawing.Size(101, 490);
@@ -99,38 +101,29 @@
             // 
             // btnSelectTool
             // 
-            this.btnSelectTool.Location = new System.Drawing.Point(6, 28);
+            this.btnSelectTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSelectTool.BackgroundImage")));
+            this.btnSelectTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnSelectTool.Location = new System.Drawing.Point(6, 19);
             this.btnSelectTool.Name = "btnSelectTool";
-            this.btnSelectTool.Size = new System.Drawing.Size(89, 23);
+            this.btnSelectTool.Size = new System.Drawing.Size(32, 32);
             this.btnSelectTool.TabIndex = 0;
-            this.btnSelectTool.Text = "Select Tool";
             this.btnSelectTool.UseVisualStyleBackColor = true;
             this.btnSelectTool.Click += new System.EventHandler(this.btnSelectTool_Click);
             // 
             // btnFogTool
             // 
+            this.btnFogTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogTool.BackgroundImage")));
+            this.btnFogTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btnFogTool.Location = new System.Drawing.Point(6, 57);
             this.btnFogTool.Name = "btnFogTool";
-            this.btnFogTool.Size = new System.Drawing.Size(89, 23);
+            this.btnFogTool.Size = new System.Drawing.Size(32, 32);
             this.btnFogTool.TabIndex = 1;
-            this.btnFogTool.Text = "Fog Tool";
             this.btnFogTool.UseVisualStyleBackColor = true;
             this.btnFogTool.Click += new System.EventHandler(this.btnFogTool_Click);
             // 
-            // btnToggleBlackout
-            // 
-            this.btnToggleBlackout.Location = new System.Drawing.Point(6, 118);
-            this.btnToggleBlackout.Name = "btnToggleBlackout";
-            this.btnToggleBlackout.Size = new System.Drawing.Size(89, 23);
-            this.btnToggleBlackout.TabIndex = 0;
-            this.btnToggleBlackout.TabStop = false;
-            this.btnToggleBlackout.Text = "Blackout";
-            this.btnToggleBlackout.UseVisualStyleBackColor = true;
-            this.btnToggleBlackout.Click += new System.EventHandler(this.btnToggleBlackout_Click);
-            // 
             // btnFogAll
             // 
-            this.btnFogAll.Location = new System.Drawing.Point(6, 179);
+            this.btnFogAll.Location = new System.Drawing.Point(6, 227);
             this.btnFogAll.Name = "btnFogAll";
             this.btnFogAll.Size = new System.Drawing.Size(89, 23);
             this.btnFogAll.TabIndex = 0;
@@ -138,6 +131,18 @@
             this.btnFogAll.Text = "Fog All";
             this.btnFogAll.UseVisualStyleBackColor = true;
             this.btnFogAll.Click += new System.EventHandler(this.btnFogAll_Click);
+            // 
+            // btnToggleBlackout
+            // 
+            this.btnToggleBlackout.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnToggleBlackout.BackgroundImage")));
+            this.btnToggleBlackout.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnToggleBlackout.Location = new System.Drawing.Point(6, 125);
+            this.btnToggleBlackout.Name = "btnToggleBlackout";
+            this.btnToggleBlackout.Size = new System.Drawing.Size(48, 48);
+            this.btnToggleBlackout.TabIndex = 0;
+            this.btnToggleBlackout.TabStop = false;
+            this.btnToggleBlackout.UseVisualStyleBackColor = false;
+            this.btnToggleBlackout.Click += new System.EventHandler(this.btnToggleBlackout_Click);
             // 
             // ServerControl
             // 

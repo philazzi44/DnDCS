@@ -15,6 +15,10 @@ namespace DnDCS.Server
 {
     public partial class ServerControl : UserControl, IDisposable, IDnDCSControl
     {
+        private readonly Color currentToolColor = Color.White;
+        private Color initialSelectToolColor;
+        private Color initialFogToolColor;
+        private Color initialBlackoutColor;
         private Image map;
 
         private Bitmap oldFog;
@@ -44,6 +48,10 @@ namespace DnDCS.Server
 
         private void ServerControl_Load(object sender, EventArgs e)
         {
+            initialSelectToolColor = btnSelectTool.BackColor;
+            initialFogToolColor = btnFogTool.BackColor;
+            initialBlackoutColor = btnToggleBlackout.BackColor;
+
             float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
                                       new float[] {0, 1, 0, 0, 0},
                                       new float[] {0, 0, 1, 0, 0},
@@ -55,8 +63,6 @@ namespace DnDCS.Server
 
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             this.Disposed += new EventHandler(ServerControl_Disposed);
-
-            ToggleTools(btnSelectTool);
 
             connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
             connection.OnClientConnected += new Action(connection_OnClientConnected);
@@ -113,17 +119,20 @@ namespace DnDCS.Server
 
         private void OnLoadImageUrl_Click(object sender, EventArgs e)
         {
+            throw new NotImplementedException();
             TryLoadImageUrl();
         }
 
         private void OnSaveState_Click(object sender, EventArgs e)
         {
             // TODO: Commit the png and overlay information to a file
+            throw new NotImplementedException();
         }
 
         private void OnLoadState_Click(object sender, EventArgs e)
         {
             // TODO: Load a png and overlay information to a file
+            throw new NotImplementedException();
         }
 
         private void OnExit_Click(object sender, EventArgs e)
@@ -160,11 +169,13 @@ namespace DnDCS.Server
 
         private void btnSelectTool_Click(object sender, EventArgs e)
         {
-            ToggleTools(btnSelectTool);
+            if (lastTool != btnSelectTool)
+                ToggleTools(btnSelectTool);
         }
 
         private void btnFogTool_Click(object sender, EventArgs e)
         {
+            if (lastTool != btnFogTool)
             ToggleTools(btnFogTool);
         }
 
@@ -174,13 +185,13 @@ namespace DnDCS.Server
             {
                 // Send message to client to stop doing full blackouts, and obey the fog of war map being sent over
                 isBlackOutSet = false;
-                btnToggleBlackout.Text = "Blackout";
+                btnToggleBlackout.BackColor = initialBlackoutColor;
             }
             else
             {
                 // Send message to client to do a full blackout, ignoring any fog of war map that may exist
                 isBlackOutSet = true;
-                btnToggleBlackout.Text = "Stop Blackout";
+                btnToggleBlackout.BackColor = Color.Black;
             }
 
             // Map and Fog Updates would have been sent to the client in real-time but masked on their end, so we can simply inform them of the change.
@@ -204,13 +215,31 @@ namespace DnDCS.Server
 
         private void ToggleTools(Button enabledTool)
         {
-            // Unset the previous tool
+            // Unset the previous tool as needed.
             if (lastTool == btnFogTool)
                 UnsetFogTool();
 
-            btnSelectTool.Enabled = (btnSelectTool != enabledTool);
-            btnFogTool.Enabled = (btnFogTool != enabledTool);
-
+            // Change the enabledness & colors as needed.
+            if (btnSelectTool == enabledTool)
+            {
+                btnSelectTool.Enabled = false;
+                btnSelectTool.BackColor = currentToolColor;
+                btnFogTool.BackColor = initialFogToolColor;
+                btnFogTool.Enabled = true;
+                UnsetFogTool();
+            }
+            else if (btnFogTool == enabledTool)
+            {
+                btnSelectTool.Enabled = true;
+                btnSelectTool.BackColor = initialSelectToolColor;
+                btnFogTool.BackColor = currentToolColor;
+                btnFogTool.Enabled = false;
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            
             // Set the new tool
             if (btnFogTool == enabledTool)
                 SetFogTool();
@@ -342,6 +371,10 @@ namespace DnDCS.Server
             pbxMap.Refresh();
 
             connection.WriteMap(map);
+            gbxCommands.Enabled = true;
+            ToggleTools(btnSelectTool);
+            // Always force a blackout when a new Map image is loaded, just to make sure we don't reveal something we shouldn't anymore.
+            btnToggleBlackout.PerformClick();
         }
 
         private void CreateFogImage()

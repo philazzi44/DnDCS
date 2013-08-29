@@ -28,6 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(GetConnectIPDialog));
             this.tboIP1 = new System.Windows.Forms.TextBox();
             this.lblInfo = new System.Windows.Forms.Label();
             this.btnCancel = new System.Windows.Forms.Button();
@@ -56,10 +57,11 @@
             // 
             // tboIP1
             // 
-            this.tboIP1.Location = new System.Drawing.Point(3, 3);
+            this.tboIP1.Location = new System.Drawing.Point(3, 4);
             this.tboIP1.Name = "tboIP1";
-            this.tboIP1.Size = new System.Drawing.Size(43, 20);
+            this.tboIP1.Size = new System.Drawing.Size(30, 20);
             this.tboIP1.TabIndex = 0;
+            this.tboIP1.Text = "127";
             this.tboIP1.TextChanged += new System.EventHandler(this.tboIP1_TextChanged);
             // 
             // lblInfo
@@ -106,25 +108,25 @@
             // 
             // tboIP2
             // 
-            this.tboIP2.Location = new System.Drawing.Point(52, 3);
+            this.tboIP2.Location = new System.Drawing.Point(39, 4);
             this.tboIP2.Name = "tboIP2";
-            this.tboIP2.Size = new System.Drawing.Size(43, 20);
+            this.tboIP2.Size = new System.Drawing.Size(30, 20);
             this.tboIP2.TabIndex = 1;
             this.tboIP2.TextChanged += new System.EventHandler(this.tboIP2_TextChanged);
             // 
             // tboIP3
             // 
-            this.tboIP3.Location = new System.Drawing.Point(101, 3);
+            this.tboIP3.Location = new System.Drawing.Point(75, 4);
             this.tboIP3.Name = "tboIP3";
-            this.tboIP3.Size = new System.Drawing.Size(43, 20);
+            this.tboIP3.Size = new System.Drawing.Size(30, 20);
             this.tboIP3.TabIndex = 2;
             this.tboIP3.TextChanged += new System.EventHandler(this.tboIP3_TextChanged);
             // 
             // tboIP4
             // 
-            this.tboIP4.Location = new System.Drawing.Point(150, 2);
+            this.tboIP4.Location = new System.Drawing.Point(111, 4);
             this.tboIP4.Name = "tboIP4";
-            this.tboIP4.Size = new System.Drawing.Size(43, 20);
+            this.tboIP4.Size = new System.Drawing.Size(30, 20);
             this.tboIP4.TabIndex = 3;
             this.tboIP4.TextChanged += new System.EventHandler(this.tboIP4_TextChanged);
             // 
@@ -156,7 +158,7 @@
             // 
             this.tboName.Location = new System.Drawing.Point(3, 3);
             this.tboName.Name = "tboName";
-            this.tboName.Size = new System.Drawing.Size(194, 20);
+            this.tboName.Size = new System.Drawing.Size(138, 20);
             this.tboName.TabIndex = 0;
             this.tboName.TextChanged += new System.EventHandler(this.tboName_TextChanged);
             // 
@@ -168,7 +170,7 @@
             this.pnlIP.Controls.Add(this.tboIP4);
             this.pnlIP.Location = new System.Drawing.Point(3, 36);
             this.pnlIP.Name = "pnlIP";
-            this.pnlIP.Size = new System.Drawing.Size(200, 26);
+            this.pnlIP.Size = new System.Drawing.Size(148, 26);
             this.pnlIP.TabIndex = 1;
             this.pnlIP.Visible = false;
             // 
@@ -177,7 +179,7 @@
             this.pnlName.Controls.Add(this.tboName);
             this.pnlName.Location = new System.Drawing.Point(3, 3);
             this.pnlName.Name = "pnlName";
-            this.pnlName.Size = new System.Drawing.Size(200, 27);
+            this.pnlName.Size = new System.Drawing.Size(148, 27);
             this.pnlName.TabIndex = 0;
             // 
             // flpConnect
@@ -186,12 +188,12 @@
             this.flpConnect.Controls.Add(this.pnlIP);
             this.flpConnect.Location = new System.Drawing.Point(6, 51);
             this.flpConnect.Name = "flpConnect";
-            this.flpConnect.Size = new System.Drawing.Size(207, 75);
+            this.flpConnect.Size = new System.Drawing.Size(158, 67);
             this.flpConnect.TabIndex = 2;
             // 
             // tboPort
             // 
-            this.tboPort.Location = new System.Drawing.Point(254, 57);
+            this.tboPort.Location = new System.Drawing.Point(205, 57);
             this.tboPort.Name = "tboPort";
             this.tboPort.Size = new System.Drawing.Size(69, 20);
             this.tboPort.TabIndex = 3;
@@ -200,7 +202,7 @@
             // lblPort
             // 
             this.lblPort.AutoSize = true;
-            this.lblPort.Location = new System.Drawing.Point(219, 60);
+            this.lblPort.Location = new System.Drawing.Point(170, 60);
             this.lblPort.Name = "lblPort";
             this.lblPort.Size = new System.Drawing.Size(29, 13);
             this.lblPort.TabIndex = 0;
@@ -211,7 +213,7 @@
             this.lboHistory.FormattingEnabled = true;
             this.lboHistory.Location = new System.Drawing.Point(13, 54);
             this.lboHistory.Name = "lboHistory";
-            this.lboHistory.Size = new System.Drawing.Size(276, 134);
+            this.lboHistory.Size = new System.Drawing.Size(212, 134);
             this.lboHistory.TabIndex = 0;
             this.lboHistory.SelectedIndexChanged += new System.EventHandler(this.lboHistory_SelectedIndexChanged);
             // 
@@ -233,19 +235,20 @@
             this.gbxNew.Controls.Add(this.tboPort);
             this.gbxNew.Location = new System.Drawing.Point(12, 195);
             this.gbxNew.Name = "gbxNew";
-            this.gbxNew.Size = new System.Drawing.Size(328, 132);
+            this.gbxNew.Size = new System.Drawing.Size(280, 124);
             this.gbxNew.TabIndex = 7;
             this.gbxNew.TabStop = false;
             this.gbxNew.Text = "New";
             // 
             // btnDelete
             // 
+            this.btnDelete.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnDelete.BackgroundImage")));
+            this.btnDelete.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btnDelete.Enabled = false;
-            this.btnDelete.Location = new System.Drawing.Point(295, 54);
+            this.btnDelete.Location = new System.Drawing.Point(231, 54);
             this.btnDelete.Name = "btnDelete";
-            this.btnDelete.Size = new System.Drawing.Size(48, 23);
+            this.btnDelete.Size = new System.Drawing.Size(24, 24);
             this.btnDelete.TabIndex = 8;
-            this.btnDelete.Text = "Delete";
             this.btnDelete.UseVisualStyleBackColor = true;
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
@@ -255,7 +258,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
-            this.ClientSize = new System.Drawing.Size(345, 360);
+            this.ClientSize = new System.Drawing.Size(296, 360);
             this.Controls.Add(this.btnDelete);
             this.Controls.Add(this.gbxNew);
             this.Controls.Add(this.lboHistory);

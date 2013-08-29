@@ -14,6 +14,8 @@ namespace DnDCS.Client
 {
     public partial class GetConnectIPDialog : Form
     {
+        private bool unselectHistoryOnChange;
+
         public string Address
         {
             get { return (rdoIP.Checked) ? string.Join(".", tboIP1.Text, tboIP2.Text, tboIP3.Text, tboIP4.Text).Trim() : tboName.Text.Trim(); }
@@ -129,7 +131,7 @@ namespace DnDCS.Client
             {
                 btnDelete.Enabled = true;
                 var serverAddress = (ServerAddress)lboHistory.SelectedItem;
-                if (Regex.IsMatch(serverAddress.Address, @"\d+\.\d+\.\d+\.\d+\:\d+"))
+                if (Utils.IsIPAddress(serverAddress.Address))
                 {
                     rdoIP.Checked = true;
                     var ipSplit = serverAddress.Address.Split('.');
@@ -144,6 +146,7 @@ namespace DnDCS.Client
                     tboName.Text = serverAddress.Address;
                 }
                 tboPort.Text = serverAddress.Port.ToString();
+                unselectHistoryOnChange = true;
             }
             else
             {
@@ -156,16 +159,29 @@ namespace DnDCS.Client
             if (lboHistory.SelectedIndex < 0)
                 return;
             lboHistory.Items.RemoveAt(lboHistory.SelectedIndex);
+            unselectHistoryOnChange = false;
         }
 
         private void OnNameChanged()
         {
+            if (unselectHistoryOnChange)
+            {
+                lboHistory.SelectedIndex = -1;
+                unselectHistoryOnChange = false;
+            }
+
             int port;
             btnPing.Enabled = btnConnect.Enabled = !string.IsNullOrWhiteSpace(tboName.Text) && int.TryParse(tboPort.Text, out port);
         }
 
         private void OnIPChanged()
         {
+            if (unselectHistoryOnChange)
+            {
+                lboHistory.SelectedIndex = -1;
+                unselectHistoryOnChange = false;
+            }
+
             int port;
             btnPing.Enabled = btnConnect.Enabled = !string.IsNullOrWhiteSpace(tboIP1.Text) &&
                                                    !string.IsNullOrWhiteSpace(tboIP2.Text) &&

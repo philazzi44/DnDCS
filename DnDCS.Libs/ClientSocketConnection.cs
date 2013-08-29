@@ -119,8 +119,7 @@ namespace DnDCS.Libs
             {
                 // Establish the local endpoint for the socket.
                 // Dns.GetHostName returns the name of the host running the application.
-                var ipHostInfo = Dns.Resolve(address);
-                var ipAddress = ipHostInfo.AddressList[0];
+                var ipAddress = (Utils.IsIPAddress(address)) ? IPAddress.Parse(address) : Dns.Resolve(address).AddressList[0];
                 var remoteEndPoint = new IPEndPoint(ipAddress, port);
 
                 Logger.LogDebug(string.Format("Client Socket - Connecting to server at '{0}:{1}'...", ipAddress, port));

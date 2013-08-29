@@ -14,6 +14,8 @@ namespace DnDCS
 {
     public partial class Launcher : Form
     {
+        private ComponentResourceManager resources;
+
         public Launcher()
         {
             InitializeComponent();
@@ -21,6 +23,7 @@ namespace DnDCS
         
         private void Launcher_Load(object sender, EventArgs e)
         {
+            this.Icon = DnDCS.Libs.Assets.AssetsLoader.LauncherIcon;
             this.Disposed += new EventHandler(Launcher_Disposed);
         }
 
@@ -32,8 +35,10 @@ namespace DnDCS
         private void btnClient_Click(object sender, EventArgs e)
         {
             Logger.FileSuffix = "Client";
-            this.Text = "DnDCS - Client";
             Logger.LogInfo("Initializing Client Mode");
+
+            this.Text = "DnDCS - Client";
+            this.Icon = DnDCS.Libs.Assets.AssetsLoader.ClientIcon;
 
             spltLauncher.Panel1Collapsed = true;
             var client = new ClientControl();
@@ -45,8 +50,10 @@ namespace DnDCS
         private void btnServer_Click(object sender, EventArgs e)
         {
             Logger.FileSuffix = "Server";
-            this.Text = "DnDCS - Server";
             Logger.LogInfo("Initializing Server Mode");
+
+            this.Text = "DnDCS - Server";
+            this.Icon = DnDCS.Libs.Assets.AssetsLoader.ServerIcon;
 
             spltLauncher.Panel1Collapsed = true;
             var server = new ServerControl();
