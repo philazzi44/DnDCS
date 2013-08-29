@@ -18,6 +18,8 @@ namespace DnDCS.Libs
         private Socket server;
         private Socket client;
 
+        public event Action OnClientConnected;
+
         public ServerSocketConnection(int port)
         {
             this.port = port;
@@ -39,6 +41,9 @@ namespace DnDCS.Libs
                 }
 
                 isConnected = true;
+
+                if (OnClientConnected != null)
+                    OnClientConnected();
             }
             catch (Exception e)
             {
@@ -79,17 +84,20 @@ namespace DnDCS.Libs
         
         public void WriteMap(Image map)
         {
-            Write(ImageSocketObject.CreateMap(map));
+            if (map != null)
+                Write(ImageSocketObject.CreateMap(map));
         }
 
         public void WriteFog(Image fog)
         {
-            Write(ImageSocketObject.CreateFog(fog));
+            if (fog != null)
+                Write(ImageSocketObject.CreateFog(fog));
         }
 
         public void WriteFogUpdate(Point[] fogUpdate, bool isClearing)
         {
-            Write(new PointArraySocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate, isClearing));
+            if (fogUpdate != null && fogUpdate.Length != 0)
+                Write(new PointArraySocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate, isClearing));
         }
 
         public void WriteBlackout(bool isBlackoutOn)
@@ -100,14 +108,16 @@ namespace DnDCS.Libs
         private void Write(BaseSocketObject socketObject)
         {
             if (client == null)
-                throw new ObjectDisposedException("Underlying socket has already been closed.");
+                return;
 
             try
             {
                 Logger.LogDebug(string.Format("Server Socket - Writing Socket Object '{0}'.", socketObject));
                 var bytes = socketObject.GetBytes();
-                bytes.Add((byte)SocketConstants.SocketAction.EndOfData);
-                client.Send(bytes.ToArray());
+
+                var sendBytes = BitConverter.GetBytes(bytes.Length).Concat(bytes).ToArray();
+                Logger.LogDebug(string.Format("Server Socket - Writing {0} total bytes.", sendBytes.Length));
+                client.Send(sendBytes);
             }
             catch (Exception e)
             {

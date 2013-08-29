@@ -8,6 +8,7 @@ namespace DnDCS.Libs.SocketObjects
     public class BaseSocketObject
     {
         public SocketConstants.SocketAction Action { get; private set; }
+        protected byte ActionByte { get { return (byte)Action; } }
 
         public BaseSocketObject() : this(SocketConstants.SocketAction.Unknown)
         {
@@ -40,9 +41,9 @@ namespace DnDCS.Libs.SocketObjects
             }
         }
 
-        public virtual List<byte> GetBytes()
+        public virtual byte[] GetBytes()
         {
-            return new List<byte> { (byte)Action };
+            return new byte[] { ActionByte };
         }
 
         public override string ToString()

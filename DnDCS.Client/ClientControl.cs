@@ -8,6 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SocketObjects;
+using System.Drawing.Imaging;
 
 namespace DnDCS.Client
 {
@@ -19,8 +20,13 @@ namespace DnDCS.Client
         private Image fog;
         private bool isBlackoutOn;
 
-        private readonly Brush fogClearBrush = Brushes.Transparent;
+        // These two colors should be the same so the transparency works as expected.
+        private readonly Brush fogClearBrush = Brushes.White;
+        private readonly Color fogClearColor = Color.White;
+
         private readonly Brush fogBrush = Brushes.Black;
+
+        private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
         public ClientControl()
         {
@@ -29,6 +35,15 @@ namespace DnDCS.Client
 
         private void ClientControl_Load(object sender, EventArgs e)
         {
+            float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
+                                      new float[] {0, 1, 0, 0, 0},
+                                      new float[] {0, 0, 1, 0, 0},
+                                      new float[] {0, 0, 0, 1, 0}, 
+                                      new float[] {0, 0, 0, 0, 1}
+                                    };
+            fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+            fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
+
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
         }
 
@@ -98,6 +113,9 @@ namespace DnDCS.Client
         private void connection_OnMapReceived(Image map)
         {
             this.map = map;
+            if (isBlackoutOn)
+                return;
+
             pbxMap.BeginInvoke((new Action(() =>
                                                {
                                                    pbxMap.Image = this.map;
@@ -108,6 +126,9 @@ namespace DnDCS.Client
         private void connection_OnFogReceived(Image fog)
         {
             this.fog = fog;
+            if (isBlackoutOn)
+                return;
+
             pbxMap.BeginInvoke((new Action(() =>
                                                {
                                                    pbxMap.Refresh();
@@ -116,18 +137,6 @@ namespace DnDCS.Client
 
         private void connection_OnFogUpdateReceived(Point[] fogUpdate, bool isClearing)
         {
-            /*
-             * 
-ERROR @ 2013-08-28T17:04:02
-Message: Client Socket - An error occurred connecting to the server.
-Exception: System.OverflowException: Overflow error.
-   at System.Drawing.Graphics.CheckErrorStatus(Int32 status)
-   at System.Drawing.Graphics.FillPolygon(Brush brush, Point[] points, FillMode fillMode)
-   at System.Drawing.Graphics.FillPolygon(Brush brush, Point[] points)
-   at DnDCS.Client.ClientControl.connection_OnFogUpdateReceived(Point[] fogUpdate, Boolean isClearing) in C:\Users\pazzi\Documents\GitHub\DnDCS\DnDCS.Client\ClientControl.cs:line 127
-   at DnDCS.Libs.ClientSocketConnection.Start() in C:\Users\pazzi\Documents\GitHub\DnDCS\DnDCS.Libs\ClientSocketConnection.cs:line 84
-             * */
-
             var isNewFogImage = (this.fog == null);
             if (isNewFogImage)
                 this.fog = new Bitmap(this.map.Width, this.map.Height);
@@ -138,6 +147,24 @@ Exception: System.OverflowException: Overflow error.
                     g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
                 g.FillPolygon((isClearing) ? fogClearBrush : fogBrush, fogUpdate);
             }
+
+            if (isBlackoutOn)
+                return;
+
+            pbxMap.BeginInvoke((new Action(() =>
+            {
+                pbxMap.Refresh();
+            })));
+        }
+        
+        private void connection_OnExitReceived()
+        {
+            this.BeginInvoke(new Action(() =>
+            {
+                MessageBox.Show(this, "The server has closed the connection. Client application will now close.",
+                                "Server Connection Closed", MessageBoxButtons.OK);
+                this.ParentForm.Close();
+            }));
         }
 
         private void DrawOnGraphics(Graphics g)
@@ -148,14 +175,7 @@ Exception: System.OverflowException: Overflow error.
             if (fog == null)
                 return;
 
-            g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel);
-        }
-
-        private void connection_OnExitReceived()
-        {
-            MessageBox.Show(this, "The server has closed the connection. Client application will now close.",
-                            "Server Connection Closed", MessageBoxButtons.OK);
-            this.ParentForm.Close();
+            g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
         }
     }
 }

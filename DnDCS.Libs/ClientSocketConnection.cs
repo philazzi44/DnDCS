@@ -144,21 +144,36 @@ namespace DnDCS.Libs
             var allBytes = new List<byte[]>();
             try
             {
-                while (true)
+                // Get the first Int32 to find out how many bytes we should expect.
+                var bytesExpectedBuffer = new byte[4];
+                server.Receive(bytesExpectedBuffer);
+                var bytesExpected = BitConverter.ToInt32(bytesExpectedBuffer, 0);
+                Logger.LogDebug(string.Format("Expecting {0} total bytes (4 read already, so {1} total read for this message).", bytesExpected, bytesExpected + 4));
+                var bytesBuffer = new byte[bytesExpected];
+                // Loop until we get all the bytes we're expecting. We should get it in one shot, but it'll depend on how the packet sizes in use.
+                var bytesReceived = 0;
+                while (bytesReceived < bytesExpected)
                 {
-                    var bytesReceived = new byte[1024];
-                    var bytesReceivedCount = server.Receive(bytesReceived);
-
-                    var actualBytesReceived = (bytesReceivedCount == bytesReceived.Length) ? bytesReceived.ToArray() : bytesReceived.Take(bytesReceivedCount).ToArray();
-
-                    // If we never received our End Of Data flag, then we must keep going.
-                    allBytes.Add(actualBytesReceived);
-                    if (actualBytesReceived.Last() == (byte)SocketConstants.SocketAction.EndOfData)
-                        break;
+                    var thisBytesReceived = server.Receive(bytesBuffer);
+                    bytesReceived += thisBytesReceived;
+                    allBytes.Add(bytesBuffer.Take(thisBytesReceived).ToArray());
                 }
 
+                //while (true)
+                //{
+                //    var bytesReceived = new byte[1024];
+                //    var bytesReceivedCount = server.Receive(bytesReceived);
+
+                //    var actualBytesReceived = (bytesReceivedCount == bytesReceived.Length) ? bytesReceived.ToArray() : bytesReceived.Take(bytesReceivedCount).ToArray();
+
+                //    // If we never received our End Of Data flag, then we must keep going.
+                //    allBytes.Add(actualBytesReceived);
+                //    if (actualBytesReceived.Last() == (byte)SocketConstants.SocketAction.EndOfData)
+                //        break;
+                //}
+
                 var allBytesConcat = allBytes.SelectMany(b => b).ToArray();
-                Logger.LogDebug(string.Format("Read {0} bytes.", allBytesConcat.Length));
+                Logger.LogDebug(string.Format("Read {0} of expected {1} total bytes.", allBytesConcat.Length, bytesExpected));
                 return BaseSocketObject.BaseObjectFromBytes(allBytesConcat);
             }
             catch (Exception e)

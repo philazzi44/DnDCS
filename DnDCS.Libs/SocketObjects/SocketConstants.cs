@@ -15,8 +15,7 @@ namespace DnDCS.Libs.SocketObjects
 
         public enum SocketAction : byte
         {
-            EndOfData = 0,
-            Unknown = 1,
+            Unknown = 0,
             Acknowledge = 44,
             Map,
             Fog,

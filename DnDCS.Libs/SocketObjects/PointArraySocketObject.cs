@@ -34,7 +34,7 @@ namespace DnDCS.Libs.SocketObjects
 
         private static byte[] ConvertPointsToBytes(Point[] points)
         {
-            var pointBytes = new List<byte>();
+            var pointBytes = new List<byte>(points.Length * 4);
             foreach (var point in points)
             {
                 pointBytes.AddRange(BitConverter.GetBytes(point.X));
@@ -45,26 +45,28 @@ namespace DnDCS.Libs.SocketObjects
 
         private static Point[] ConvertBytesToPointArray(byte[] pointBytes)
         {
-            var points = new List<Point>();
-            for (int i = 0; i < pointBytes.Length; i+=4)
+            var points = new List<Point>(pointBytes.Length / 4);
+            for (int i = 0; i < pointBytes.Length; i += 8)
             {
                 var x = BitConverter.ToInt32(pointBytes, i);
-                var y = BitConverter.ToInt32(pointBytes, i);
+                var y = BitConverter.ToInt32(pointBytes, i + 4);
                 points.Add(new Point(x, y));
             }
             return points.ToArray();
         }
 
-        public override List<byte> GetBytes()
+        public override byte[] GetBytes()
         {
-            var bytes = base.GetBytes();
+            var bytes = new List<byte>();
+            bytes.Add(ActionByte);
+            bytes.Add(IsClearing ? (byte)1 : (byte)0);
             bytes.AddRange(ConvertPointsToBytes(this.Points));
-            return bytes;
+            return bytes.ToArray();
         }
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: .", Action, Points.Length, IsClearing);
+            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: {2}.", Action, Points.Length, IsClearing);
         }
     }
 }

@@ -27,9 +27,12 @@ namespace DnDCS.Server
         private MenuItem undoLastFogAction;
 
         private readonly Brush newFogClearBrush = Brushes.Red;
+
+        // These two colors should be the same so the transparency works as expected.
         private readonly Brush fogClearBrush = Brushes.White;
-        private readonly Brush fogBrush = Brushes.LightBlue;
-        private readonly Brush newFogBrush = Brushes.Blue;
+        private readonly Color fogClearColor = Color.White;
+        private readonly Brush fogBrush = Brushes.Black;
+        private readonly Brush newFogBrush = Brushes.Gray;
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
         private ServerSocketConnection connection;
@@ -41,12 +44,28 @@ namespace DnDCS.Server
 
         private void ServerControl_Load(object sender, EventArgs e)
         {
+            float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
+                                      new float[] {0, 1, 0, 0, 0},
+                                      new float[] {0, 0, 1, 0, 0},
+                                      new float[] {0, 0, 0, 0.35f, 0}, 
+                                      new float[] {0, 0, 0, 0, 1}
+                                    };
+            fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+            fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
+
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             this.Disposed += new EventHandler(ServerControl_Disposed);
 
             ToggleTools(btnSelectTool);
 
             connection = new ServerSocketConnection(SocketConstants.Port);
+            connection.OnClientConnected += new Action(connection_OnClientConnected);
+        }
+
+        private void connection_OnClientConnected()
+        {
+            connection.WriteMap(map);
+            connection.WriteFog(fog);
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -99,19 +118,17 @@ namespace DnDCS.Server
 
         private void OnSaveState_Click(object sender, EventArgs e)
         {
-            // Commit the png and overlay information to a file
+            // TODO: Commit the png and overlay information to a file
         }
 
         private void OnLoadState_Click(object sender, EventArgs e)
         {
-            // Load a png and overlay information to a file
+            // TODO: Load a png and overlay information to a file
         }
 
         private void OnExit_Click(object sender, EventArgs e)
         {
-            // Prompt for save
-            // Save if needed
-            // Send quit message to client
+            // TODO: Prompt for save and save if needed.
             connection.Stop();
             this.ParentForm.Close();
         }
@@ -125,12 +142,15 @@ namespace DnDCS.Server
                 fog = oldFog;
                 oldFog = flipFog;
                 pbxMap.Refresh();
+
+                connection.WriteFog(fog);
             }
         }
 
         private void OnSyncClients_Click(object sender, EventArgs e)
         {
-            // TODO: Allow for a Sync process to make sure the client has the latest data?
+            connection.WriteMap(map);
+            connection.WriteFog(fog);
         }
 
         private void pbxMap_Paint(object sender, PaintEventArgs e)
@@ -162,6 +182,8 @@ namespace DnDCS.Server
                 isBlackOutSet = true;
                 btnToggleBlackout.Text = "Stop Blackout";
             }
+
+            // Map and Fog Updates would have been sent to the client in real-time but masked on their end, so we can simply inform them of the change.
             connection.WriteBlackout(isBlackOutSet);
         }
         
@@ -176,6 +198,7 @@ namespace DnDCS.Server
                     g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
                     pbxMap.Refresh();
                 }
+                connection.WriteFog(fog);
             }
         }
 
@@ -328,13 +351,6 @@ namespace DnDCS.Server
             {
                 g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
             }
-            float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
-                                      new float[] {0, 1, 0, 0, 0},
-                                      new float[] {0, 0, 1, 0, 0},
-                                      new float[] {0, 0, 0, 0.35f, 0}, 
-                                      new float[] {0, 0, 0, 0, 1}
-                                    };
-            fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
 
             connection.WriteFog(fog);
         }

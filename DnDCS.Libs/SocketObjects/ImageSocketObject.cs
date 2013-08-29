@@ -78,16 +78,17 @@ namespace DnDCS.Libs.SocketObjects
             }
         }
 
-        public override List<byte> GetBytes()
+        public override byte[] GetBytes()
         {
-            var bytes = base.GetBytes();
+            var bytes = new List<byte>();
+            bytes.Add(ActionByte);
             bytes.AddRange(ImageBytes);
-            return bytes;
+            return bytes.ToArray();
         }
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Bytes Length: {1}.", Action, ImageBytes.Length);
+            return string.Format("Socket Action: '{0}', Image Bytes Length: {1}.", Action, ImageBytes.Length);
         }
     }
 }

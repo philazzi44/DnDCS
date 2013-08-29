@@ -36,6 +36,7 @@
             // 
             // pnlMap
             // 
+            this.pnlMap.AutoScroll = true;
             this.pnlMap.Controls.Add(this.pbxMap);
             this.pnlMap.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlMap.Location = new System.Drawing.Point(0, 0);

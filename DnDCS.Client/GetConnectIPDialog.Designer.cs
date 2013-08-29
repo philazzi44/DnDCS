@@ -84,6 +84,7 @@
             this.btnPing.TabIndex = 3;
             this.btnPing.Text = "Ping";
             this.btnPing.UseVisualStyleBackColor = true;
+            this.btnPing.Visible = false;
             // 
             // btnConnect
             // 
@@ -200,6 +201,7 @@
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Connect to IP";
+            this.Load += new System.EventHandler(this.GetConnectIPDialog_Load);
             this.pnlIP.ResumeLayout(false);
             this.pnlIP.PerformLayout();
             this.pnlName.ResumeLayout(false);

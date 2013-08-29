@@ -11,6 +11,12 @@ namespace DnDCS.Client
 {
     public partial class GetConnectIPDialog : Form
     {
+        private const string DefaultName = "desktop-win7";
+        private const string DefaultIP1 = "127";
+        private const string DefaultIP2 = "0";
+        private const string DefaultIP3 = "0";
+        private const string DefaultIP4 = "1";
+
         public string Address
         {
             get { return (rdoIP.Checked) ? string.Join(".", tboIP1.Text, tboIP2.Text, tboIP3.Text, tboIP4.Text).Trim() : tboName.Text.Trim(); }
@@ -19,6 +25,15 @@ namespace DnDCS.Client
         public GetConnectIPDialog()
         {
             InitializeComponent();
+        }
+        
+        private void GetConnectIPDialog_Load(object sender, EventArgs e)
+        {
+            tboName.Text = DefaultName;
+            tboIP1.Text = DefaultIP1;
+            tboIP2.Text = DefaultIP2;
+            tboIP3.Text = DefaultIP3;
+            tboIP4.Text = DefaultIP4;
         }
 
         private void rdoName_CheckedChanged(object sender, EventArgs e)
@@ -35,13 +50,16 @@ namespace DnDCS.Client
         {
             if (rdoIP.Checked)
             {
-                tboName.Text = string.Empty;
+                tboName.Text = DefaultName;
                 pnlName.Visible = false;
                 pnlIP.Visible = true;
             }
             else
             {
-                tboIP1.Text = tboIP2.Text = tboIP3.Text = tboIP4.Text = string.Empty;
+                tboIP1.Text = DefaultIP1;
+                tboIP2.Text = DefaultIP2;
+                tboIP3.Text = DefaultIP3;
+                tboIP4.Text = DefaultIP4;
                 pnlName.Visible = true;
                 pnlIP.Visible = false;
             }
