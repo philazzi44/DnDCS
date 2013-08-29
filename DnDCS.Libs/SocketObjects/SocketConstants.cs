@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Configuration;
 
 namespace DnDCS.Libs.SocketObjects
 {
@@ -9,9 +10,6 @@ namespace DnDCS.Libs.SocketObjects
     {
         public static readonly BaseSocketObject AcknowledgeSocketObject = new BaseSocketObject(SocketConstants.SocketAction.Acknowledge);
         public static readonly BaseSocketObject ExitSocketObject = new BaseSocketObject(SocketConstants.SocketAction.Exit);
-
-        // TODO: Port must be configurable
-        public static int Port = 11000;
 
         public enum SocketAction : byte
         {

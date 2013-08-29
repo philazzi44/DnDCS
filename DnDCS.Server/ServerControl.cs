@@ -58,7 +58,7 @@ namespace DnDCS.Server
 
             ToggleTools(btnSelectTool);
 
-            connection = new ServerSocketConnection(SocketConstants.Port);
+            connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
             connection.OnClientConnected += new Action(connection_OnClientConnected);
         }
 

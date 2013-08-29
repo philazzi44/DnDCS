@@ -72,7 +72,7 @@ namespace DnDCS.Client
             {
                 if (getConnectIP.ShowDialog() == DialogResult.OK)
                 {
-                    Connect(getConnectIP.Address);
+                    Connect(getConnectIP.Address, getConnectIP.Port);
                 }
             }
         }
@@ -84,12 +84,12 @@ namespace DnDCS.Client
             this.ParentForm.Close();
         }
 
-        private void Connect(string address)
+        private void Connect(string address, int port)
         {
             if (connection != null)
                 connection.Stop();
 
-            connection = new ClientSocketConnection(address, SocketConstants.Port);
+            connection = new ClientSocketConnection(address, port);
             connection.OnMapReceived += new Action<Image>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
