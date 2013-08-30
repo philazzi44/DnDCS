@@ -66,7 +66,7 @@ namespace DnDCS.Libs.SocketObjects
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: {2}.", Action, Points.Length, IsClearing);
+            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: {2}", Action, Points.Length, IsClearing);
         }
     }
 }

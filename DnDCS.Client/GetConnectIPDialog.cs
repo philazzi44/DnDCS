@@ -42,6 +42,7 @@ namespace DnDCS.Client
             {
                 foreach (var serverAddress in clientData.ServerAddressHistory)
                     lboHistory.Items.Add(serverAddress);
+                lboHistory.SelectedIndex = 0;
             }
 
             Closed += new EventHandler(GetConnectIPDialog_Closed);
@@ -110,11 +111,13 @@ namespace DnDCS.Client
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
-            lboHistory.Items.Add(new ServerAddress()
+            var newAddress = new ServerAddress()
             {
                 Address = Address,
                 Port = this.Port
-            });
+            };
+            if (!lboHistory.Items.Contains(newAddress))
+                lboHistory.Items.Insert(0, newAddress);
 
             this.DialogResult = DialogResult.OK;
         }

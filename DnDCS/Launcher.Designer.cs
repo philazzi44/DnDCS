@@ -94,6 +94,7 @@
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Launcher";
             this.Text = "DnDCS - Launcher";
+            this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Launcher_FormClosed);
             this.Load += new System.EventHandler(this.Launcher_Load);
             this.spltLauncher.Panel1.ResumeLayout(false);
             this.spltLauncher.Panel1.PerformLayout();

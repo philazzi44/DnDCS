@@ -48,7 +48,7 @@ namespace DnDCS.Libs.SocketObjects
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}'.", Action);
+            return string.Format("Socket Action: '{0}'", Action);
         }
     }
 }

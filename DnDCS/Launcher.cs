@@ -24,14 +24,13 @@ namespace DnDCS
         private void Launcher_Load(object sender, EventArgs e)
         {
             this.Icon = DnDCS.Libs.Assets.AssetsLoader.LauncherIcon;
-            this.Disposed += new EventHandler(Launcher_Disposed);
         }
 
-        private void Launcher_Disposed(object sender, EventArgs e)
+        private void Launcher_FormClosed(object sender, FormClosedEventArgs e)
         {
             Logger.LogInfo("Application closing.");
         }
-
+        
         private void btnClient_Click(object sender, EventArgs e)
         {
             Logger.FileSuffix = "Client";

@@ -88,7 +88,7 @@ namespace DnDCS.Libs.SocketObjects
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Image Bytes Length: {1}.", Action, ImageBytes.Length);
+            return string.Format("Socket Action: '{0}', Image Bytes Length: {1}", Action, ImageBytes.Length);
         }
     }
 }

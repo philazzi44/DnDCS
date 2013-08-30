@@ -9,13 +9,17 @@ using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SocketObjects;
 using System.Drawing.Imaging;
+using DnDCS.Libs.Assets;
 
 namespace DnDCS.Client
 {
     public partial class ClientControl : UserControl, IDnDCSControl
     {
+        private string initialParentFormText;
         private ClientSocketConnection connection;
         private MenuItem connectItem;
+        private int mapWidth;
+        private int mapHeight;
         private Image map;
         private Image fog;
         private bool isBlackoutOn;
@@ -44,6 +48,7 @@ namespace DnDCS.Client
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
             fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
 
+            initialParentFormText = this.ParentForm.Text;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
         }
 
@@ -98,14 +103,29 @@ namespace DnDCS.Client
 
             connectItem.Text = "Connected...";
             connectItem.Enabled = false;
+            this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, address, port);
         }
 
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
         {
             this.isBlackoutOn = isBlackoutOn;
+
+            Image blackoutOrMap;
+            if (this.isBlackoutOn)
+            {
+                blackoutOrMap = new Bitmap(this.mapWidth, this.mapHeight);
+                using (var g = Graphics.FromImage(blackoutOrMap))
+                {
+                    g.Clear(Color.Black);
+                }
+            }
+            else
+            {
+                blackoutOrMap = this.map;
+            }
             pbxMap.BeginInvoke((new Action(() =>
                                                {
-                                                   pbxMap.Image = (this.isBlackoutOn) ? null : this.map;
+                                                   pbxMap.Image = blackoutOrMap;
                                                    pbxMap.Refresh();
                                                })));
         }
@@ -113,6 +133,8 @@ namespace DnDCS.Client
         private void connection_OnMapReceived(Image map)
         {
             this.map = map;
+            this.mapWidth = this.map.Width;
+            this.mapHeight = this.map.Height;
             if (isBlackoutOn)
                 return;
 
@@ -137,16 +159,20 @@ namespace DnDCS.Client
 
         private void connection_OnFogUpdateReceived(Point[] fogUpdate, bool isClearing)
         {
-            var isNewFogImage = (this.fog == null);
+            var fogImageToUpdate = this.fog;
+            var isNewFogImage = (fogImageToUpdate == null);
             if (isNewFogImage)
-                this.fog = new Bitmap(this.map.Width, this.map.Height);
+                fogImageToUpdate = new Bitmap(this.mapWidth, this.mapHeight);
 
-            using (var g = Graphics.FromImage(this.fog))
+            using (var g = Graphics.FromImage(fogImageToUpdate))
             {
                 if (isNewFogImage)
                     g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
                 g.FillPolygon((isClearing) ? fogClearBrush : fogBrush, fogUpdate);
             }
+
+            if (isNewFogImage)
+                this.fog = fogImageToUpdate;
 
             if (isBlackoutOn)
                 return;
@@ -170,12 +196,19 @@ namespace DnDCS.Client
         private void DrawOnGraphics(Graphics g)
         {
             if (this.isBlackoutOn)
+            {
+                // Draw the Blackout Image in the Top/Left of what is visible to the user.
+                g.DrawImage(AssetsLoader.BlackoutImage, pnlMap.HorizontalScroll.Value, pnlMap.VerticalScroll.Value);
                 return;
+            }
 
-            if (fog == null)
-                return;
+            if (fog != null)
+                g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+        }
 
-            g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+        private void pnlMap_Scroll(object sender, ScrollEventArgs e)
+        {
+            pbxMap.Refresh();
         }
     }
 }

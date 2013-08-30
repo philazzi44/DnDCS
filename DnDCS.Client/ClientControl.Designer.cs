@@ -43,10 +43,10 @@
             this.pnlMap.Name = "pnlMap";
             this.pnlMap.Size = new System.Drawing.Size(659, 384);
             this.pnlMap.TabIndex = 0;
+            this.pnlMap.Scroll += new System.Windows.Forms.ScrollEventHandler(this.pnlMap_Scroll);
             // 
             // pbxMap
             // 
-            this.pbxMap.BackColor = System.Drawing.Color.Black;
             this.pbxMap.Location = new System.Drawing.Point(0, 0);
             this.pbxMap.Name = "pbxMap";
             this.pbxMap.Size = new System.Drawing.Size(320, 240);

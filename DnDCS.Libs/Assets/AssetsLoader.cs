@@ -15,11 +15,14 @@ namespace DnDCS.Libs.Assets
             get
             {
                 const string name = "Assets/LauncherIcon.ico";
-                if (assets.ContainsKey(name))
-                    return (Icon)assets[name];
-                var icon = Icon.ExtractAssociatedIcon(name);
-                assets.Add(name, icon);
-                return icon;
+                lock (assets)
+                {
+                    if (assets.ContainsKey(name))
+                        return (Icon)assets[name];
+                    var icon = Icon.ExtractAssociatedIcon(name);
+                    assets.Add(name, icon);
+                    return icon;
+                }
             }
         }
 
@@ -28,11 +31,14 @@ namespace DnDCS.Libs.Assets
             get
             {
                 const string name = "Assets/ClientIcon.ico";
-                if (assets.ContainsKey(name))
-                    return (Icon)assets[name];
-                var icon = Icon.ExtractAssociatedIcon(name);
-                assets.Add(name, icon);
-                return icon;
+                lock (assets)
+                {
+                    if (assets.ContainsKey(name))
+                        return (Icon)assets[name];
+                    var icon = Icon.ExtractAssociatedIcon(name);
+                    assets.Add(name, icon);
+                    return icon;
+                }
             }
         }
 
@@ -41,11 +47,14 @@ namespace DnDCS.Libs.Assets
             get
             {
                 const string name = "Assets/ServerIcon.ico";
-                if (assets.ContainsKey(name))
-                    return (Icon)assets[name];
-                var icon = Icon.ExtractAssociatedIcon(name);
-                assets.Add(name, icon);
-                return icon;
+                lock (assets)
+                {
+                    if (assets.ContainsKey(name))
+                        return (Icon)assets[name];
+                    var icon = Icon.ExtractAssociatedIcon(name);
+                    assets.Add(name, icon);
+                    return icon;
+                }
             }
         }
 
@@ -53,12 +62,15 @@ namespace DnDCS.Libs.Assets
         {
             get
             {
-                const string name = "Assets/BlackoutImage.ico";
-                if (assets.ContainsKey(name))
-                    return (Image)assets[name];
-                var image = Image.FromFile(name);
-                assets.Add(name, image);
-                return image;
+                const string name = "Assets/BlackoutImage.png";
+                lock (assets)
+                {
+                    if (assets.ContainsKey(name))
+                        return (Image)assets[name];
+                    var image = Image.FromFile(name);
+                    assets.Add(name, image);
+                    return image;
+                }
             }
         }
     }
