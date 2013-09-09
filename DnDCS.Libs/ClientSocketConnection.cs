@@ -30,6 +30,7 @@ namespace DnDCS.Libs
             this.port = port;
 
             var socketThread = new Thread(Start);
+            socketThread.IsBackground = true;
             socketThread.Name = "Client Socket Thread";
             socketThread.Start();
         }
@@ -65,6 +66,9 @@ namespace DnDCS.Libs
                     {
                         case SocketConstants.SocketAction.Acknowledge:
                             throw new NotSupportedException("Acknowledge not supported at this time.");
+
+                        case SocketConstants.SocketAction.Ping:
+                            break;
 
                         case SocketConstants.SocketAction.Map:
                             Logger.LogDebug("Read Map action.");

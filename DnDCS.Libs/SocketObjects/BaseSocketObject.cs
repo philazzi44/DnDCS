@@ -25,6 +25,7 @@ namespace DnDCS.Libs.SocketObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.Acknowledge:
+                case SocketConstants.SocketAction.Ping:
                 case SocketConstants.SocketAction.BlackoutOn:
                 case SocketConstants.SocketAction.BlackoutOff:
                 case SocketConstants.SocketAction.Exit:

@@ -52,6 +52,7 @@
     <Compile Include="PersistenceObjects\ClientData.cs" />
     <Compile Include="PersistenceObjects\ServerData.cs" />
     <Compile Include="PersistenceObjects\ServerAddress.cs" />
+    <Compile Include="ServerEvents\SocketEvent.cs" />
     <Compile Include="SocketObjects\PointArraySocketObject.cs" />
     <Compile Include="SocketObjects\ImageSocketObject.cs" />
     <Compile Include="SocketObjects\SocketConstants.cs" />

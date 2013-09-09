@@ -27,3 +27,6 @@ http://findicons.com/icon/93532/stock_lock?id=366494
 
 UnblackoutTool.png
 http://findicons.com/icon/203539/stock_lock_open?id=366627
+
+ClearLogicon.png
+http://findicons.com/icon/66997/gnome_edit_clear?id=347940

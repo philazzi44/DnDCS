@@ -8,27 +8,41 @@ using System.Threading;
 using System.Drawing;
 using DnDCS.Libs.SocketObjects;
 using System.IO;
+using DnDCS.Libs.ServerEvents;
 
 namespace DnDCS.Libs
 {
     public class ServerSocketConnection
     {
-        private Thread socketThread;
+        private Thread serverListenerThread;
+        private Timer socketPollTimer;
 
         private readonly int port;
         private Socket server;
         private readonly List<Socket> clients = new List<Socket>();
-        private bool isStopping;
+        public bool IsStopping { get; private set; }
 
         public event Action OnClientConnected;
+        public event Action<ServerEvent> OnSocketEvent;
+        public event Action<int> OnClientCountChanged;
+
+        public int ClientsCount { get; private set; }
 
         public ServerSocketConnection(int port)
         {
             this.port = port;
 
-            socketThread = new Thread(Start);
-            socketThread.Name = "Server Socket Thread";
-            socketThread.Start();
+            serverListenerThread = new Thread(Start);
+            serverListenerThread.IsBackground = true;
+            serverListenerThread.Name = "Server Socket Thread";
+            serverListenerThread.Start();
+
+            socketPollTimer = new Timer(PollTimerCallback, null, 5000, 5000);
+        }
+
+        private void PollTimerCallback(object state)
+        {
+            Write(SocketObjects.SocketConstants.PingSocketObject);
         }
 
         private void Start()
@@ -44,7 +58,7 @@ namespace DnDCS.Libs
                 return;
             }
 
-            while (!isStopping)
+            while (!IsStopping)
             {
                 try
                 {
@@ -52,12 +66,19 @@ namespace DnDCS.Libs
                     if (newClient == null)
                         continue;
 
-                    lock (newClient)
+                    lock (clients)
                     {
+                        if (IsStopping)
+                            throw new InvalidOperationException("Server Socket - Server has been closed after a new connection was established.");
                         clients.Add(newClient);
+                        ClientsCount++;
+                        if (OnClientCountChanged != null)
+                            OnClientCountChanged(ClientsCount);
                     }
                     if (OnClientConnected != null)
                         OnClientConnected();
+                    if (OnSocketEvent != null)
+                        OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.ClientConnected));
                 }
                 catch (ThreadInterruptedException e)
                 {
@@ -92,11 +113,17 @@ namespace DnDCS.Libs
                 Logger.LogDebug("Server Socket - Waiting for a connection...");
                 var connectedSocket = server.Accept();
                 Logger.LogDebug(string.Format("Server Socket - Connection received for '{0}'.", ((IPEndPoint)connectedSocket.RemoteEndPoint).Address));
-                
+
                 var connectedClient = connectedSocket;
 
                 if (WriteAcknowledge(connectedClient))
                     return connectedClient;
+            }
+            catch (SocketException e1)
+            {
+                // When stopping, we may raise an error from the blocking Accept() socket call that we want to ignore now.
+                if (!IsStopping)
+                    Logger.LogError("Server Socket - An error occurred trying to establish initial connection to client.", e1);
             }
             catch (Exception e)
             {
@@ -149,7 +176,7 @@ namespace DnDCS.Libs
 
         private void Write(BaseSocketObject socketObject)
         {
-            if (!clients.Any())
+            if (ClientsCount == 0)
                 return;
 
             try
@@ -159,21 +186,37 @@ namespace DnDCS.Libs
 
                 var sendBytes = BitConverter.GetBytes(bytes.Length).Concat(bytes).ToArray();
                 Logger.LogDebug(string.Format("Server Socket - Writing {0} total bytes.", sendBytes.Length));
-                for (int c = 0; c < clients.Count; c++)
+                lock (clients)
                 {
-                    var client = clients[c];
-                    try
+                    for (int c = 0; c < clients.Count; c++)
                     {
-                        Logger.LogDebug(string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
-                        client.Send(sendBytes);
-                    }
-                    catch (Exception e)
-                    {
-                        Logger.LogError(string.Format("Server Socket - Failed to write Socket Object '{0}' to Client '{1}'. Disconnecting client.", socketObject, ((IPEndPoint)client.RemoteEndPoint).Address), e);
-                        // Remove the element from the list and repeat the index, since the subsequent items would shift down.
-                        SafeClose(client);
-                        clients.RemoveAt(c);
-                        c--;
+                        var client = clients[c];
+                        try
+                        {
+                            Logger.LogDebug(string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
+                            client.Send(sendBytes);
+                        }
+                        catch (Exception e)
+                        {
+                            if (e is SocketException && ((SocketException)e).SocketErrorCode != SocketError.ConnectionAborted)
+                            {
+                                Logger.LogError(string.Format("Server Socket - Client socket '{0}' has been closed already. Fully disconnecting client now.", ((IPEndPoint)client.RemoteEndPoint).Address), e);
+                            }
+                            else
+                            {
+                                Logger.LogError(string.Format("Server Socket - Failed to write Socket Object '{0}' to Client '{1}'. Disconnecting client.", socketObject, ((IPEndPoint)client.RemoteEndPoint).Address), e);
+                            }
+
+                            // Remove the element from the list and repeat the index, since the subsequent items would shift down.
+                            SafeCloseClient(client);
+                            clients.RemoveAt(c);
+                            ClientsCount--;
+
+                            if (OnClientCountChanged != null)
+                                OnClientCountChanged(ClientsCount);
+
+                            c--;
+                        }
                     }
                 }
                 Logger.LogDebug(string.Format("Server Socket - Done writing Socket Object '{0}'.", socketObject));
@@ -184,12 +227,17 @@ namespace DnDCS.Libs
             }
         }
 
-        private void SafeClose(Socket socket)
+        private void SafeCloseClient(Socket client)
         {
             try
             {
-                socket.Shutdown(SocketShutdown.Both);
-                socket.Close();
+                var address = ((IPEndPoint)client.RemoteEndPoint).Address.ToString();
+
+                client.Shutdown(SocketShutdown.Both);
+                client.Close();
+
+                if (OnSocketEvent != null)
+                    OnSocketEvent(new ServerEvent(address, ServerEvent.SocketEventType.ClientDisconnected));
             }
             catch
             {
@@ -198,21 +246,28 @@ namespace DnDCS.Libs
 
         public void Stop()
         {
-            isStopping = true;
+            IsStopping = true;
             Logger.LogDebug("Server Socket - Stopping...");
 
-            if (clients.Any())
+            if (ClientsCount > 0)
             {
                 Logger.LogDebug("Server Socket - Sending 'Exit' to clients...");
                 Write(SocketConstants.ExitSocketObject);
                 Logger.LogDebug("Server Socket - 'Exit' Sent to clients.");
 
                 Logger.LogDebug("Server Socket - Closing Client sockets...");
-                clients.ForEach(client =>
-                    {
-                        SafeClose(client);
-                    });
-                clients.Clear();
+                lock (clients)
+                {
+                    clients.ForEach(client =>
+                        {
+                            SafeCloseClient(client);
+                            ClientsCount--;
+                            
+                            if (OnClientCountChanged != null)
+                                OnClientCountChanged(ClientsCount);
+                        });
+                    clients.Clear();
+                }
                 Logger.LogDebug("Server Socket - Client Sockets closed.");
             }
 

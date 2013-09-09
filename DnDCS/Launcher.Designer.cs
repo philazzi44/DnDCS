@@ -92,6 +92,7 @@
             this.ClientSize = new System.Drawing.Size(765, 626);
             this.Controls.Add(this.spltLauncher);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MinimumSize = new System.Drawing.Size(640, 480);
             this.Name = "Launcher";
             this.Text = "DnDCS - Launcher";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Launcher_FormClosed);

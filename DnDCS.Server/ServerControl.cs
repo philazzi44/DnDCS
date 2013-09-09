@@ -10,11 +10,14 @@ using DnDCS.Libs;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.ServerEvents;
 
 namespace DnDCS.Server
 {
     public partial class ServerControl : UserControl, IDisposable, IDnDCSControl
     {
+        private string initialParentFormText;
+
         private readonly Color currentToolColor = Color.White;
         private Color initialSelectToolColor;
         private Color initialFogToolColor;
@@ -61,17 +64,45 @@ namespace DnDCS.Server
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
             fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
 
+            initialParentFormText = this.ParentForm.Text;
+            this.ParentForm.Text = initialParentFormText + " (0 clients connected)";
+
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             this.Disposed += new EventHandler(ServerControl_Disposed);
 
             connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
-            connection.OnClientConnected += new Action(connection_OnClientConnected);
+            connection.OnClientConnected += connection_OnClientConnected;
+            connection.OnClientCountChanged += new Action<int>(connection_OnClientCountChanged);
+            connection.OnSocketEvent += new Action<ServerEvent>(connection_OnSocketEvent);
         }
-
+        
         private void connection_OnClientConnected()
         {
+            if (connection.IsStopping)
+                return;
             connection.WriteMap(map);
             connection.WriteFog(fog);
+        }
+        
+        private void connection_OnClientCountChanged(int count)
+        {
+            if (connection.IsStopping)
+                return;
+            this.BeginInvoke(new Action(() =>
+            {
+                this.ParentForm.Text = initialParentFormText + string.Format(" ({0} client{1} connected)", count, (count == 1) ? string.Empty : "s");
+            }));
+        }
+
+        private void connection_OnSocketEvent(ServerEvent socketEvent)
+        {
+            tboLog.BeginInvoke(new Action(() =>
+            {
+                if (tboLog.TextLength == 0)
+                    tboLog.Text = socketEvent.ToString();
+                else
+                    tboLog.Text = tboLog.Text + "\r\n" + socketEvent.ToString();
+            }));
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -211,6 +242,16 @@ namespace DnDCS.Server
                 }
                 connection.WriteFog(fog);
             }
+        }
+
+        private void btnClearLog_Click(object sender, EventArgs e)
+        {
+            tboLog.Clear();
+        }
+        
+        private void tboLog_TextChanged(object sender, EventArgs e)
+        {
+            this.btnClearLog.Enabled = (this.tboLog.TextLength > 0);
         }
 
         private void ToggleTools(Button enabledTool)
