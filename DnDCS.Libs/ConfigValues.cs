@@ -14,15 +14,14 @@ namespace DnDCS.Libs
         public static readonly string DefaultServerIP2;
         public static readonly string DefaultServerIP3;
         public static readonly string DefaultServerIP4;
+        public static readonly int PingInterval;
         public static readonly string ClientDataFile;
         public static readonly string ServerDataFile;
 
         static ConfigValues()
         {
             int defaultServerPort;
-            if (!int.TryParse(ConfigurationManager.AppSettings["DefaultServerPort"], out defaultServerPort))
-                defaultServerPort = 11000;
-            DefaultServerPort = defaultServerPort;
+            DefaultServerPort = int.TryParse(ConfigurationManager.AppSettings["DefaultServerPort"], out defaultServerPort) ? defaultServerPort : 11000;
 
             DefaultServerName = ConfigurationManager.AppSettings["DefaultServerName"] ?? "localhost";
             DefaultServerIP1 = ConfigurationManager.AppSettings["DefaultServerIP1"] ?? "127";
@@ -33,6 +32,8 @@ namespace DnDCS.Libs
             ClientDataFile = ConfigurationManager.AppSettings["ClientDataFile"] ?? "ClientData.xml";
             ServerDataFile = ConfigurationManager.AppSettings["ServerDataFile"] ?? "ServerData.xml";
 
+            int pingInterval;
+            PingInterval = int.TryParse(ConfigurationManager.AppSettings["PingInterval"], out pingInterval) ? pingInterval : 5000;
         }
     }
 }

@@ -30,3 +30,6 @@ http://findicons.com/icon/203539/stock_lock_open?id=366627
 
 ClearLogicon.png
 http://findicons.com/icon/66997/gnome_edit_clear?id=347940
+
+FogAllIcon.png
+http://findicons.com/icon/93564/weather_fog?id=406338

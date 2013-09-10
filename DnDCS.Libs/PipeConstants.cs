@@ -5,6 +5,7 @@ using System.Text;
 
 namespace DnDCS.Libs
 {
+    [Obsolete]
     public static class PipeConstants
     {
         public const string PIPE_NAME = "DnDCS-MainPipe";

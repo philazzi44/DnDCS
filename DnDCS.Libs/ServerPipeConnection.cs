@@ -11,6 +11,7 @@ using System.IO;
 
 namespace DnDCS.Libs
 {
+    [Obsolete]
     public class ServerPipeConnection
     {
         private readonly NamedPipeServerStream pipe;

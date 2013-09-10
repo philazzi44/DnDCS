@@ -12,7 +12,8 @@ namespace DnDCS.Libs.ServerEvents
         public enum SocketEventType
         {
             ClientConnected,
-            ClientDisconnected
+            ClientDisconnected,
+            DataSent,
         }
 
         private DateTime _time;
@@ -27,6 +28,8 @@ namespace DnDCS.Libs.ServerEvents
                         return "Client Connected";
                     case SocketEventType.ClientDisconnected:
                         return "Client Disconnected";
+                    case SocketEventType.DataSent:
+                        return "Data Sent";
                     default:
                         return _eventType.ToString();
                 }

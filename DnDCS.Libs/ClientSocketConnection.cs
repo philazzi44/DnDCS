@@ -85,7 +85,7 @@ namespace DnDCS.Libs
                         case SocketConstants.SocketAction.FogUpdate:
                             Logger.LogDebug("Read Fog Update action.");
                             if (OnFogUpdateReceived != null)
-                                OnFogUpdateReceived(((PointArraySocketObject)socketObject).Points, ((PointArraySocketObject)socketObject).IsClearing);
+                                OnFogUpdateReceived(((FogUpdateSocketObject)socketObject).Points, ((FogUpdateSocketObject)socketObject).IsClearing);
                             break;
 
                         case SocketConstants.SocketAction.BlackoutOn:

@@ -17,21 +17,24 @@ namespace DnDCS.Server
     public partial class ServerControl : UserControl, IDisposable, IDnDCSControl
     {
         private string initialParentFormText;
+        private bool realTimeFogUpdates;
 
-        private readonly Color currentToolColor = Color.White;
         private Color initialSelectToolColor;
         private Color initialFogToolColor;
         private Color initialBlackoutColor;
         private Image map;
 
-        private Bitmap oldFog;
         private Bitmap fog;
         private Bitmap newFog;
         private Button lastTool;
         private bool isBlackOutSet;
-        private bool newFogIsClearing;
-        private LinkedList<Point> newFogToolPoints;
+
+        private FogUpdate currentFogUpdate;
+        private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
+        private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
+
         private MenuItem undoLastFogAction;
+        private MenuItem redoLastFogAction;
 
         private readonly Brush newFogClearBrush = Brushes.Red;
 
@@ -74,6 +77,11 @@ namespace DnDCS.Server
             connection.OnClientConnected += connection_OnClientConnected;
             connection.OnClientCountChanged += new Action<int>(connection_OnClientCountChanged);
             connection.OnSocketEvent += new Action<ServerEvent>(connection_OnSocketEvent);
+
+            var serverData = Persistence.LoadServerData();
+            realTimeFogUpdates = serverData.RealTimeFogUpdates;
+            btnSyncFog.Visible = !realTimeFogUpdates;
+            gbxLog.Visible = serverData.ShowLog;
         }
         
         private void connection_OnClientConnected()
@@ -94,15 +102,23 @@ namespace DnDCS.Server
             }));
         }
 
-        private void connection_OnSocketEvent(ServerEvent socketEvent)
+        private void AppendToLog(string text)
         {
             tboLog.BeginInvoke(new Action(() =>
             {
-                if (tboLog.TextLength == 0)
-                    tboLog.Text = socketEvent.ToString();
-                else
-                    tboLog.Text = tboLog.Text + "\r\n" + socketEvent.ToString();
+                if (gbxLog.Visible)
+                {
+                    if (tboLog.TextLength == 0)
+                        tboLog.Text = text;
+                    else
+                        tboLog.Text = tboLog.Text + "\r\n" + text;
+                }
             }));
+        }
+
+        private void connection_OnSocketEvent(ServerEvent socketEvent)
+        {
+            AppendToLog(socketEvent.ToString());
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -117,25 +133,33 @@ namespace DnDCS.Server
         
         public MainMenu GetMainMenu()
         {
+            var serverData = Persistence.LoadServerData();
+
             var menu = new MainMenu();
             var fileMenu = new MenuItem("File");
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
                 new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
                 new MenuItem("Load Image From Url", OnLoadImageUrl_Click, Shortcut.CtrlShiftK),
+                new MenuItem("-"),
                 new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
                 new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
+                new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
 
             var optionsMenu = new MenuItem("Options");
             undoLastFogAction = new MenuItem("Undo Last Fog Action", OnUndoLastFogAction_Click, Shortcut.CtrlZ);
+            redoLastFogAction = new MenuItem("Redo Last Fog Action", OnRedoLastFogAction_Click, Shortcut.CtrlY);
             undoLastFogAction.Enabled = false;
-            optionsMenu.MenuItems.Add(undoLastFogAction);
+            redoLastFogAction.Enabled = false;
             optionsMenu.MenuItems.AddRange(new MenuItem[] 
             {
                 undoLastFogAction,
-                new MenuItem("Sync Connected Clients", OnSyncClients_Click)
+                redoLastFogAction,
+                new MenuItem("-"),
+                new MenuItem("Real-time Fog Updates", OnRealTimeFogUpdates_Click) { Checked = serverData.RealTimeFogUpdates },
+                new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog }, 
             });
 
             menu.MenuItems.Add(fileMenu);
@@ -175,22 +199,64 @@ namespace DnDCS.Server
 
         private void OnUndoLastFogAction_Click(object sender, EventArgs e)
         {
-            if (oldFog != null)
+            if (undoFogUpdates.Any())
             {
-                // Flip the current fog with the backup.
-                var flipFog = fog;
-                fog = oldFog;
-                oldFog = flipFog;
+                var lastFogUpdate = undoFogUpdates.Last();
+                lastFogUpdate.IsClearing = !lastFogUpdate.IsClearing;
+                UpdateFogImage(lastFogUpdate);
+                redoFogUpdates.AddLast(lastFogUpdate);
+                undoFogUpdates.RemoveLast();
                 pbxMap.Refresh();
 
-                connection.WriteFog(fog);
+                undoLastFogAction.Enabled = undoFogUpdates.Any();
+                redoLastFogAction.Enabled = true;
+
+                if (realTimeFogUpdates)
+                    connection.WriteFog(fog);
+            }
+        }
+        
+        private void OnRedoLastFogAction_Click(object sender, EventArgs e)
+        {
+            if (redoFogUpdates.Any())
+            {
+                var lastFogUpdate = redoFogUpdates.Last();
+                lastFogUpdate.IsClearing = !lastFogUpdate.IsClearing;
+                UpdateFogImage(lastFogUpdate);
+                undoFogUpdates.AddLast(lastFogUpdate);
+                redoFogUpdates.RemoveLast();
+                pbxMap.Refresh();
+
+                undoLastFogAction.Enabled = true;
+                redoLastFogAction.Enabled = redoFogUpdates.Any();
+
+                if (realTimeFogUpdates)
+                    connection.WriteFog(fog);
             }
         }
 
-        private void OnSyncClients_Click(object sender, EventArgs e)
+        private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)
         {
-            connection.WriteMap(map);
-            connection.WriteFog(fog);
+            ToggleTools(btnSelectTool);
+
+            var menuItem = sender as MenuItem;
+            realTimeFogUpdates = menuItem.Checked = !menuItem.Checked;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.RealTimeFogUpdates = realTimeFogUpdates;
+            Persistence.SaveServerData(serverData);
+
+            btnSyncFog.Visible = !realTimeFogUpdates;
+        }
+
+        private void OnShowLog_Click(object sender, EventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            this.gbxLog.Visible = menuItem.Checked = !menuItem.Checked;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.ShowLog = this.gbxLog.Visible;
+            Persistence.SaveServerData(serverData);
         }
 
         private void pbxMap_Paint(object sender, PaintEventArgs e)
@@ -207,7 +273,7 @@ namespace DnDCS.Server
         private void btnFogTool_Click(object sender, EventArgs e)
         {
             if (lastTool != btnFogTool)
-            ToggleTools(btnFogTool);
+                ToggleTools(btnFogTool);
         }
 
         private void btnToggleBlackout_Click(object sender, EventArgs e)
@@ -231,17 +297,29 @@ namespace DnDCS.Server
         
         private void btnFogAll_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(this, "This will fog the entire map. Are you sure?", "Fog Entire Map?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
+            if (MessageBox.Show(this, "This will fog the entire map. Are you sure? This cannot be undone.", "Fog Entire Map?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
-                // Keep a copy of the fog before we blow it away, in case the user messes up.
-                oldFog = (Bitmap)fog.Clone();
-                using (var g = Graphics.FromImage(fog))
-                {
-                    g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
-                    pbxMap.Refresh();
-                }
-                connection.WriteFog(fog);
+                var fogAllFogUpdate = new FogUpdate(false);
+                fogAllFogUpdate.Add(new Point(0, 0));
+                fogAllFogUpdate.Add(new Point(fog.Width, 0));
+                fogAllFogUpdate.Add(new Point(fog.Width, fog.Height));
+                fogAllFogUpdate.Add(new Point(0, fog.Height));
+
+                UpdateFogImage(fogAllFogUpdate);
+                undoFogUpdates.Clear();
+                redoFogUpdates.Clear();
+                undoLastFogAction.Enabled = redoLastFogAction.Enabled = false;
+                pbxMap.Refresh();
+
+                if (realTimeFogUpdates)
+                    connection.WriteFog(fog);
             }
+        }
+        
+        private void btnSyncFog_Click(object sender, EventArgs e)
+        {
+            // TODO: More efficient to send the list of updates rather than the full fog map.
+            connection.WriteFog(fog);
         }
 
         private void btnClearLog_Click(object sender, EventArgs e)
@@ -256,6 +334,10 @@ namespace DnDCS.Server
 
         private void ToggleTools(Button enabledTool)
         {
+            // Ignore any tool toggling if we're not even allowing commands yet.
+            if (!gbxCommands.Enabled)
+                return;
+
             // Unset the previous tool as needed.
             if (lastTool == btnFogTool)
                 UnsetFogTool();
@@ -264,16 +346,15 @@ namespace DnDCS.Server
             if (btnSelectTool == enabledTool)
             {
                 btnSelectTool.Enabled = false;
-                btnSelectTool.BackColor = currentToolColor;
+                btnSelectTool.BackColor = Color.White;
                 btnFogTool.BackColor = initialFogToolColor;
                 btnFogTool.Enabled = true;
-                UnsetFogTool();
             }
             else if (btnFogTool == enabledTool)
             {
                 btnSelectTool.Enabled = true;
                 btnSelectTool.BackColor = initialSelectToolColor;
-                btnFogTool.BackColor = currentToolColor;
+                btnFogTool.BackColor = Color.White;
                 btnFogTool.Enabled = false;
             }
             else
@@ -302,22 +383,19 @@ namespace DnDCS.Server
 
             pbxMap.MouseMove += new MouseEventHandler(pbxMap_MouseMove);
 
-            // Keep track of the old fog to support an Undo functionality. Make a new image for the New Fog to track the updates being made.
-            oldFog = (Bitmap)fog.Clone();
             newFog = new Bitmap(fog.Width, fog.Height);
-            // TODO: Do we need to forcibly set the newfog as all transparent?
 
-            // Start tracking all the points the mouse moves.
-            newFogToolPoints = new LinkedList<Point>();
-            newFogIsClearing = (e.Button == System.Windows.Forms.MouseButtons.Left);
-            newFogToolPoints.AddLast(e.Location);
+            currentFogUpdate = new FogUpdate((e.Button == System.Windows.Forms.MouseButtons.Left));
+            currentFogUpdate.Add(e.Location);
         }
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
+            // TODO: Add some kind of delay here, so we don't raise the event so fast.
+
             // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-            newFogToolPoints.AddLast(e.Location);
-            UpdateFogImage(newFog, newFogIsClearing ? newFogClearBrush : newFogBrush, newFogToolPoints.ToArray());
+            currentFogUpdate.Add(e.Location);
+            UpdateNewFogImage(currentFogUpdate);
 
             pbxMap.Refresh();
         }
@@ -330,19 +408,21 @@ namespace DnDCS.Server
             pbxMap.MouseMove -= new MouseEventHandler(pbxMap_MouseMove);
 
             // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether.
-            newFogToolPoints.AddLast(e.Location);
-            UpdateFogImage(fog, (newFogIsClearing) ? fogClearBrush : fogBrush, newFogToolPoints.ToArray());
+            currentFogUpdate.Add(e.Location);
+            UpdateFogImage(currentFogUpdate);
+            undoFogUpdates.AddLast(currentFogUpdate);
+            undoLastFogAction.Enabled = true;
+            redoFogUpdates.Clear();
+            redoLastFogAction.Enabled = false;
 
             newFog.Dispose();
             newFog = null;
-
-            // We should still have an OldFog backup image, so we'll allow undoing to it.
-            undoLastFogAction.Enabled = (oldFog != null);
-
             pbxMap.Refresh();
 
-            connection.WriteFogUpdate(newFogToolPoints.ToArray(), newFogIsClearing);
-            newFogToolPoints = null;
+            if (realTimeFogUpdates)
+                connection.WriteFogUpdate(currentFogUpdate);
+
+            currentFogUpdate = null;
         }
 
         private void UnsetFogTool()
@@ -429,11 +509,19 @@ namespace DnDCS.Server
             connection.WriteFog(fog);
         }
 
-        private void UpdateFogImage(Bitmap fogImage, Brush brush, Point[] fogToolPoints)
+        private void UpdateNewFogImage(FogUpdate fogUpdate)
         {
-            using (var g = Graphics.FromImage(fogImage))
+            using (var g = Graphics.FromImage(newFog))
             {
-                g.FillPolygon(brush, fogToolPoints);
+                g.FillPolygon((fogUpdate.IsClearing) ? newFogClearBrush : newFogBrush, fogUpdate.Points);
+            }
+        }
+
+        private void UpdateFogImage(FogUpdate fogUpdate)
+        {
+            using (var g = Graphics.FromImage(fog))
+            {
+                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : fogBrush, fogUpdate.Points);
             }
         }
 

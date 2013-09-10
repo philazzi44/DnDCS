@@ -50,7 +50,7 @@ namespace DnDCS.Client
 
         private void GetConnectIPDialog_Closed(object sender, EventArgs e)
         {
-            var clientData = Persistence.LoadClientData() ?? new ClientData();
+            var clientData = Persistence.LoadClientData();
             clientData.ServerAddressHistory = lboHistory.Items.OfType<ServerAddress>().ToArray();
             Persistence.SaveClientData(clientData);
         }

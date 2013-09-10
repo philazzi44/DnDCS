@@ -35,7 +35,7 @@ namespace DnDCS.Libs.SocketObjects
                 case SocketConstants.SocketAction.Fog:
                     return ImageSocketObject.ImageObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.FogUpdate:
-                    return PointArraySocketObject.PointArrayObjectFromBytes(bytes);
+                    return FogUpdateSocketObject.PointArrayObjectFromBytes(bytes);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));

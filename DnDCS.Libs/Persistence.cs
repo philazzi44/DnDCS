@@ -26,15 +26,19 @@ namespace DnDCS.Libs
 
         public static ClientData LoadClientData()
         {
+            ClientData clientData = null;
             try
             {
-                return LoadData<ClientData>(ConfigValues.ClientDataFile);
+                clientData = LoadData<ClientData>(ConfigValues.ClientDataFile);
             }
             catch (Exception e)
             {
                 Logger.LogError("Failed to load Client Data.", e);
-                return null;
             }
+            return clientData ?? new ClientData()
+            {
+                ServerAddressHistory = new ServerAddress[0],
+            };
         }
 
         public static bool SaveServerData(ServerData serverData)
@@ -53,15 +57,20 @@ namespace DnDCS.Libs
 
         public static ServerData LoadServerData()
         {
+            ServerData serverData = null;
             try
             {
-                return LoadData<ServerData>(ConfigValues.ServerDataFile);
+                serverData = LoadData<ServerData>(ConfigValues.ServerDataFile);
             }
             catch (Exception e)
             {
                 Logger.LogError("Failed to load Server Data.", e);
-                return null;
             }
+            return serverData ?? new ServerData()
+            {
+                RealTimeFogUpdates = true,
+                ShowLog = true,
+            };
         }
 
         private static void SaveData(string fileName, object data)

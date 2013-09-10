@@ -42,7 +42,7 @@ namespace DnDCS.Libs
 
         private void PollTimerCallback(object state)
         {
-            Write(SocketObjects.SocketConstants.PingSocketObject);
+            Write(SocketObjects.SocketConstants.PingSocketObject, false);
         }
 
         private void Start()
@@ -163,10 +163,11 @@ namespace DnDCS.Libs
                 Write(ImageSocketObject.CreateFog(fog));
         }
 
-        public void WriteFogUpdate(Point[] fogUpdate, bool isClearing)
+        public void WriteFogUpdate(FogUpdate fogUpdate)
         {
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new PointArraySocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate, isClearing));
+                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
+
         }
 
         public void WriteBlackout(bool isBlackoutOn)
@@ -174,7 +175,7 @@ namespace DnDCS.Libs
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
         }
 
-        private void Write(BaseSocketObject socketObject)
+        private void Write(BaseSocketObject socketObject, bool raiseSocketEvent = true)
         {
             if (ClientsCount == 0)
                 return;
@@ -195,6 +196,8 @@ namespace DnDCS.Libs
                         {
                             Logger.LogDebug(string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
                             client.Send(sendBytes);
+                            if (raiseSocketEvent && OnSocketEvent != null)
+                                OnSocketEvent(new ServerEvent(client, ServerEvent.SocketEventType.DataSent, socketObject.Action.ToString()));
                         }
                         catch (Exception e)
                         {

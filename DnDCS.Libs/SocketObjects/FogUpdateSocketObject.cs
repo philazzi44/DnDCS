@@ -7,25 +7,32 @@ using System.IO;
 
 namespace DnDCS.Libs.SocketObjects
 {
-    public class PointArraySocketObject : BaseSocketObject
+    public class FogUpdateSocketObject : BaseSocketObject
     {
         public Point[] Points { get; set; }
         public bool IsClearing { get; set; }
 
-        public PointArraySocketObject(SocketConstants.SocketAction action, Point[] points, bool isClearing)
+        public FogUpdateSocketObject(SocketConstants.SocketAction action, Point[] points, bool isClearing)
             : base(action)
         {
             Points = points;
             IsClearing = isClearing;
         }
 
-        public static PointArraySocketObject PointArrayObjectFromBytes(byte[] bytes)
+        public FogUpdateSocketObject(SocketConstants.SocketAction action, FogUpdate fogUpdate)
+            : base(action)
+        {
+            Points = (fogUpdate.Points ?? new Point[0]).ToArray();
+            IsClearing = fogUpdate.IsClearing;
+        }
+
+        public static FogUpdateSocketObject PointArrayObjectFromBytes(byte[] bytes)
         {
             var action = (SocketConstants.SocketAction)bytes[0];
             switch (action)
             {
                 case SocketConstants.SocketAction.FogUpdate:
-                    return new PointArraySocketObject(action, ConvertBytesToPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1);
+                    return new FogUpdateSocketObject(action, ConvertBytesToPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));

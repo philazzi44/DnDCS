@@ -11,6 +11,7 @@ using System.Security.AccessControl;
 
 namespace DnDCS.Libs
 {
+    [Obsolete]
     public class ClientPipeConnection
     {
         private const int TIMEOUT = 1000;

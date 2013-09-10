@@ -32,22 +32,23 @@
             this.pbxMap = new System.Windows.Forms.PictureBox();
             this.spltServer = new System.Windows.Forms.SplitContainer();
             this.pnlMap = new System.Windows.Forms.Panel();
-            this.gbxCommands = new System.Windows.Forms.GroupBox();
-            this.btnClearLog = new System.Windows.Forms.Button();
-            this.btnSelectTool = new System.Windows.Forms.Button();
+            this.gbxLog = new System.Windows.Forms.GroupBox();
             this.tboLog = new System.Windows.Forms.RichTextBox();
+            this.btnClearLog = new System.Windows.Forms.Button();
+            this.gbxCommands = new System.Windows.Forms.GroupBox();
+            this.btnSelectTool = new System.Windows.Forms.Button();
             this.btnFogTool = new System.Windows.Forms.Button();
             this.btnFogAll = new System.Windows.Forms.Button();
             this.btnToggleBlackout = new System.Windows.Forms.Button();
-            this.gbxLog = new System.Windows.Forms.GroupBox();
+            this.btnSyncFog = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
             this.spltServer.Panel2.SuspendLayout();
             this.spltServer.SuspendLayout();
             this.pnlMap.SuspendLayout();
-            this.gbxCommands.SuspendLayout();
             this.gbxLog.SuspendLayout();
+            this.gbxCommands.SuspendLayout();
             this.SuspendLayout();
             // 
             // pbxMap
@@ -91,19 +92,35 @@
             this.pnlMap.Size = new System.Drawing.Size(671, 486);
             this.pnlMap.TabIndex = 0;
             // 
-            // gbxCommands
+            // gbxLog
             // 
-            this.gbxCommands.Controls.Add(this.btnSelectTool);
-            this.gbxCommands.Controls.Add(this.btnFogTool);
-            this.gbxCommands.Controls.Add(this.btnFogAll);
-            this.gbxCommands.Controls.Add(this.btnToggleBlackout);
-            this.gbxCommands.Enabled = false;
-            this.gbxCommands.Location = new System.Drawing.Point(3, 3);
-            this.gbxCommands.Name = "gbxCommands";
-            this.gbxCommands.Size = new System.Drawing.Size(115, 208);
-            this.gbxCommands.TabIndex = 0;
-            this.gbxCommands.TabStop = false;
-            this.gbxCommands.Text = "Commands";
+            this.gbxLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.gbxLog.Controls.Add(this.tboLog);
+            this.gbxLog.Controls.Add(this.btnClearLog);
+            this.gbxLog.Location = new System.Drawing.Point(3, 215);
+            this.gbxLog.Name = "gbxLog";
+            this.gbxLog.Size = new System.Drawing.Size(115, 268);
+            this.gbxLog.TabIndex = 0;
+            this.gbxLog.TabStop = false;
+            this.gbxLog.Text = "Log";
+            // 
+            // tboLog
+            // 
+            this.tboLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.tboLog.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.tboLog.Location = new System.Drawing.Point(6, 51);
+            this.tboLog.Name = "tboLog";
+            this.tboLog.ReadOnly = true;
+            this.tboLog.Size = new System.Drawing.Size(103, 211);
+            this.tboLog.TabIndex = 0;
+            this.tboLog.TabStop = false;
+            this.tboLog.Text = "";
+            this.tboLog.WordWrap = false;
+            this.tboLog.TextChanged += new System.EventHandler(this.tboLog_TextChanged);
             // 
             // btnClearLog
             // 
@@ -119,6 +136,21 @@
             this.btnClearLog.UseVisualStyleBackColor = true;
             this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
             // 
+            // gbxCommands
+            // 
+            this.gbxCommands.Controls.Add(this.btnSyncFog);
+            this.gbxCommands.Controls.Add(this.btnSelectTool);
+            this.gbxCommands.Controls.Add(this.btnFogTool);
+            this.gbxCommands.Controls.Add(this.btnFogAll);
+            this.gbxCommands.Controls.Add(this.btnToggleBlackout);
+            this.gbxCommands.Enabled = false;
+            this.gbxCommands.Location = new System.Drawing.Point(3, 3);
+            this.gbxCommands.Name = "gbxCommands";
+            this.gbxCommands.Size = new System.Drawing.Size(115, 206);
+            this.gbxCommands.TabIndex = 0;
+            this.gbxCommands.TabStop = false;
+            this.gbxCommands.Text = "Commands";
+            // 
             // btnSelectTool
             // 
             this.btnSelectTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSelectTool.BackgroundImage")));
@@ -129,22 +161,6 @@
             this.btnSelectTool.TabIndex = 0;
             this.btnSelectTool.UseVisualStyleBackColor = true;
             this.btnSelectTool.Click += new System.EventHandler(this.btnSelectTool_Click);
-            // 
-            // tboLog
-            // 
-            this.tboLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.tboLog.Font = new System.Drawing.Font("Consolas", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.tboLog.Location = new System.Drawing.Point(6, 51);
-            this.tboLog.Name = "tboLog";
-            this.tboLog.ReadOnly = true;
-            this.tboLog.Size = new System.Drawing.Size(103, 209);
-            this.tboLog.TabIndex = 0;
-            this.tboLog.TabStop = false;
-            this.tboLog.Text = "";
-            this.tboLog.WordWrap = false;
-            this.tboLog.TextChanged += new System.EventHandler(this.tboLog_TextChanged);
             // 
             // btnFogTool
             // 
@@ -159,12 +175,13 @@
             // 
             // btnFogAll
             // 
+            this.btnFogAll.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogAll.BackgroundImage")));
+            this.btnFogAll.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btnFogAll.Location = new System.Drawing.Point(6, 152);
             this.btnFogAll.Name = "btnFogAll";
             this.btnFogAll.Size = new System.Drawing.Size(48, 48);
             this.btnFogAll.TabIndex = 0;
             this.btnFogAll.TabStop = false;
-            this.btnFogAll.Text = "Fog All";
             this.btnFogAll.UseVisualStyleBackColor = true;
             this.btnFogAll.Click += new System.EventHandler(this.btnFogAll_Click);
             // 
@@ -180,19 +197,15 @@
             this.btnToggleBlackout.UseVisualStyleBackColor = false;
             this.btnToggleBlackout.Click += new System.EventHandler(this.btnToggleBlackout_Click);
             // 
-            // gbxLog
+            // btnSyncFog
             // 
-            this.gbxLog.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.gbxLog.Controls.Add(this.tboLog);
-            this.gbxLog.Controls.Add(this.btnClearLog);
-            this.gbxLog.Location = new System.Drawing.Point(3, 217);
-            this.gbxLog.Name = "gbxLog";
-            this.gbxLog.Size = new System.Drawing.Size(115, 266);
-            this.gbxLog.TabIndex = 0;
-            this.gbxLog.TabStop = false;
-            this.gbxLog.Text = "Log";
+            this.btnSyncFog.Location = new System.Drawing.Point(60, 152);
+            this.btnSyncFog.Name = "btnSyncFog";
+            this.btnSyncFog.Size = new System.Drawing.Size(48, 48);
+            this.btnSyncFog.TabIndex = 0;
+            this.btnSyncFog.Text = "Sync Fog";
+            this.btnSyncFog.UseVisualStyleBackColor = true;
+            this.btnSyncFog.Click += new System.EventHandler(this.btnSyncFog_Click);
             // 
             // ServerControl
             // 
@@ -209,8 +222,8 @@
             this.spltServer.ResumeLayout(false);
             this.pnlMap.ResumeLayout(false);
             this.pnlMap.PerformLayout();
-            this.gbxCommands.ResumeLayout(false);
             this.gbxLog.ResumeLayout(false);
+            this.gbxCommands.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
@@ -228,5 +241,6 @@
         private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.RichTextBox tboLog;
         private System.Windows.Forms.GroupBox gbxLog;
+        private System.Windows.Forms.Button btnSyncFog;
     }
 }
