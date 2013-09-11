@@ -36,11 +36,11 @@
             this.tboLog = new System.Windows.Forms.RichTextBox();
             this.btnClearLog = new System.Windows.Forms.Button();
             this.gbxCommands = new System.Windows.Forms.GroupBox();
+            this.btnSyncFog = new System.Windows.Forms.Button();
             this.btnSelectTool = new System.Windows.Forms.Button();
             this.btnFogTool = new System.Windows.Forms.Button();
             this.btnFogAll = new System.Windows.Forms.Button();
             this.btnToggleBlackout = new System.Windows.Forms.Button();
-            this.btnSyncFog = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
@@ -151,6 +151,17 @@
             this.gbxCommands.TabStop = false;
             this.gbxCommands.Text = "Commands";
             // 
+            // btnSyncFog
+            // 
+            this.btnSyncFog.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSyncFog.BackgroundImage")));
+            this.btnSyncFog.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnSyncFog.Location = new System.Drawing.Point(60, 152);
+            this.btnSyncFog.Name = "btnSyncFog";
+            this.btnSyncFog.Size = new System.Drawing.Size(48, 48);
+            this.btnSyncFog.TabIndex = 0;
+            this.btnSyncFog.UseVisualStyleBackColor = true;
+            this.btnSyncFog.Click += new System.EventHandler(this.btnSyncFog_Click);
+            // 
             // btnSelectTool
             // 
             this.btnSelectTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSelectTool.BackgroundImage")));
@@ -196,16 +207,6 @@
             this.btnToggleBlackout.TabStop = false;
             this.btnToggleBlackout.UseVisualStyleBackColor = false;
             this.btnToggleBlackout.Click += new System.EventHandler(this.btnToggleBlackout_Click);
-            // 
-            // btnSyncFog
-            // 
-            this.btnSyncFog.Location = new System.Drawing.Point(60, 152);
-            this.btnSyncFog.Name = "btnSyncFog";
-            this.btnSyncFog.Size = new System.Drawing.Size(48, 48);
-            this.btnSyncFog.TabIndex = 0;
-            this.btnSyncFog.Text = "Sync Fog";
-            this.btnSyncFog.UseVisualStyleBackColor = true;
-            this.btnSyncFog.Click += new System.EventHandler(this.btnSyncFog_Click);
             // 
             // ServerControl
             // 

@@ -46,13 +46,14 @@
             this.tboPort = new System.Windows.Forms.TextBox();
             this.lblPort = new System.Windows.Forms.Label();
             this.lboHistory = new System.Windows.Forms.ListBox();
-            this.lblHistory = new System.Windows.Forms.Label();
-            this.gbxNew = new System.Windows.Forms.GroupBox();
+            this.gbxAddress = new System.Windows.Forms.GroupBox();
             this.btnDelete = new System.Windows.Forms.Button();
+            this.gbxHistory = new System.Windows.Forms.GroupBox();
             this.pnlIP.SuspendLayout();
             this.pnlName.SuspendLayout();
             this.flpConnect.SuspendLayout();
-            this.gbxNew.SuspendLayout();
+            this.gbxAddress.SuspendLayout();
+            this.gbxHistory.SuspendLayout();
             this.SuspendLayout();
             // 
             // tboIP1
@@ -76,10 +77,10 @@
             // btnCancel
             // 
             this.btnCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.btnCancel.Location = new System.Drawing.Point(144, 333);
+            this.btnCancel.Location = new System.Drawing.Point(217, 334);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 6;
+            this.btnCancel.TabIndex = 5;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -87,10 +88,10 @@
             // btnPing
             // 
             this.btnPing.Enabled = false;
-            this.btnPing.Location = new System.Drawing.Point(12, 333);
+            this.btnPing.Location = new System.Drawing.Point(12, 334);
             this.btnPing.Name = "btnPing";
             this.btnPing.Size = new System.Drawing.Size(49, 23);
-            this.btnPing.TabIndex = 4;
+            this.btnPing.TabIndex = 3;
             this.btnPing.Text = "Ping";
             this.btnPing.UseVisualStyleBackColor = true;
             this.btnPing.Visible = false;
@@ -98,10 +99,10 @@
             // btnConnect
             // 
             this.btnConnect.Enabled = false;
-            this.btnConnect.Location = new System.Drawing.Point(63, 333);
+            this.btnConnect.Location = new System.Drawing.Point(63, 334);
             this.btnConnect.Name = "btnConnect";
             this.btnConnect.Size = new System.Drawing.Size(75, 23);
-            this.btnConnect.TabIndex = 5;
+            this.btnConnect.TabIndex = 4;
             this.btnConnect.Text = "Connect";
             this.btnConnect.UseVisualStyleBackColor = true;
             this.btnConnect.Click += new System.EventHandler(this.btnConnect_Click);
@@ -211,46 +212,48 @@
             // lboHistory
             // 
             this.lboHistory.FormattingEnabled = true;
-            this.lboHistory.Location = new System.Drawing.Point(13, 54);
+            this.lboHistory.Location = new System.Drawing.Point(6, 16);
             this.lboHistory.Name = "lboHistory";
-            this.lboHistory.Size = new System.Drawing.Size(212, 134);
+            this.lboHistory.Size = new System.Drawing.Size(235, 134);
             this.lboHistory.TabIndex = 0;
             this.lboHistory.SelectedIndexChanged += new System.EventHandler(this.lboHistory_SelectedIndexChanged);
             // 
-            // lblHistory
+            // gbxAddress
             // 
-            this.lblHistory.AutoSize = true;
-            this.lblHistory.Location = new System.Drawing.Point(10, 38);
-            this.lblHistory.Name = "lblHistory";
-            this.lblHistory.Size = new System.Drawing.Size(39, 13);
-            this.lblHistory.TabIndex = 0;
-            this.lblHistory.Text = "History";
-            // 
-            // gbxNew
-            // 
-            this.gbxNew.Controls.Add(this.flpConnect);
-            this.gbxNew.Controls.Add(this.lblPort);
-            this.gbxNew.Controls.Add(this.rdoIP);
-            this.gbxNew.Controls.Add(this.rdoName);
-            this.gbxNew.Controls.Add(this.tboPort);
-            this.gbxNew.Location = new System.Drawing.Point(12, 195);
-            this.gbxNew.Name = "gbxNew";
-            this.gbxNew.Size = new System.Drawing.Size(280, 124);
-            this.gbxNew.TabIndex = 7;
-            this.gbxNew.TabStop = false;
-            this.gbxNew.Text = "New";
+            this.gbxAddress.Controls.Add(this.flpConnect);
+            this.gbxAddress.Controls.Add(this.lblPort);
+            this.gbxAddress.Controls.Add(this.rdoIP);
+            this.gbxAddress.Controls.Add(this.rdoName);
+            this.gbxAddress.Controls.Add(this.tboPort);
+            this.gbxAddress.Location = new System.Drawing.Point(12, 197);
+            this.gbxAddress.Name = "gbxAddress";
+            this.gbxAddress.Size = new System.Drawing.Size(280, 124);
+            this.gbxAddress.TabIndex = 2;
+            this.gbxAddress.TabStop = false;
+            this.gbxAddress.Text = "Address";
             // 
             // btnDelete
             // 
             this.btnDelete.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnDelete.BackgroundImage")));
             this.btnDelete.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
             this.btnDelete.Enabled = false;
-            this.btnDelete.Location = new System.Drawing.Point(231, 54);
+            this.btnDelete.Location = new System.Drawing.Point(247, 16);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(24, 24);
-            this.btnDelete.TabIndex = 8;
+            this.btnDelete.TabIndex = 1;
             this.btnDelete.UseVisualStyleBackColor = true;
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
+            // 
+            // gbxHistory
+            // 
+            this.gbxHistory.Controls.Add(this.lboHistory);
+            this.gbxHistory.Controls.Add(this.btnDelete);
+            this.gbxHistory.Location = new System.Drawing.Point(12, 32);
+            this.gbxHistory.Name = "gbxHistory";
+            this.gbxHistory.Size = new System.Drawing.Size(277, 157);
+            this.gbxHistory.TabIndex = 1;
+            this.gbxHistory.TabStop = false;
+            this.gbxHistory.Text = "History";
             // 
             // GetConnectIPDialog
             // 
@@ -259,10 +262,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.CancelButton = this.btnCancel;
             this.ClientSize = new System.Drawing.Size(296, 360);
-            this.Controls.Add(this.btnDelete);
-            this.Controls.Add(this.gbxNew);
-            this.Controls.Add(this.lboHistory);
-            this.Controls.Add(this.lblHistory);
+            this.Controls.Add(this.gbxHistory);
+            this.Controls.Add(this.gbxAddress);
             this.Controls.Add(this.lblInfo);
             this.Controls.Add(this.btnCancel);
             this.Controls.Add(this.btnPing);
@@ -280,8 +281,9 @@
             this.pnlName.ResumeLayout(false);
             this.pnlName.PerformLayout();
             this.flpConnect.ResumeLayout(false);
-            this.gbxNew.ResumeLayout(false);
-            this.gbxNew.PerformLayout();
+            this.gbxAddress.ResumeLayout(false);
+            this.gbxAddress.PerformLayout();
+            this.gbxHistory.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -306,9 +308,9 @@
         private System.Windows.Forms.TextBox tboPort;
         private System.Windows.Forms.Label lblPort;
         private System.Windows.Forms.ListBox lboHistory;
-        private System.Windows.Forms.Label lblHistory;
-        private System.Windows.Forms.GroupBox gbxNew;
+        private System.Windows.Forms.GroupBox gbxAddress;
         private System.Windows.Forms.Button btnDelete;
+        private System.Windows.Forms.GroupBox gbxHistory;
 
     }
 }

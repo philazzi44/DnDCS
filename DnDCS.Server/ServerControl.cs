@@ -102,7 +102,7 @@ namespace DnDCS.Server
             }));
         }
 
-        private void AppendToLog(string text)
+        private void AppendToUILog(string text)
         {
             tboLog.BeginInvoke(new Action(() =>
             {
@@ -118,7 +118,7 @@ namespace DnDCS.Server
 
         private void connection_OnSocketEvent(ServerEvent socketEvent)
         {
-            AppendToLog(socketEvent.ToString());
+            AppendToUILog(socketEvent.ToString());
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -140,7 +140,6 @@ namespace DnDCS.Server
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
                 new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
-                new MenuItem("Load Image From Url", OnLoadImageUrl_Click, Shortcut.CtrlShiftK),
                 new MenuItem("-"),
                 new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
                 new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
@@ -169,13 +168,17 @@ namespace DnDCS.Server
 
         private void OnLoadImage_Click(object sender, EventArgs e)
         {
-            TryLoadImage();
-        }
-
-        private void OnLoadImageUrl_Click(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
-            TryLoadImageUrl();
+            using (var loadImage = new GetImageUrlDialog())
+            {
+                var result = loadImage.ShowDialog(this);
+                if (result == DialogResult.OK)
+                {
+                    var log = string.Format("Loaded image url '{0}'.", loadImage.LoadedImageUrl);
+                    Logger.LogInfo(log);
+                    AppendToUILog(log);
+                    SetMapImage(loadImage.LoadedImage);
+                }
+            }
         }
 
         private void OnSaveState_Click(object sender, EventArgs e)
@@ -430,54 +433,6 @@ namespace DnDCS.Server
             pbxMap.Cursor = Cursors.Arrow;
             pbxMap.MouseDown -= new MouseEventHandler(pbxMap_MouseDown);
             pbxMap.MouseUp -= new MouseEventHandler(pbxMap_MouseUp);
-        }
-
-        private void TryLoadImage()
-        {
-            // Launch a popup to get a Url for an image
-            var imageFile = GetLoadImageFile();
-            if (string.IsNullOrWhiteSpace(imageFile))
-                return;
-
-            SetMapImage(Image.FromFile(imageFile));
-        }
-
-        private string GetLoadImageFile()
-        {
-            // Launch a popup to get a png
-            using (var openFile = new OpenFileDialog())
-            {
-                openFile.Title = "Select a .PNG image.";
-                openFile.CheckFileExists = true;
-                openFile.CheckPathExists = true;
-                openFile.Filter = "Image Files (*.png)|*.png";
-
-                var result = openFile.ShowDialog(this);
-                if (result == DialogResult.OK)
-                    return openFile.FileName;
-            }
-            return null;
-        }
-
-        private void TryLoadImageUrl()
-        {
-            // Launch a popup to get a Url for an image
-            var image = GetLoadImageUrl();
-            if (image == null)
-                return;
-
-            SetMapImage(image);
-        }
-
-        private Image GetLoadImageUrl()
-        {
-            using (var loadImage = new GetUrlDialog())
-            {
-                var result = loadImage.ShowDialog(this);
-                if (result == DialogResult.OK)
-                    return loadImage.LoadedImage;
-            }
-            return null;
         }
 
         private void SetMapImage(Image mapImage)

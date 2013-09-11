@@ -9,6 +9,7 @@ namespace DnDCS.Libs.PersistenceObjects
     {
         public bool RealTimeFogUpdates { get; set; }
         public bool ShowLog { get; set; }
+        public string[] ServerImageUrlHistory { get; set; }
 
         public ServerData()
         {

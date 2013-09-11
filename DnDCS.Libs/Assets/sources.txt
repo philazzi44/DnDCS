@@ -33,3 +33,9 @@ http://findicons.com/icon/66997/gnome_edit_clear?id=347940
 
 FogAllIcon.png
 http://findicons.com/icon/93564/weather_fog?id=406338
+
+FogToolSyncArrow.png
+http://findicons.com/icon/261541/arrow_refresh?id=384778
+
+FogToolSync.png
+Combination of FogTool.png and FogToolSyncArrow.png
