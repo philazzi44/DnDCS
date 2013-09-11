@@ -23,12 +23,14 @@ namespace DnDCS.Client
         private Image map;
         private Image fog;
         private bool isBlackoutOn;
+        private int? gridSize;
 
         // These two colors should be the same so the transparency works as expected.
         private readonly Brush fogClearBrush = Brushes.White;
         private readonly Color fogClearColor = Color.White;
 
         private readonly Brush fogBrush = Brushes.Black;
+        private readonly Color fogColor = Color.Black;
 
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
@@ -49,6 +51,7 @@ namespace DnDCS.Client
             fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
 
             initialParentFormText = this.ParentForm.Text;
+            pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
         }
 
@@ -98,6 +101,7 @@ namespace DnDCS.Client
             connection.OnMapReceived += new Action<Image>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
+            connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
@@ -132,9 +136,15 @@ namespace DnDCS.Client
 
         private void connection_OnMapReceived(Image map)
         {
+            // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
+            this.fog = new Bitmap(map.Width, map.Height);
+            using (var g = Graphics.FromImage(this.fog))
+                g.Clear(fogColor);
+
             this.map = map;
             this.mapWidth = this.map.Width;
             this.mapHeight = this.map.Height;
+
             if (isBlackoutOn)
                 return;
 
@@ -183,6 +193,16 @@ namespace DnDCS.Client
             })));
         }
         
+        private void connection_OnGridSizeReceived(bool showGrid, int gridSize)
+        {
+            this.gridSize = (showGrid) ? gridSize : new Nullable<int>();
+
+            pbxMap.BeginInvoke((new Action(() =>
+            {
+                pbxMap.Refresh();
+            })));
+        }
+
         private void connection_OnExitReceived()
         {
             this.BeginInvoke(new Action(() =>
@@ -195,11 +215,26 @@ namespace DnDCS.Client
 
         private void DrawOnGraphics(Graphics g)
         {
+            if (this.map == null)
+                return;
+
             if (this.isBlackoutOn)
             {
                 // Draw the Blackout Image in the Top/Left of what is visible to the user.
                 g.DrawImage(AssetsLoader.BlackoutImage, pnlMap.HorizontalScroll.Value, pnlMap.VerticalScroll.Value);
                 return;
+            }
+
+            if (gridSize.HasValue)
+            {
+                for (int x = 0; x < pbxMap.Width; x += gridSize.Value)
+                {
+                    g.DrawLine(Pens.Aqua, x, 0, x, pbxMap.Height);
+                }
+                for (int y = 0; y < pbxMap.Height; y += gridSize.Value)
+                {
+                    g.DrawLine(Pens.Aqua, 0, y, pbxMap.Width, y);
+                }
             }
 
             if (fog != null)

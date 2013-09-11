@@ -31,6 +31,8 @@ namespace DnDCS.Libs.SocketObjects
                 case SocketConstants.SocketAction.Exit:
                     return new BaseSocketObject(action);
 
+                case SocketConstants.SocketAction.GridSize:
+                    return GridSizeSocketObject.GridSizeObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.Map:
                 case SocketConstants.SocketAction.Fog:
                     return ImageSocketObject.ImageObjectFromBytes(bytes);

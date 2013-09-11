@@ -55,6 +55,7 @@
     <Compile Include="PersistenceObjects\ServerAddress.cs" />
     <Compile Include="ServerEvents\SocketEvent.cs" />
     <Compile Include="SocketObjects\FogUpdateSocketObject.cs" />
+    <Compile Include="SocketObjects\GridSizeSocketObject.cs" />
     <Compile Include="SocketObjects\ImageSocketObject.cs" />
     <Compile Include="SocketObjects\SocketConstants.cs" />
     <Compile Include="IDnDCSControl.cs" />

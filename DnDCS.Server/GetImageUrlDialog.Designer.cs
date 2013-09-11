@@ -53,7 +53,7 @@
             this.btnOK.Location = new System.Drawing.Point(330, 442);
             this.btnOK.Name = "btnOK";
             this.btnOK.Size = new System.Drawing.Size(75, 23);
-            this.btnOK.TabIndex = 2;
+            this.btnOK.TabIndex = 4;
             this.btnOK.Text = "OK";
             this.btnOK.UseVisualStyleBackColor = true;
             this.btnOK.Click += new System.EventHandler(this.btnOK_Click);
@@ -65,7 +65,7 @@
             this.btnCancel.Location = new System.Drawing.Point(411, 442);
             this.btnCancel.Name = "btnCancel";
             this.btnCancel.Size = new System.Drawing.Size(75, 23);
-            this.btnCancel.TabIndex = 3;
+            this.btnCancel.TabIndex = 5;
             this.btnCancel.Text = "Cancel";
             this.btnCancel.UseVisualStyleBackColor = true;
             this.btnCancel.Click += new System.EventHandler(this.btnCancel_Click);
@@ -105,7 +105,7 @@
             this.gbxPreview.Location = new System.Drawing.Point(12, 256);
             this.gbxPreview.Name = "gbxPreview";
             this.gbxPreview.Size = new System.Drawing.Size(240, 180);
-            this.gbxPreview.TabIndex = 0;
+            this.gbxPreview.TabIndex = 3;
             this.gbxPreview.TabStop = false;
             this.gbxPreview.Text = "Preview";
             // 
@@ -115,7 +115,7 @@
             this.btnBrowse.Location = new System.Drawing.Point(444, 17);
             this.btnBrowse.Name = "btnBrowse";
             this.btnBrowse.Size = new System.Drawing.Size(25, 23);
-            this.btnBrowse.TabIndex = 4;
+            this.btnBrowse.TabIndex = 1;
             this.btnBrowse.Text = "...";
             this.btnBrowse.UseVisualStyleBackColor = true;
             this.btnBrowse.Click += new System.EventHandler(this.btnBrowse_Click);
@@ -129,7 +129,7 @@
             this.btnDelete.Location = new System.Drawing.Point(444, 19);
             this.btnDelete.Name = "btnDelete";
             this.btnDelete.Size = new System.Drawing.Size(24, 24);
-            this.btnDelete.TabIndex = 11;
+            this.btnDelete.TabIndex = 1;
             this.btnDelete.UseVisualStyleBackColor = true;
             this.btnDelete.Click += new System.EventHandler(this.btnDelete_Click);
             // 
@@ -143,7 +143,7 @@
             this.lboHistory.Location = new System.Drawing.Point(6, 19);
             this.lboHistory.Name = "lboHistory";
             this.lboHistory.Size = new System.Drawing.Size(432, 134);
-            this.lboHistory.TabIndex = 10;
+            this.lboHistory.TabIndex = 0;
             this.lboHistory.SelectedIndexChanged += new System.EventHandler(this.lboHistory_SelectedIndexChanged);
             // 
             // gbxHistory
@@ -153,7 +153,7 @@
             this.gbxHistory.Location = new System.Drawing.Point(12, 36);
             this.gbxHistory.Name = "gbxHistory";
             this.gbxHistory.Size = new System.Drawing.Size(474, 161);
-            this.gbxHistory.TabIndex = 12;
+            this.gbxHistory.TabIndex = 1;
             this.gbxHistory.TabStop = false;
             this.gbxHistory.Text = "History";
             // 
@@ -164,7 +164,7 @@
             this.gbxUrl.Location = new System.Drawing.Point(12, 203);
             this.gbxUrl.Name = "gbxUrl";
             this.gbxUrl.Size = new System.Drawing.Size(474, 47);
-            this.gbxUrl.TabIndex = 13;
+            this.gbxUrl.TabIndex = 2;
             this.gbxUrl.TabStop = false;
             this.gbxUrl.Text = "Image Url";
             // 

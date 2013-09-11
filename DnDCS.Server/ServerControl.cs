@@ -82,16 +82,39 @@ namespace DnDCS.Server
             realTimeFogUpdates = serverData.RealTimeFogUpdates;
             btnSyncFog.Visible = !realTimeFogUpdates;
             gbxLog.Visible = serverData.ShowLog;
+            gbxGridSize.Visible = serverData.ShowGridValues;
+            chkShowGrid.Checked = serverData.ShowGrid;
+            nudGridSize.Minimum = ConfigValues.MinimumGridSize;
+            nudGridSize.Maximum = ConfigValues.MaximumGridSize;
+            nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
         }
         
         private void connection_OnClientConnected()
         {
             if (connection.IsStopping)
                 return;
-            connection.WriteMap(map);
-            connection.WriteFog(fog);
+            SendAll(true);
         }
-        
+
+        private void SendAll(bool sendBlackout)
+        {
+            if (this.InvokeRequired)
+            {
+                this.Invoke(new Action(() => { SendAll(sendBlackout); }));
+                return;
+            }
+
+            // Client-side will automatically fog a map received so it's not revealed for a split second. After this, we'll send a Blackout command
+            // to ensure the client blacks out. Finally, we'll send the latest fog and grid for them to have.
+            connection.WriteMap(map);
+            if (!this.isBlackOutSet)
+                this.btnToggleBlackout.PerformClick();
+            else
+                connection.WriteBlackout(true);
+            connection.WriteFog(fog);
+            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+        }
+
         private void connection_OnClientCountChanged(int count)
         {
             if (connection.IsStopping)
@@ -148,17 +171,15 @@ namespace DnDCS.Server
             });
 
             var optionsMenu = new MenuItem("Options");
-            undoLastFogAction = new MenuItem("Undo Last Fog Action", OnUndoLastFogAction_Click, Shortcut.CtrlZ);
-            redoLastFogAction = new MenuItem("Redo Last Fog Action", OnRedoLastFogAction_Click, Shortcut.CtrlY);
-            undoLastFogAction.Enabled = false;
-            redoLastFogAction.Enabled = false;
             optionsMenu.MenuItems.AddRange(new MenuItem[] 
             {
-                undoLastFogAction,
-                redoLastFogAction,
+                undoLastFogAction = new MenuItem("Undo Last Fog Action", OnUndoLastFogAction_Click, Shortcut.CtrlZ) { Enabled = false },
+                redoLastFogAction = new MenuItem("Redo Last Fog Action", OnRedoLastFogAction_Click, Shortcut.CtrlY) { Enabled = false },
                 new MenuItem("-"),
                 new MenuItem("Real-time Fog Updates", OnRealTimeFogUpdates_Click) { Checked = serverData.RealTimeFogUpdates },
-                new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog }, 
+                new MenuItem("-"),
+                new MenuItem("Show Grid Values", OnShowGridValues_Click) { Checked = serverData.ShowGridValues },
+                new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog },
             });
 
             menu.MenuItems.Add(fileMenu);
@@ -252,6 +273,16 @@ namespace DnDCS.Server
             btnSyncFog.Visible = !realTimeFogUpdates;
         }
 
+        private void OnShowGridValues_Click(object sender, EventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+            this.gbxGridSize.Visible = menuItem.Checked = !menuItem.Checked;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.ShowGridValues = this.gbxGridSize.Visible;
+            Persistence.SaveServerData(serverData);
+        }        
+
         private void OnShowLog_Click(object sender, EventArgs e)
         {
             var menuItem = sender as MenuItem;
@@ -323,6 +354,33 @@ namespace DnDCS.Server
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
             connection.WriteFog(fog);
+        }
+        
+        private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
+        {
+            lblGridSize.Enabled = nudGridSize.Enabled = chkShowGrid.Checked;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.ShowGrid = this.chkShowGrid.Checked;
+            Persistence.SaveServerData(serverData);
+
+            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+
+            pbxMap.Refresh();
+        }
+
+        private void nudGridSize_ValueChanged(object sender, EventArgs e)
+        {
+            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+
+            pbxMap.Refresh();
+        }
+
+        private void nudGridSize_Leave(object sender, EventArgs e)
+        {
+            var serverData = Persistence.LoadServerData();
+            serverData.GridSize = (chkShowGrid.Checked) ? (int)this.nudGridSize.Value : 0;
+            Persistence.SaveServerData(serverData);
         }
 
         private void btnClearLog_Click(object sender, EventArgs e)
@@ -446,11 +504,11 @@ namespace DnDCS.Server
             pbxMap.Image = map;
             pbxMap.Refresh();
 
-            connection.WriteMap(map);
             gbxCommands.Enabled = true;
             ToggleTools(btnSelectTool);
-            // Always force a blackout when a new Map image is loaded, just to make sure we don't reveal something we shouldn't anymore.
-            btnToggleBlackout.PerformClick();
+
+            // Re-send everything since we've just re-created the Map and Fog. This will also force a Blackout of the new image.
+            SendAll(true);
         }
 
         private void CreateFogImage()
@@ -489,6 +547,18 @@ namespace DnDCS.Server
 
             if (newFog != null)
                 g.DrawImage(newFog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+
+            if (chkShowGrid.Checked)
+            {
+                for (int x = 0; x < pbxMap.Width; x += (int)nudGridSize.Value)
+                {
+                    g.DrawLine(Pens.Aqua, x, 0, x, pbxMap.Height);
+                }
+                for (int y = 0; y < pbxMap.Height; y += (int)nudGridSize.Value)
+                {
+                    g.DrawLine(Pens.Aqua, 0, y, pbxMap.Width, y);
+                }
+            }
         }
     }
 }

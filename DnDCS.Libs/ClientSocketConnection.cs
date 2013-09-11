@@ -21,6 +21,7 @@ namespace DnDCS.Libs
         public event Action<Image> OnMapReceived;
         public event Action<Image> OnFogReceived;
         public event Action<Point[], bool> OnFogUpdateReceived;
+        public event Action<bool, int> OnGridSizeReceived;
         public event Action OnExitReceived;
         public event Action<bool> OnBlackoutReceived;
 
@@ -86,6 +87,12 @@ namespace DnDCS.Libs
                             Logger.LogDebug("Read Fog Update action.");
                             if (OnFogUpdateReceived != null)
                                 OnFogUpdateReceived(((FogUpdateSocketObject)socketObject).Points, ((FogUpdateSocketObject)socketObject).IsClearing);
+                            break;
+
+                        case SocketConstants.SocketAction.GridSize:
+                            Logger.LogDebug("Read Grid Size action.");
+                            if (OnGridSizeReceived != null)
+                                OnGridSizeReceived(((GridSizeSocketObject)socketObject).ShowGrid, ((GridSizeSocketObject)socketObject).GridSize);
                             break;
 
                         case SocketConstants.SocketAction.BlackoutOn:

@@ -17,6 +17,8 @@ namespace DnDCS.Libs
         public static readonly int PingInterval;
         public static readonly string ClientDataFile;
         public static readonly string ServerDataFile;
+        public static readonly int MinimumGridSize;
+        public static readonly int MaximumGridSize;
 
         static ConfigValues()
         {
@@ -34,6 +36,12 @@ namespace DnDCS.Libs
 
             int pingInterval;
             PingInterval = int.TryParse(ConfigurationManager.AppSettings["PingInterval"], out pingInterval) ? pingInterval : 5000;
+
+            int minimumGridSize;
+            MinimumGridSize = int.TryParse(ConfigurationManager.AppSettings["MinimumGridSize"], out minimumGridSize) ? minimumGridSize : 10;
+            int maximumGridSize;
+            MaximumGridSize = int.TryParse(ConfigurationManager.AppSettings["MaximumGridSize"], out maximumGridSize) ? maximumGridSize : 256;
         }
+
     }
 }

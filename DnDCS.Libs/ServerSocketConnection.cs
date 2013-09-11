@@ -170,6 +170,11 @@ namespace DnDCS.Libs
 
         }
 
+        public void WriteGridSize(bool showGrid, int gridSize)
+        {
+            Write(new GridSizeSocketObject(showGrid, gridSize));
+        }
+
         public void WriteBlackout(bool isBlackoutOn)
         {
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
