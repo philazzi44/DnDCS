@@ -14,8 +14,13 @@ using DnDCS.Libs.ServerEvents;
 
 namespace DnDCS.Server
 {
-    public partial class ServerControl : UserControl, IDisposable, IDnDCSControl
+    public partial class ServerControl : UserControl, IDnDCSControl
     {
+        private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
+
+        private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(50d);
+        private DateTime lastMouseMove = DateTime.MinValue;
+
         private string initialParentFormText;
         private bool realTimeFogUpdates;
 
@@ -38,12 +43,24 @@ namespace DnDCS.Server
 
         private readonly Brush newFogClearBrush = Brushes.Red;
 
-        // These two colors should be the same so the transparency works as expected.
-        private readonly Brush fogClearBrush = Brushes.White;
-        private readonly Color fogClearColor = Color.White;
-        private readonly Brush fogBrush = Brushes.Black;
+        private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
+
+        private Color _fogBrushColor { get; set; }
+        private Color FogBrushColor
+        {
+            get { return _fogBrushColor; }
+            set
+            {
+                _fogBrushColor = value;
+                SetFogAttributesColorMatrix(_fogBrushColor.A);
+            }
+        }
+
+        private static readonly Brush FOG_BRUSH = Brushes.LightBlue;
         private readonly Brush newFogBrush = Brushes.Gray;
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
+
+        private Pen gridPen;
 
         private ServerSocketConnection connection;
 
@@ -51,21 +68,12 @@ namespace DnDCS.Server
         {
             InitializeComponent();
         }
-
+        
         private void ServerControl_Load(object sender, EventArgs e)
         {
             initialSelectToolColor = btnSelectTool.BackColor;
             initialFogToolColor = btnFogTool.BackColor;
             initialBlackoutColor = btnToggleBlackout.BackColor;
-
-            float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
-                                      new float[] {0, 1, 0, 0, 0},
-                                      new float[] {0, 0, 1, 0, 0},
-                                      new float[] {0, 0, 0, 0.35f, 0}, 
-                                      new float[] {0, 0, 0, 0, 1}
-                                    };
-            fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-            fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
 
             initialParentFormText = this.ParentForm.Text;
             this.ParentForm.Text = initialParentFormText + " (0 clients connected)";
@@ -87,6 +95,10 @@ namespace DnDCS.Server
             nudGridSize.Minimum = ConfigValues.MinimumGridSize;
             nudGridSize.Maximum = ConfigValues.MaximumGridSize;
             nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
+
+            gridPen = (serverData.IsGridColorSet) ? new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB)) : new Pen(Color.Aqua);
+
+            FogBrushColor = Color.FromArgb(DEFAULT_FOG_BRUSH_ALPHA, Color.Black);
         }
         
         private void connection_OnClientConnected()
@@ -113,6 +125,7 @@ namespace DnDCS.Server
                 connection.WriteBlackout(true);
             connection.WriteFog(fog);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+            connection.WriteGridColor(gridPen.Color);
         }
 
         private void connection_OnClientCountChanged(int count)
@@ -152,6 +165,8 @@ namespace DnDCS.Server
                 fog.Dispose();
             if (connection != null)
                 connection.Stop();
+            if (gridPen != null)
+                gridPen.Dispose();
         }
         
         public MainMenu GetMainMenu()
@@ -164,9 +179,9 @@ namespace DnDCS.Server
             {
                 new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
                 new MenuItem("-"),
-                new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
-                new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
-                new MenuItem("-"),
+                //new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
+                //new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
+                //new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
 
@@ -180,6 +195,8 @@ namespace DnDCS.Server
                 new MenuItem("-"),
                 new MenuItem("Show Grid Values", OnShowGridValues_Click) { Checked = serverData.ShowGridValues },
                 new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog },
+                new MenuItem("-"),
+                new MenuItem("Set Color Options", OnSetColorOptions_Click),
             });
 
             menu.MenuItems.Add(fileMenu);
@@ -282,7 +299,7 @@ namespace DnDCS.Server
             serverData.ShowGridValues = this.gbxGridSize.Visible;
             Persistence.SaveServerData(serverData);
         }        
-
+        
         private void OnShowLog_Click(object sender, EventArgs e)
         {
             var menuItem = sender as MenuItem;
@@ -293,6 +310,28 @@ namespace DnDCS.Server
             Persistence.SaveServerData(serverData);
         }
 
+        private void OnSetColorOptions_Click(object sender, EventArgs e)
+        {
+            using (var colorOptions = new ColorOptionsDialog())
+            {
+                var serverData = Persistence.LoadServerData();
+
+                colorOptions.GridLineColor = gridPen.Color;
+                if (colorOptions.ShowDialog(this) == DialogResult.OK)
+                {
+                    gridPen.Dispose();
+                    gridPen = new Pen(colorOptions.GridLineColor);
+                    serverData.GridColor = colorOptions.GridLineColor;
+
+                    Persistence.SaveServerData(serverData);
+
+                    connection.WriteGridColor(colorOptions.GridLineColor);
+
+                    pbxMap.Refresh();
+                }
+            }
+        }
+        
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             DrawOnGraphics(e.Graphics);
@@ -452,7 +491,9 @@ namespace DnDCS.Server
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
-            // TODO: Add some kind of delay here, so we don't raise the event so fast.
+            if (DateTime.Now - lastMouseMove < MouseMoveInterval)
+                return;
+            lastMouseMove = DateTime.Now;
 
             // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
             currentFogUpdate.Add(e.Location);
@@ -516,10 +557,23 @@ namespace DnDCS.Server
             fog = new Bitmap(map.Width, map.Height);
             using (var g = Graphics.FromImage(fog))
             {
-                g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
+                g.FillRectangle(FOG_BRUSH, 0, 0, fog.Width, fog.Height);
             }
 
             connection.WriteFog(fog);
+        }
+
+        private void SetFogAttributesColorMatrix(byte a = DEFAULT_FOG_BRUSH_ALPHA)
+        {
+            // All colors are alpha blended by the alpha specified
+            float[][] fogMatrixItems = { new float[] {1, 0, 0, 0, 0},
+                                         new float[] {0, 1, 0, 0, 0},
+                                         new float[] {0, 0, 1, 0, 0},
+                                         new float[] {0, 0, 0, ((float)a) / 255f, 0}, 
+                                         new float[] {0, 0, 0, 0, 1}
+                                    };
+            fogAttributes.SetColorMatrix(new ColorMatrix(fogMatrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+            fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
         }
 
         private void UpdateNewFogImage(FogUpdate fogUpdate)
@@ -534,7 +588,7 @@ namespace DnDCS.Server
         {
             using (var g = Graphics.FromImage(fog))
             {
-                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : fogBrush, fogUpdate.Points);
+                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : FOG_BRUSH, fogUpdate.Points);
             }
         }
 
@@ -550,13 +604,13 @@ namespace DnDCS.Server
 
             if (chkShowGrid.Checked)
             {
-                for (int x = 0; x < pbxMap.Width; x += (int)nudGridSize.Value)
+                for (int x = (int)nudGridSize.Value; x < pbxMap.Width; x += (int)nudGridSize.Value)
                 {
-                    g.DrawLine(Pens.Aqua, x, 0, x, pbxMap.Height);
+                    g.DrawLine(gridPen, x, 0, x, pbxMap.Height);
                 }
-                for (int y = 0; y < pbxMap.Height; y += (int)nudGridSize.Value)
+                for (int y = (int)nudGridSize.Value; y < pbxMap.Height; y += (int)nudGridSize.Value)
                 {
-                    g.DrawLine(Pens.Aqua, 0, y, pbxMap.Width, y);
+                    g.DrawLine(gridPen, 0, y, pbxMap.Width, y);
                 }
             }
         }

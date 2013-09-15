@@ -15,6 +15,7 @@ namespace DnDCS.Client
 {
     public partial class ClientControl : UserControl, IDnDCSControl
     {
+        private bool isConnected;
         private string initialParentFormText;
         private ClientSocketConnection connection;
         private MenuItem connectItem;
@@ -24,10 +25,9 @@ namespace DnDCS.Client
         private Image fog;
         private bool isBlackoutOn;
         private int? gridSize;
+        private Pen gridPen;
 
-        // These two colors should be the same so the transparency works as expected.
-        private readonly Brush fogClearBrush = Brushes.White;
-        private readonly Color fogClearColor = Color.White;
+        private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
 
         private readonly Brush fogBrush = Brushes.Black;
         private readonly Color fogColor = Color.Black;
@@ -48,11 +48,24 @@ namespace DnDCS.Client
                                       new float[] {0, 0, 0, 0, 1}
                                     };
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
-            fogAttributes.SetColorKey(fogClearColor, fogClearColor, ColorAdjustType.Bitmap);
+            fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
             initialParentFormText = this.ParentForm.Text;
             pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
+            this.Disposed += new EventHandler(ClientControl_Disposed);
+        }
+
+        private void ClientControl_Disposed(object sender, EventArgs e)
+        {
+            if (map != null)
+                map.Dispose();
+            if (fog != null)
+                fog.Dispose();
+            if (connection != null)
+                connection.Stop();
+            if (gridPen != null)
+                gridPen.Dispose();
         }
 
         private void pbxMap_Paint(object sender, PaintEventArgs e)
@@ -78,7 +91,7 @@ namespace DnDCS.Client
             // Prompt for Name/IP address
             using (var getConnectIP = new GetConnectIPDialog())
             {
-                if (getConnectIP.ShowDialog() == DialogResult.OK)
+                if (getConnectIP.ShowDialog(this) == DialogResult.OK)
                 {
                     Connect(getConnectIP.Address, getConnectIP.Port);
                 }
@@ -88,7 +101,10 @@ namespace DnDCS.Client
         private void OnExit_Click(object sender, EventArgs e)
         {
             if (connection != null)
+            {
                 connection.Stop();
+                connection = null;
+            }
             this.ParentForm.Close();
         }
 
@@ -102,12 +118,13 @@ namespace DnDCS.Client
             connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
+            connection.OnGridColorReceived += new Action<Color>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
-            connectItem.Text = "Connected...";
+            connectItem.Text = "Connecting...";
             connectItem.Enabled = false;
-            this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, address, port);
+            this.ParentForm.Text = string.Format("{0} - Connecting to {1}:{2}...", initialParentFormText, address, port);
         }
 
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
@@ -136,6 +153,13 @@ namespace DnDCS.Client
 
         private void connection_OnMapReceived(Image map)
         {
+            if (!isConnected)
+            {
+                isConnected = true;
+                connectItem.Text = "Connected.";
+                this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, connection.Address, connection.Port);
+            }
+
             // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
             this.fog = new Bitmap(map.Width, map.Height);
             using (var g = Graphics.FromImage(this.fog))
@@ -203,6 +227,13 @@ namespace DnDCS.Client
             })));
         }
 
+        private void connection_OnGridColorReceived(Color gridColor)
+        {
+            if (gridPen != null)
+                gridPen.Dispose();
+            gridPen = new Pen(gridColor);
+        }
+
         private void connection_OnExitReceived()
         {
             this.BeginInvoke(new Action(() =>
@@ -229,11 +260,11 @@ namespace DnDCS.Client
             {
                 for (int x = 0; x < pbxMap.Width; x += gridSize.Value)
                 {
-                    g.DrawLine(Pens.Aqua, x, 0, x, pbxMap.Height);
+                    g.DrawLine(gridPen, x, 0, x, pbxMap.Height);
                 }
                 for (int y = 0; y < pbxMap.Height; y += gridSize.Value)
                 {
-                    g.DrawLine(Pens.Aqua, 0, y, pbxMap.Width, y);
+                    g.DrawLine(gridPen, 0, y, pbxMap.Width, y);
                 }
             }
 

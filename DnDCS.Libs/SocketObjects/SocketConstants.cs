@@ -21,6 +21,7 @@ namespace DnDCS.Libs.SocketObjects
             Fog,
             FogUpdate,
             GridSize,
+            GridColor,
             BlackoutOn,
             BlackoutOff,
             Exit,

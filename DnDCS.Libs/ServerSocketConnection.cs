@@ -175,6 +175,11 @@ namespace DnDCS.Libs
             Write(new GridSizeSocketObject(showGrid, gridSize));
         }
 
+        public void WriteGridColor(Color color)
+        {
+            Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color));
+        }
+
         public void WriteBlackout(bool isBlackoutOn)
         {
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));

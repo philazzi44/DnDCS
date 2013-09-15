@@ -14,6 +14,8 @@ namespace DnDCS.Libs
     {
         private Socket server;
 
+        public string Address { get { return Address; } }
+        public int Port { get { return port; } }
         private readonly string address;
         private readonly int port;
         private bool isStopped;
@@ -22,6 +24,7 @@ namespace DnDCS.Libs
         public event Action<Image> OnFogReceived;
         public event Action<Point[], bool> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
+        public event Action<Color> OnGridColorReceived;
         public event Action OnExitReceived;
         public event Action<bool> OnBlackoutReceived;
 
@@ -93,6 +96,12 @@ namespace DnDCS.Libs
                             Logger.LogDebug("Read Grid Size action.");
                             if (OnGridSizeReceived != null)
                                 OnGridSizeReceived(((GridSizeSocketObject)socketObject).ShowGrid, ((GridSizeSocketObject)socketObject).GridSize);
+                            break;
+
+                        case SocketConstants.SocketAction.GridColor:
+                            Logger.LogDebug("Read Grid Color action.");
+                            if (OnGridColorReceived != null)
+                                OnGridColorReceived(((ColorSocketObject)socketObject).Value);
                             break;
 
                         case SocketConstants.SocketAction.BlackoutOn:

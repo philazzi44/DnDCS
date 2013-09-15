@@ -33,6 +33,8 @@ namespace DnDCS.Libs.SocketObjects
 
                 case SocketConstants.SocketAction.GridSize:
                     return GridSizeSocketObject.GridSizeObjectFromBytes(bytes);
+                case SocketConstants.SocketAction.GridColor:
+                    return ColorSocketObject.GridColorObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.Map:
                 case SocketConstants.SocketAction.Fog:
                     return ImageSocketObject.ImageObjectFromBytes(bytes);
