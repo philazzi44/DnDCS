@@ -53,6 +53,7 @@ namespace DnDCS.Client
             fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
             initialParentFormText = this.ParentForm.Text;
+            this.BackColor = fogColor;
             pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
@@ -174,7 +175,7 @@ namespace DnDCS.Client
             Image blackoutOrMap;
             if (this.isBlackoutOn)
             {
-                blackoutOrMap = new Bitmap(this.receivedMapWidth, this.receivedMapHeight);
+                blackoutOrMap = new Bitmap((this.receivedMap == null) ? 640 : this.receivedMapWidth, (this.receivedMap == null) ? 480 : this.receivedMapHeight);
                 using (var g = Graphics.FromImage(blackoutOrMap))
                 {
                     g.Clear(Color.Black);
@@ -209,7 +210,6 @@ namespace DnDCS.Client
 
             this.receivedMap = map;
             this.assignedMap = new Bitmap(map, (int)(map.Width * scaleFactor), (int)(map.Height * scaleFactor));
-
             this.receivedMapWidth = this.receivedMap.Width;
             this.receivedMapHeight = this.receivedMap.Height;
 

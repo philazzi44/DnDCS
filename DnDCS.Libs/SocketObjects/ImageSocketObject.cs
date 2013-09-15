@@ -31,8 +31,8 @@ namespace DnDCS.Libs.SocketObjects
         private ImageSocketObject(SocketConstants.SocketAction action, Image image)
             : base(action)
         {
-            ImageBytes = ConvertImageToBytes(image);
-            image = (Image)image.Clone();
+            this.image = (Image)image.Clone();
+            ImageBytes = ConvertImageToBytes(this.image);
         }
 
         public static ImageSocketObject ImageObjectFromBytes(byte[] bytes)

@@ -116,13 +116,12 @@ namespace DnDCS.Server
                 return;
             }
 
-            // Client-side will automatically fog a map received so it's not revealed for a split second. After this, we'll send a Blackout command
-            // to ensure the client blacks out. Finally, we'll send the latest fog and grid for them to have.
-            connection.WriteMap(map);
             if (!this.isBlackOutSet)
                 this.btnToggleBlackout.PerformClick();
             else
                 connection.WriteBlackout(true);
+
+            connection.WriteMap(map);
             connection.WriteFog(fog);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color);
@@ -543,6 +542,9 @@ namespace DnDCS.Server
         {
             if (mapImage == null)
                 return;
+
+            var oldMap = map;
+
             map = mapImage;
 
             CreateFogImage();
@@ -555,17 +557,23 @@ namespace DnDCS.Server
 
             // Re-send everything since we've just re-created the Map and Fog. This will also force a Blackout of the new image.
             SendAll(true);
+
+            if (oldMap != null)
+                oldMap.Dispose();
         }
 
         private void CreateFogImage()
         {
+            var oldFog = fog;
+
             fog = new Bitmap(map.Width, map.Height);
             using (var g = Graphics.FromImage(fog))
             {
                 g.FillRectangle(FOG_BRUSH, 0, 0, fog.Width, fog.Height);
             }
 
-            connection.WriteFog(fog);
+            if (oldFog != null)
+                oldFog.Dispose();
         }
 
         private void SetFogAttributesColorMatrix(byte a = DEFAULT_FOG_BRUSH_ALPHA)
