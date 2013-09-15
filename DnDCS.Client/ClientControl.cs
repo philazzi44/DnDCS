@@ -15,12 +15,15 @@ namespace DnDCS.Client
 {
     public partial class ClientControl : UserControl, IDnDCSControl
     {
+        private float scaleFactor = 1.0f;
+
         private bool isConnected;
         private string initialParentFormText;
         private ClientSocketConnection connection;
-        private int mapWidth;
-        private int mapHeight;
-        private Image map;
+        private int receivedMapWidth;
+        private int receivedMapHeight;
+        private Image assignedMap;
+        private Image receivedMap;
         private Image fog;
         private bool isBlackoutOn;
         private int? gridSize;
@@ -55,27 +58,45 @@ namespace DnDCS.Client
             pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
             this.Disposed += new EventHandler(ClientControl_Disposed);
 
+            pbxMap.Focus();
             Connect();
         }
 
         private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
         {
+            if (!Control.ModifierKeys.HasFlag(Keys.Control))
+                return;
+
+            var doubleScale = Control.ModifierKeys.HasFlag(Keys.Shift);
             switch (Math.Sign(e.Delta))
             {
                 // Zoom in
                 case 1:
+                    scaleFactor = Math.Min(scaleFactor + ((doubleScale) ? 0.2f : 0.1f), ConfigValues.MaximumGridZoomFactor);
                     break;
 
-                // Zoom 2
+                // Zoom out
                 case -1:
+                    scaleFactor = Math.Max(scaleFactor - ((doubleScale) ? 0.2f : 0.1f), ConfigValues.MinimumGridZoomFactor);
                     break;
+
+                default:
+                    return;
             }
+
+            var oldMap = this.assignedMap;
+            pbxMap.Image = this.assignedMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * scaleFactor), (int)(receivedMapHeight * scaleFactor));
+            if (oldMap != null)
+                oldMap.Dispose();
+            pbxMap.Refresh();
         }
 
         private void ClientControl_Disposed(object sender, EventArgs e)
         {
-            if (map != null)
-                map.Dispose();
+            if (assignedMap != null)
+                assignedMap.Dispose();
+            if (receivedMap != null)
+                receivedMap.Dispose();
             if (fog != null)
                 fog.Dispose();
             if (connection != null)
@@ -83,22 +104,7 @@ namespace DnDCS.Client
             if (gridPen != null)
                 gridPen.Dispose();
         }
-
-        //protected override void WndProc(ref Message m)
-        //{
-        //    const int WM_MOUSEWHEEL = 0x020A;
-
-        //    // If mouse wheel moved
-        //    switch (m.Msg)
-        //    {
-        //        case WM_MOUSEWHEEL:
-        //            break;
-        //        default:
-        //            base.WndProc(ref m);
-        //            return;
-        //    }
-        //}
-
+        
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             DrawOnGraphics(e.Graphics);
@@ -110,6 +116,8 @@ namespace DnDCS.Client
             var fileMenu = new MenuItem("File");
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
+                new MenuItem("Force Focus Map", new EventHandler((o, e) => pbxMap.Focus())),
+                new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
@@ -166,7 +174,7 @@ namespace DnDCS.Client
             Image blackoutOrMap;
             if (this.isBlackoutOn)
             {
-                blackoutOrMap = new Bitmap(this.mapWidth, this.mapHeight);
+                blackoutOrMap = new Bitmap(this.receivedMapWidth, this.receivedMapHeight);
                 using (var g = Graphics.FromImage(blackoutOrMap))
                 {
                     g.Clear(Color.Black);
@@ -174,7 +182,7 @@ namespace DnDCS.Client
             }
             else
             {
-                blackoutOrMap = this.map;
+                blackoutOrMap = this.assignedMap;
             }
             pbxMap.BeginInvoke((new Action(() =>
                                                {
@@ -199,16 +207,18 @@ namespace DnDCS.Client
             using (var g = Graphics.FromImage(this.fog))
                 g.Clear(fogColor);
 
-            this.map = map;
-            this.mapWidth = this.map.Width;
-            this.mapHeight = this.map.Height;
+            this.receivedMap = map;
+            this.assignedMap = new Bitmap(map, (int)(map.Width * scaleFactor), (int)(map.Height * scaleFactor));
+
+            this.receivedMapWidth = this.receivedMap.Width;
+            this.receivedMapHeight = this.receivedMap.Height;
 
             if (isBlackoutOn)
                 return;
 
             pbxMap.BeginInvoke((new Action(() =>
                                                {
-                                                   pbxMap.Image = this.map;
+                                                   pbxMap.Image = this.assignedMap;
                                                    pbxMap.Refresh();
                                                })));
         }
@@ -227,7 +237,7 @@ namespace DnDCS.Client
             var fogImageToUpdate = this.fog;
             var isNewFogImage = (fogImageToUpdate == null);
             if (isNewFogImage)
-                fogImageToUpdate = new Bitmap(this.mapWidth, this.mapHeight);
+                fogImageToUpdate = new Bitmap(this.receivedMapWidth, this.receivedMapHeight);
 
             using (var g = Graphics.FromImage(fogImageToUpdate))
             {
@@ -287,7 +297,7 @@ namespace DnDCS.Client
 
         private void DrawOnGraphics(Graphics g)
         {
-            if (this.map == null)
+            if (this.assignedMap == null)
                 return;
 
             if (this.isBlackoutOn)
@@ -297,20 +307,22 @@ namespace DnDCS.Client
                 return;
             }
 
+            g.ScaleTransform(scaleFactor, scaleFactor);
+
             if (gridSize.HasValue)
             {
-                for (int x = 0; x < pbxMap.Width; x += gridSize.Value)
+                for (int x = 0; x < receivedMapWidth; x += gridSize.Value)
                 {
-                    g.DrawLine(gridPen, x, 0, x, pbxMap.Height);
+                    g.DrawLine(gridPen, x, 0, x, receivedMapHeight);
                 }
-                for (int y = 0; y < pbxMap.Height; y += gridSize.Value)
+                for (int y = 0; y < receivedMapHeight; y += gridSize.Value)
                 {
-                    g.DrawLine(gridPen, 0, y, pbxMap.Width, y);
+                    g.DrawLine(gridPen, 0, y, receivedMapWidth, y);
                 }
             }
 
             if (fog != null)
-                g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                g.DrawImage(fog, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
         }
     }
 }

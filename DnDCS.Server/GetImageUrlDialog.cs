@@ -94,7 +94,7 @@ namespace DnDCS.Server
 
         private void TrySetImage(string url)
         {
-            if (Regex.IsMatch(tboUrl.Text, @".*\.png"))
+            if (Regex.IsMatch(tboUrl.Text, @".*\.((png)|(jpg)|(jpeg)|(bmp))"))
             {
                 pbxPreview.ImageLocation = LoadedImageUrl = tboUrl.Text;
                 btnOK.Enabled = true;
