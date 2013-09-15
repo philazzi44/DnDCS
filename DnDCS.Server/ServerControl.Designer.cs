@@ -111,6 +111,7 @@
             this.flpControls.Size = new System.Drawing.Size(121, 486);
             this.flpControls.TabIndex = 0;
             this.flpControls.WrapContents = false;
+            this.flpControls.SizeChanged += new System.EventHandler(this.flpControls_SizeChanged);
             // 
             // gbxCommands
             // 
@@ -186,6 +187,8 @@
             // 
             // gbxGridSize
             // 
+            this.gbxGridSize.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxGridSize.Controls.Add(this.chkShowGrid);
             this.gbxGridSize.Controls.Add(this.lblGridSize);
             this.gbxGridSize.Controls.Add(this.nudGridSize);
@@ -238,6 +241,8 @@
             // 
             // gbxLog
             // 
+            this.gbxLog.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxLog.Controls.Add(this.tboLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
             this.gbxLog.Location = new System.Drawing.Point(3, 268);

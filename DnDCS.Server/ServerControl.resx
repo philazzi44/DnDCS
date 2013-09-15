@@ -121,7 +121,7 @@
   <data name="btnSyncFog.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAJcEhZcwAADsAAAA7AAWrWiQkAAAAHdElNRQfYCh0TABzQG+JnAAAAGnRFWHRTb2Z0d2FyZQBQ
+        YQUAAAAJcEhZcwAADr8AAA6/ATgFUyQAAAAHdElNRQfYCh0TABzQG+JnAAAAGnRFWHRTb2Z0d2FyZQBQ
         YWludC5ORVQgdjMuNS4xMUfzQjcAAB3+SURBVHhe7XsHeFVV2rWDChYQC58I6uA46Ix9bAiIqCAjYAEU
         FbBQFEUB6b0ISI20UCMhpBdCCklueu+9ENI7aaSQhAQCaTfrf9e+94TI4Kgj880z//NtnvXcm3PO3We/
         6637PYcb/lvHxOBHB30Q+viLU6Oe/uSz6Odf/Dx62J3GU///jtHeAx/7e8D9O8YH/7FiYtQgTE54CB+e
@@ -393,7 +393,7 @@
   <data name="btnFogAll.BackgroundImage" type="System.Drawing.Bitmap, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
         iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8
-        YQUAAAAJcEhZcwAACw4AAAsOAUC+4UEAAAAHdElNRQfYCxgUCzV+rGzHAAAAGXRFWHRDb21tZW50AENy
+        YQUAAAAJcEhZcwAACw0AAAsNAe0HwCwAAAAHdElNRQfYCxgUCzV+rGzHAAAAGXRFWHRDb21tZW50AENy
         ZWF0ZWQgd2l0aCBHSU1QV4EOFwAAIR5JREFUeF7tnFmwVdWdxteT71RZxUt3dWVQEycSSdKd7s5Agpk6
         A6lmx2iMA5MCApKgKJMjgiIXBHEEREUGLyjigKAMMsQR7TadWeMUp+5KeqqmH+n1nbu/w3f+/Nfeax8u
         im0efrXWXmeffc7dv+9b+2BVEmZvfrnF1VteCldvfinMfuzlcM3jv2+Pc7a+GsdXW+Pcba+EuVtfCddu

@@ -18,7 +18,6 @@ namespace DnDCS.Client
         private bool isConnected;
         private string initialParentFormText;
         private ClientSocketConnection connection;
-        private MenuItem connectItem;
         private int mapWidth;
         private int mapHeight;
         private Image map;
@@ -38,7 +37,7 @@ namespace DnDCS.Client
         {
             InitializeComponent();
         }
-
+        
         private void ClientControl_Load(object sender, EventArgs e)
         {
             float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
@@ -53,7 +52,24 @@ namespace DnDCS.Client
             initialParentFormText = this.ParentForm.Text;
             pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
+            pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
             this.Disposed += new EventHandler(ClientControl_Disposed);
+
+            Connect();
+        }
+
+        private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
+        {
+            switch (Math.Sign(e.Delta))
+            {
+                // Zoom in
+                case 1:
+                    break;
+
+                // Zoom 2
+                case -1:
+                    break;
+            }
         }
 
         private void ClientControl_Disposed(object sender, EventArgs e)
@@ -68,6 +84,21 @@ namespace DnDCS.Client
                 gridPen.Dispose();
         }
 
+        //protected override void WndProc(ref Message m)
+        //{
+        //    const int WM_MOUSEWHEEL = 0x020A;
+
+        //    // If mouse wheel moved
+        //    switch (m.Msg)
+        //    {
+        //        case WM_MOUSEWHEEL:
+        //            break;
+        //        default:
+        //            base.WndProc(ref m);
+        //            return;
+        //    }
+        //}
+
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             DrawOnGraphics(e.Graphics);
@@ -79,23 +110,10 @@ namespace DnDCS.Client
             var fileMenu = new MenuItem("File");
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
-                connectItem = new MenuItem("Connect", OnConnect_Click),
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
             return menu;
-        }
-
-        private void OnConnect_Click(object sender, EventArgs e)
-        {
-            // Prompt for Name/IP address
-            using (var getConnectIP = new GetConnectIPDialog())
-            {
-                if (getConnectIP.ShowDialog(this) == DialogResult.OK)
-                {
-                    Connect(getConnectIP.Address, getConnectIP.Port);
-                }
-            }
         }
 
         private void OnExit_Click(object sender, EventArgs e)
@@ -106,6 +124,22 @@ namespace DnDCS.Client
                 connection = null;
             }
             this.ParentForm.Close();
+        }
+
+        private void Connect()
+        {
+            // Prompt for Name/IP address
+            using (var getConnectIP = new GetConnectIPDialog())
+            {
+                if (getConnectIP.ShowDialog(this) == DialogResult.OK)
+                {
+                    Connect(getConnectIP.Address, getConnectIP.Port);
+                }
+                else
+                {
+                    this.ParentForm.Close();
+                }
+            }
         }
 
         private void Connect(string address, int port)
@@ -122,8 +156,6 @@ namespace DnDCS.Client
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
-            connectItem.Text = "Connecting...";
-            connectItem.Enabled = false;
             this.ParentForm.Text = string.Format("{0} - Connecting to {1}:{2}...", initialParentFormText, address, port);
         }
 
@@ -156,8 +188,10 @@ namespace DnDCS.Client
             if (!isConnected)
             {
                 isConnected = true;
-                connectItem.Text = "Connected.";
-                this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, connection.Address, connection.Port);
+                this.ParentForm.BeginInvoke(new Action(() =>
+                {
+                    this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, connection.Address, connection.Port);
+                }));
             }
 
             // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
@@ -185,10 +219,7 @@ namespace DnDCS.Client
             if (isBlackoutOn)
                 return;
 
-            pbxMap.BeginInvoke((new Action(() =>
-                                               {
-                                                   pbxMap.Refresh();
-                                               })));
+            RefreshMapPictureBox();
         }
 
         private void connection_OnFogUpdateReceived(Point[] fogUpdate, bool isClearing)
@@ -211,20 +242,13 @@ namespace DnDCS.Client
             if (isBlackoutOn)
                 return;
 
-            pbxMap.BeginInvoke((new Action(() =>
-            {
-                pbxMap.Refresh();
-            })));
+            RefreshMapPictureBox();
         }
         
         private void connection_OnGridSizeReceived(bool showGrid, int gridSize)
         {
             this.gridSize = (showGrid) ? gridSize : new Nullable<int>();
-
-            pbxMap.BeginInvoke((new Action(() =>
-            {
-                pbxMap.Refresh();
-            })));
+            RefreshMapPictureBox();
         }
 
         private void connection_OnGridColorReceived(Color gridColor)
@@ -232,6 +256,8 @@ namespace DnDCS.Client
             if (gridPen != null)
                 gridPen.Dispose();
             gridPen = new Pen(gridColor);
+
+            RefreshMapPictureBox();
         }
 
         private void connection_OnExitReceived()
@@ -242,6 +268,21 @@ namespace DnDCS.Client
                                 "Server Connection Closed", MessageBoxButtons.OK);
                 this.ParentForm.Close();
             }));
+        }
+
+        private void RefreshMapPictureBox()
+        {
+            if (pbxMap.InvokeRequired)
+            {
+                pbxMap.BeginInvoke((Action)RefreshMapPictureBox);
+                return;
+            }
+            pbxMap.Refresh();
+        }
+
+        private void pnlMap_Scroll(object sender, ScrollEventArgs e)
+        {
+            pbxMap.Refresh();
         }
 
         private void DrawOnGraphics(Graphics g)
@@ -270,11 +311,6 @@ namespace DnDCS.Client
 
             if (fog != null)
                 g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
-        }
-
-        private void pnlMap_Scroll(object sender, ScrollEventArgs e)
-        {
-            pbxMap.Refresh();
         }
     }
 }

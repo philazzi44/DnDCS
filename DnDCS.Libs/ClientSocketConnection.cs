@@ -14,7 +14,7 @@ namespace DnDCS.Libs
     {
         private Socket server;
 
-        public string Address { get { return Address; } }
+        public string Address { get { return address; } }
         public int Port { get { return port; } }
         private readonly string address;
         private readonly int port;

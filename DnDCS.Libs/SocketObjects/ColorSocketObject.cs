@@ -18,12 +18,12 @@ namespace DnDCS.Libs.SocketObjects
                 B = value.B;
             }
         }
-        public int A { get; private set; }
-        public int R { get; private set; }
-        public int G { get; private set; }
-        public int B { get; private set; }
+        public byte A { get; private set; }
+        public byte R { get; private set; }
+        public byte G { get; private set; }
+        public byte B { get; private set; }
 
-        public ColorSocketObject(SocketConstants.SocketAction socketAction, int a, int r, int g, int b) :
+        public ColorSocketObject(SocketConstants.SocketAction socketAction, byte a, byte r, byte g, byte b) :
             this(socketAction, System.Drawing.Color.FromArgb(a, r, g, b))
         {
         }
@@ -40,7 +40,7 @@ namespace DnDCS.Libs.SocketObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.GridColor:
-                    return new ColorSocketObject(action, BitConverter.ToInt32(bytes, 1), BitConverter.ToInt32(bytes, 2), BitConverter.ToInt32(bytes, 3), BitConverter.ToInt32(bytes, 4));
+                    return new ColorSocketObject(action, bytes[1], bytes[2], bytes[3], bytes[4]);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
@@ -51,10 +51,10 @@ namespace DnDCS.Libs.SocketObjects
         {
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
-            bytes.AddRange(BitConverter.GetBytes(A));
-            bytes.AddRange(BitConverter.GetBytes(R));
-            bytes.AddRange(BitConverter.GetBytes(G));
-            bytes.AddRange(BitConverter.GetBytes(B));
+            bytes.Add(A);
+            bytes.Add(R);
+            bytes.Add(G);
+            bytes.Add(B);
             return bytes.ToArray();
         }
 

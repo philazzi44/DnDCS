@@ -51,10 +51,10 @@ namespace DnDCS.Server
             // Launch a popup to get a png
             using (var openFile = new OpenFileDialog())
             {
-                openFile.Title = "Select a .PNG image.";
+                openFile.Title = "Select a .JPG or .PNG image.";
                 openFile.CheckFileExists = true;
                 openFile.CheckPathExists = true;
-                openFile.Filter = "Image Files (*.png)|*.png";
+                openFile.Filter = "Image Files (*.jpg, *.jpeg, *.png, *.bmp)|*.jpg; *.jpeg; *.png; *.bmp";
 
                 var result = openFile.ShowDialog(this);
                 if (result == DialogResult.OK)

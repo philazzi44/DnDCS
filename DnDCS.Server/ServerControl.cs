@@ -56,7 +56,7 @@ namespace DnDCS.Server
             }
         }
 
-        private static readonly Brush FOG_BRUSH = Brushes.LightBlue;
+        private static readonly Brush FOG_BRUSH = Brushes.Black;
         private readonly Brush newFogBrush = Brushes.Gray;
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
@@ -335,6 +335,11 @@ namespace DnDCS.Server
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             DrawOnGraphics(e.Graphics);
+        }
+        
+        private void flpControls_SizeChanged(object sender, EventArgs e)
+        {
+            this.gbxCommands.Width = flpControls.Width - gbxCommands.Margin.Right;
         }
 
         private void btnSelectTool_Click(object sender, EventArgs e)
