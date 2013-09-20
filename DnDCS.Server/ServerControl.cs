@@ -489,7 +489,6 @@ namespace DnDCS.Server
         {
             pbxMap.Cursor = Cursors.Cross;
             pbxMap.MouseDown += new MouseEventHandler(pbxMap_MouseDown);
-            pbxMap.MouseUp += new MouseEventHandler(pbxMap_MouseUp);
         }
 
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
@@ -498,6 +497,7 @@ namespace DnDCS.Server
                 return;
 
             pbxMap.MouseMove += new MouseEventHandler(pbxMap_MouseMove);
+            pbxMap.MouseUp += new MouseEventHandler(pbxMap_MouseUp);
 
             newFog = new Bitmap(fog.Width, fog.Height);
 
@@ -524,6 +524,7 @@ namespace DnDCS.Server
                 return;
 
             pbxMap.MouseMove -= new MouseEventHandler(pbxMap_MouseMove);
+            pbxMap.MouseUp -= new MouseEventHandler(pbxMap_MouseUp);
 
             // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether.
             currentFogUpdate.Add(e.Location);
