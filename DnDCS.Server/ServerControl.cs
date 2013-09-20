@@ -19,7 +19,7 @@ namespace DnDCS.Server
         private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
 
         private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(50d);
-        private DateTime lastMouseMove = DateTime.MinValue;
+        private DateTime lastMouseMoveTime = DateTime.MinValue;
 
         private string initialParentFormText;
         private bool realTimeFogUpdates;
@@ -507,9 +507,9 @@ namespace DnDCS.Server
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
-            if (DateTime.Now - lastMouseMove < MouseMoveInterval)
+            if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
                 return;
-            lastMouseMove = DateTime.Now;
+            lastMouseMoveTime = DateTime.Now;
 
             // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
             currentFogUpdate.Add(e.Location);

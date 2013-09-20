@@ -276,11 +276,6 @@ namespace DnDCS.Client
             pbxMap.Refresh();
         }
 
-        private void pnlMap_Scroll(object sender, ScrollEventArgs e)
-        {
-            pbxMap.Refresh();
-        }
-
         private void DrawOnGraphics(Graphics g)
         {
             if (this.assignedMap == null)
