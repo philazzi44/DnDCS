@@ -171,24 +171,9 @@ namespace DnDCS.Client
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
         {
             this.isBlackoutOn = isBlackoutOn;
-
-            Image blackoutOrMap;
-            if (this.isBlackoutOn)
-            {
-                blackoutOrMap = null;
-                //blackoutOrMap = new Bitmap((this.receivedMap == null) ? 640 : this.receivedMapWidth, (this.receivedMap == null) ? 480 : this.receivedMapHeight);
-                //using (var g = Graphics.FromImage(blackoutOrMap))
-                //{
-                //    g.Clear(Color.Black);
-                //}
-            }
-            else
-            {
-                blackoutOrMap = this.assignedMap;
-            }
             pbxMap.BeginInvoke((new Action(() =>
                                                {
-                                                   pbxMap.Image = blackoutOrMap;
+                                                   pbxMap.Image = (this.isBlackoutOn) ? null : this.assignedMap;
                                                    pbxMap.Refresh();
                                                })));
         }
