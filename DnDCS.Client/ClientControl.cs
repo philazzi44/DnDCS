@@ -10,6 +10,7 @@ using DnDCS.Libs;
 using DnDCS.Libs.SocketObjects;
 using System.Drawing.Imaging;
 using DnDCS.Libs.Assets;
+using System.Threading;
 
 namespace DnDCS.Client
 {
@@ -36,6 +37,10 @@ namespace DnDCS.Client
 
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
+        private Thread mouseWheelHandlerThread;
+        private readonly EventWaitHandle mouseWheelHandlerThreadWaitHandle = new AutoResetEvent(false);
+        private bool stopMouseWheelHandlerThread;
+
         public ClientControl()
         {
             InitializeComponent();
@@ -52,6 +57,10 @@ namespace DnDCS.Client
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
             fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
+            mouseWheelHandlerThread = new Thread(MouseWheelHandlerStart);
+            mouseWheelHandlerThread.IsBackground = true;
+            mouseWheelHandlerThread.Start();
+
             initialParentFormText = this.ParentForm.Text;
             this.BackColor = fogColor;
             pnlMap.BackColor = fogColor;
@@ -61,6 +70,43 @@ namespace DnDCS.Client
 
             pbxMap.Focus();
             Connect();
+        }
+
+        /// <summary>
+        ///     By using a thread to handle the Mouse Wheel zooming functionality, we allow the user to implicitly "enqueue" zoom attempts
+        ///     and we'll ignore any that happen while we're creating the new bitmap. Then we'll apply it and re-check the Scale Factor to 
+        ///     see if our latest build of the bitmap was ok. If not, we'll create one. That means scaling from 1.0 to 10.0 in 0.1 increments
+        ///     won't end up generating 100 bitmaps but rather only a subset of them, as any increment steps that are skipped while
+        ///     a bitmap is being generated are never consumed.
+        /// </summary>
+        private void MouseWheelHandlerStart()
+        {
+            var lastScaleFactor = scaleFactor;
+            while (!stopMouseWheelHandlerThread)
+            {
+                try
+                {
+                    if (lastScaleFactor == scaleFactor)
+                        mouseWheelHandlerThreadWaitHandle.WaitOne();
+                    if (lastScaleFactor == scaleFactor)
+                        continue;
+                    lastScaleFactor = scaleFactor;
+
+                    var oldMap = this.assignedMap;
+                    var newMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * scaleFactor), (int)(receivedMapHeight * scaleFactor));
+                    pbxMap.BeginInvoke(new Action(() =>
+                    {
+                        pbxMap.Image = this.assignedMap = newMap;
+                        pbxMap.Refresh();
+                    }));
+                    if (oldMap != null)
+                        oldMap.Dispose();
+                }
+                catch (Exception)
+                {
+                }
+            }
+            mouseWheelHandlerThreadWaitHandle.Dispose();
         }
 
         private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
@@ -85,11 +131,14 @@ namespace DnDCS.Client
                     return;
             }
 
-            var oldMap = this.assignedMap;
-            pbxMap.Image = this.assignedMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * scaleFactor), (int)(receivedMapHeight * scaleFactor));
-            if (oldMap != null)
-                oldMap.Dispose();
-            pbxMap.Refresh();
+            mouseWheelHandlerThreadWaitHandle.Set();
+            ((HandledMouseEventArgs)e).Handled = true;
+
+            //var oldMap = this.assignedMap;
+            //pbxMap.Image = this.assignedMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * scaleFactor), (int)(receivedMapHeight * scaleFactor));
+            //if (oldMap != null)
+            //    oldMap.Dispose();
+            //pbxMap.Refresh();
         }
 
         private void ClientControl_Disposed(object sender, EventArgs e)
@@ -104,6 +153,11 @@ namespace DnDCS.Client
                 connection.Stop();
             if (gridPen != null)
                 gridPen.Dispose();
+            if (mouseWheelHandlerThread != null)
+            {
+                stopMouseWheelHandlerThread = true;
+                mouseWheelHandlerThreadWaitHandle.Set();
+            }
         }
         
         private void pbxMap_Paint(object sender, PaintEventArgs e)
