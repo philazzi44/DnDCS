@@ -40,7 +40,7 @@ namespace DnDCS.Libs
 
         private static string LogDateTime
         {
-            get { return DateTime.Now.ToString("s"); }
+            get { return DateTime.Now.ToString("o"); }
         }
 
         public static void LogError(string message, Exception e = null)

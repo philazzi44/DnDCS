@@ -139,16 +139,28 @@ namespace DnDCS.Server
 
         private void AppendToUILog(string text)
         {
-            tboLog.BeginInvoke(new Action(() =>
+            try
             {
-                if (gbxLog.Visible)
+                tboLog.BeginInvoke(new Action(() =>
                 {
-                    if (tboLog.TextLength == 0)
-                        tboLog.Text = text;
-                    else
-                        tboLog.Text = tboLog.Text + "\r\n" + text;
-                }
-            }));
+                    try
+                    {
+                        if (gbxLog.Visible)
+                        {
+                            if (tboLog.TextLength == 0)
+                                tboLog.Text = text;
+                            else
+                                tboLog.Text = tboLog.Text + "\r\n" + text;
+                        }
+                    }
+                    catch
+                    {
+                    }
+                }));
+            }
+            catch
+            {
+            }
         }
 
         private void connection_OnSocketEvent(ServerEvent socketEvent)

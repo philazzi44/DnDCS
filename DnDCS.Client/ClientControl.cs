@@ -175,11 +175,12 @@ namespace DnDCS.Client
             Image blackoutOrMap;
             if (this.isBlackoutOn)
             {
-                blackoutOrMap = new Bitmap((this.receivedMap == null) ? 640 : this.receivedMapWidth, (this.receivedMap == null) ? 480 : this.receivedMapHeight);
-                using (var g = Graphics.FromImage(blackoutOrMap))
-                {
-                    g.Clear(Color.Black);
-                }
+                blackoutOrMap = null;
+                //blackoutOrMap = new Bitmap((this.receivedMap == null) ? 640 : this.receivedMapWidth, (this.receivedMap == null) ? 480 : this.receivedMapHeight);
+                //using (var g = Graphics.FromImage(blackoutOrMap))
+                //{
+                //    g.Clear(Color.Black);
+                //}
             }
             else
             {

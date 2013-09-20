@@ -21,6 +21,7 @@ namespace DnDCS.Libs
         public static readonly int MaximumGridSize;
         public static readonly float MaximumGridZoomFactor;
         public static readonly float MinimumGridZoomFactor;
+        public static readonly bool LogPings;
 
         static ConfigValues()
         {
@@ -48,6 +49,9 @@ namespace DnDCS.Libs
             MinimumGridZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MinimumGridZoomFactor"], out minimumGridZoomFactor) ? minimumGridZoomFactor : 0.2f;
             float maximumGridZoomFactor;
             MaximumGridZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MaximumGridZoomFactor"], out maximumGridZoomFactor) ? maximumGridZoomFactor : 10.0f;
+
+            bool logPings;
+            LogPings = bool.TryParse(ConfigurationManager.AppSettings["LogPings"], out logPings) ? LogPings : false;
         }
 
     }

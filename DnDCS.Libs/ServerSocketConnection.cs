@@ -185,6 +185,12 @@ namespace DnDCS.Libs
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
         }
 
+        private void LogSocketObject(BaseSocketObject socketObject, string message)
+        {
+            if (socketObject.Action != SocketConstants.SocketAction.Ping || ConfigValues.LogPings)
+                Logger.LogDebug(message);
+        }
+
         private void Write(BaseSocketObject socketObject, bool raiseSocketEvent = true)
         {
             if (ClientsCount == 0)
@@ -192,11 +198,11 @@ namespace DnDCS.Libs
 
             try
             {
-                Logger.LogDebug(string.Format("Server Socket - Writing Socket Object '{0}'.", socketObject));
+                LogSocketObject(socketObject, string.Format("Server Socket - Writing Socket Object '{0}'.", socketObject));
                 var bytes = socketObject.GetBytes();
 
                 var sendBytes = BitConverter.GetBytes(bytes.Length).Concat(bytes).ToArray();
-                Logger.LogDebug(string.Format("Server Socket - Writing {0} total bytes.", sendBytes.Length));
+                LogSocketObject(socketObject, string.Format("Server Socket - Writing {0} total bytes.", sendBytes.Length));
                 lock (clients)
                 {
                     for (int c = 0; c < clients.Count; c++)
@@ -204,7 +210,7 @@ namespace DnDCS.Libs
                         var client = clients[c];
                         try
                         {
-                            Logger.LogDebug(string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
+                            LogSocketObject(socketObject, string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
                             client.Send(sendBytes);
                             if (raiseSocketEvent && OnSocketEvent != null)
                                 OnSocketEvent(new ServerEvent(client, ServerEvent.SocketEventType.DataSent, socketObject.Action.ToString()));
@@ -232,7 +238,7 @@ namespace DnDCS.Libs
                         }
                     }
                 }
-                Logger.LogDebug(string.Format("Server Socket - Done writing Socket Object '{0}'.", socketObject));
+                LogSocketObject(socketObject, string.Format("Server Socket - Done writing Socket Object '{0}'.", socketObject));
             }
             catch (Exception e)
             {

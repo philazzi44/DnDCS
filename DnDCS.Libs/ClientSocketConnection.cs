@@ -167,13 +167,20 @@ namespace DnDCS.Libs
                 var bytesExpectedBuffer = new byte[4];
                 server.Receive(bytesExpectedBuffer);
                 var bytesExpected = BitConverter.ToInt32(bytesExpectedBuffer, 0);
-                Logger.LogDebug(string.Format("Expecting {0} total bytes (4 read already, so {1} total read for this message).", bytesExpected, bytesExpected + 4));
+                Logger.LogDebug(string.Format("Expecting {0} more bytes (4 read already, so {1} total read for this message).", bytesExpected, bytesExpected + 4));
                 var bytesBuffer = new byte[bytesExpected];
                 // Loop until we get all the bytes we're expecting. We should get it in one shot, but it'll depend on how the packet sizes in use.
                 var bytesReceived = 0;
                 while (bytesReceived < bytesExpected)
                 {
-                    var thisBytesReceived = server.Receive(bytesBuffer);
+                    // Read either a full buffer's worth, or just up to how many we're expecting. This prevents data that is enqueued
+                    // behind this object from being read in and corrupting the data.
+                    var bytesToRead = Math.Min(bytesExpected - bytesReceived, bytesBuffer.Length);
+                    var thisBytesReceived = server.Receive(bytesBuffer, bytesToRead, SocketFlags.None);
+                    if (thisBytesReceived > bytesToRead)
+                    {
+                        throw new InvalidOperationException(string.Format("Socket has been corrupted in some way, as a maximum of {0} bytes were requested but {1} bytes were read.", bytesToRead, thisBytesReceived));
+                    }
                     bytesReceived += thisBytesReceived;
                     allBytes.Add(bytesBuffer.Take(thisBytesReceived).ToArray());
                 }
