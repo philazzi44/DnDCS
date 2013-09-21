@@ -14,8 +14,6 @@ namespace DnDCS
 {
     public partial class Launcher : Form
     {
-        private ComponentResourceManager resources;
-
         public Launcher()
         {
             InitializeComponent();
@@ -33,43 +31,31 @@ namespace DnDCS
         
         private void btnClient_Click(object sender, EventArgs e)
         {
-            Logger.FileSuffix = "Client";
-            Logger.LogInfo("Initializing Client Mode");
-
-            this.Text = "DnDCS - Client";
-            this.Icon = DnDCS.Libs.Assets.AssetsLoader.ClientIcon;
-
-            spltLauncher.Panel1Collapsed = true;
-            var client = new ClientControl();
-
-            InitializeControl(client);
-            AddToPanel2(client);
+            SetMode("Client", DnDCS.Libs.Assets.AssetsLoader.ClientIcon, new ClientControl());
         }
 
         private void btnServer_Click(object sender, EventArgs e)
         {
-            Logger.FileSuffix = "Server";
-            Logger.LogInfo("Initializing Server Mode");
-
-            this.Text = "DnDCS - Server";
-            this.Icon = DnDCS.Libs.Assets.AssetsLoader.ServerIcon;
-
-            spltLauncher.Panel1Collapsed = true;
-            var server = new ServerControl();
-
-            InitializeControl(server);
-            AddToPanel2(server);
+            SetMode("Server", DnDCS.Libs.Assets.AssetsLoader.ServerIcon, new ServerControl());
         }
 
-        private void InitializeControl(IDnDCSControl control)
+        private void SetMode(string mode, Icon icon, Control control)
         {
-            this.Menu = control.GetMainMenu();
-        }
+            Logger.FileSuffix = mode;
+            Logger.LogInfo(string.Format("Initializing {0} Mode", mode));
 
-        private void AddToPanel2(Control control)
-        {
+            this.Text = "DnDCS - " + mode;
+            this.Icon = icon;
+            var del = this.pnlInit;
+            this.Controls.Remove(del);
+            del.Dispose();
+
+            if (control is IDnDCSControl)
+                this.Menu = ((IDnDCSControl)control).GetMainMenu();
+
             control.Dock = DockStyle.Fill;
-            spltLauncher.Panel2.Controls.Add(control);
+            this.Controls.Add(control);
+            this.Invalidate();
         }
     }
 }

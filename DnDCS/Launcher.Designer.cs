@@ -32,15 +32,13 @@
             this.btnClient = new System.Windows.Forms.Button();
             this.btnServer = new System.Windows.Forms.Button();
             this.lblInfo = new System.Windows.Forms.Label();
-            this.spltLauncher = new System.Windows.Forms.SplitContainer();
-            ((System.ComponentModel.ISupportInitialize)(this.spltLauncher)).BeginInit();
-            this.spltLauncher.Panel1.SuspendLayout();
-            this.spltLauncher.SuspendLayout();
+            this.pnlInit = new System.Windows.Forms.Panel();
+            this.pnlInit.SuspendLayout();
             this.SuspendLayout();
             // 
             // btnClient
             // 
-            this.btnClient.Location = new System.Drawing.Point(296, 38);
+            this.btnClient.Location = new System.Drawing.Point(14, 39);
             this.btnClient.Name = "btnClient";
             this.btnClient.Size = new System.Drawing.Size(75, 23);
             this.btnClient.TabIndex = 0;
@@ -50,7 +48,7 @@
             // 
             // btnServer
             // 
-            this.btnServer.Location = new System.Drawing.Point(394, 38);
+            this.btnServer.Location = new System.Drawing.Point(112, 39);
             this.btnServer.Name = "btnServer";
             this.btnServer.Size = new System.Drawing.Size(75, 23);
             this.btnServer.TabIndex = 1;
@@ -61,46 +59,36 @@
             // lblInfo
             // 
             this.lblInfo.AutoSize = true;
-            this.lblInfo.Location = new System.Drawing.Point(294, 8);
+            this.lblInfo.Location = new System.Drawing.Point(12, 9);
             this.lblInfo.Name = "lblInfo";
             this.lblInfo.Size = new System.Drawing.Size(176, 13);
-            this.lblInfo.TabIndex = 2;
+            this.lblInfo.TabIndex = 0;
             this.lblInfo.Text = "Select which mode you want to run.";
             // 
-            // spltLauncher
+            // pnlInit
             // 
-            this.spltLauncher.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.spltLauncher.FixedPanel = System.Windows.Forms.FixedPanel.Panel1;
-            this.spltLauncher.IsSplitterFixed = true;
-            this.spltLauncher.Location = new System.Drawing.Point(0, 0);
-            this.spltLauncher.Name = "spltLauncher";
-            this.spltLauncher.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // spltLauncher.Panel1
-            // 
-            this.spltLauncher.Panel1.Controls.Add(this.btnServer);
-            this.spltLauncher.Panel1.Controls.Add(this.btnClient);
-            this.spltLauncher.Panel1.Controls.Add(this.lblInfo);
-            this.spltLauncher.Size = new System.Drawing.Size(765, 626);
-            this.spltLauncher.SplitterDistance = 68;
-            this.spltLauncher.TabIndex = 4;
+            this.pnlInit.Controls.Add(this.lblInfo);
+            this.pnlInit.Controls.Add(this.btnServer);
+            this.pnlInit.Controls.Add(this.btnClient);
+            this.pnlInit.Location = new System.Drawing.Point(282, 12);
+            this.pnlInit.Name = "pnlInit";
+            this.pnlInit.Size = new System.Drawing.Size(200, 70);
+            this.pnlInit.TabIndex = 0;
             // 
             // Launcher
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(765, 626);
-            this.Controls.Add(this.spltLauncher);
+            this.Controls.Add(this.pnlInit);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MinimumSize = new System.Drawing.Size(640, 480);
             this.Name = "Launcher";
             this.Text = "DnDCS - Launcher";
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Launcher_FormClosed);
             this.Load += new System.EventHandler(this.Launcher_Load);
-            this.spltLauncher.Panel1.ResumeLayout(false);
-            this.spltLauncher.Panel1.PerformLayout();
-            ((System.ComponentModel.ISupportInitialize)(this.spltLauncher)).EndInit();
-            this.spltLauncher.ResumeLayout(false);
+            this.pnlInit.ResumeLayout(false);
+            this.pnlInit.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -110,7 +98,7 @@
         private System.Windows.Forms.Button btnClient;
         private System.Windows.Forms.Button btnServer;
         private System.Windows.Forms.Label lblInfo;
-        private System.Windows.Forms.SplitContainer spltLauncher;
+        private System.Windows.Forms.Panel pnlInit;
     }
 }
 
