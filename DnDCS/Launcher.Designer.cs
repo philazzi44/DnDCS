@@ -85,6 +85,8 @@
             this.MinimumSize = new System.Drawing.Size(640, 480);
             this.Name = "Launcher";
             this.Text = "DnDCS - Launcher";
+            this.Activated += new System.EventHandler(this.Launcher_Activated);
+            this.Deactivate += new System.EventHandler(this.Launcher_Deactivate);
             this.FormClosed += new System.Windows.Forms.FormClosedEventHandler(this.Launcher_FormClosed);
             this.Load += new System.EventHandler(this.Launcher_Load);
             this.pnlInit.ResumeLayout(false);

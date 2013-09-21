@@ -64,6 +64,18 @@ namespace DnDCS.Server
 
         private ServerSocketConnection connection;
 
+        public Point ScrollPosition
+        {
+            // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
+            get { return new Point(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            set
+            {
+                // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
+                this.pnlMap.AutoScrollPosition = value;
+                this.pnlMap.AutoScrollPosition = value;
+            }
+        }
+
         public ServerControl()
         {
             InitializeComponent();
@@ -525,23 +537,30 @@ namespace DnDCS.Server
 
             pbxMap.MouseMove -= new MouseEventHandler(pbxMap_MouseMove);
             pbxMap.MouseUp -= new MouseEventHandler(pbxMap_MouseUp);
-
-            // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether.
-            currentFogUpdate.Add(e.Location);
-            UpdateFogImage(currentFogUpdate);
-            undoFogUpdates.AddLast(currentFogUpdate);
-            undoLastFogAction.Enabled = true;
-            redoFogUpdates.Clear();
-            redoLastFogAction.Enabled = false;
-
-            newFog.Dispose();
+            
+            var toBeDisposedFog = newFog;
             newFog = null;
-            pbxMap.Refresh();
+            toBeDisposedFog.Dispose();
 
-            if (realTimeFogUpdates)
-                connection.WriteFogUpdate(currentFogUpdate);
+            // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
+            // at least 3 points, then we don't have a shape that can be used.
+            
+            currentFogUpdate.Add(e.Location);
+            if (currentFogUpdate.Length >= 3)
+            {
+                UpdateFogImage(currentFogUpdate);
+                undoFogUpdates.AddLast(currentFogUpdate);
+                undoLastFogAction.Enabled = true;
+                redoFogUpdates.Clear();
+                redoLastFogAction.Enabled = false;
 
-            currentFogUpdate = null;
+                pbxMap.Refresh();
+
+                if (realTimeFogUpdates)
+                    connection.WriteFogUpdate(currentFogUpdate);
+
+                currentFogUpdate = null;
+            }
         }
 
         private void UnsetFogTool()

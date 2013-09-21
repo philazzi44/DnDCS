@@ -42,6 +42,18 @@ namespace DnDCS.Client
 
         private System.Threading.Timer mouseWheelHandlerDelayStart;
         private bool drawScaleFactor;
+        
+        public Point ScrollPosition
+        {
+            // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
+            get { return new Point(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            set
+            {
+                // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
+                this.pnlMap.AutoScrollPosition = value;
+                this.pnlMap.AutoScrollPosition = value;
+            }
+        }
 
         public ClientControl()
         {

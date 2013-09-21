@@ -14,6 +14,9 @@ namespace DnDCS
 {
     public partial class Launcher : Form
     {
+        private Point lastScrollPosition = Point.Empty;
+        private IDnDCSControl control;
+
         public Launcher()
         {
             InitializeComponent();
@@ -39,8 +42,10 @@ namespace DnDCS
             SetMode("Server", DnDCS.Libs.Assets.AssetsLoader.ServerIcon, new ServerControl());
         }
 
-        private void SetMode(string mode, Icon icon, Control control)
+        private void SetMode(string mode, Icon icon, IDnDCSControl control)
         {
+            this.control = control;
+
             Logger.FileSuffix = mode;
             Logger.LogInfo(string.Format("Initializing {0} Mode", mode));
 
@@ -53,9 +58,20 @@ namespace DnDCS
             if (control is IDnDCSControl)
                 this.Menu = ((IDnDCSControl)control).GetMainMenu();
 
-            control.Dock = DockStyle.Fill;
-            this.Controls.Add(control);
-            this.Invalidate();
+            ((Control)control).Dock = DockStyle.Fill;
+            this.Controls.Add((Control)control);
+        }
+        
+        private void Launcher_Activated(object sender, EventArgs e)
+        {
+            if (this.control != null)
+                this.control.ScrollPosition = lastScrollPosition;
+        }
+
+        private void Launcher_Deactivate(object sender, EventArgs e)
+        {
+            if (this.control != null)
+                lastScrollPosition = this.control.ScrollPosition;
         }
     }
 }
