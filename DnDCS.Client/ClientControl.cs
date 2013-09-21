@@ -40,9 +40,6 @@ namespace DnDCS.Client
 
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
 
-        private Thread mouseWheelHandlerThread;
-        private readonly EventWaitHandle mouseWheelHandlerThreadWaitHandle = new AutoResetEvent(false);
-        private bool stopMouseWheelHandlerThread;
         private System.Threading.Timer mouseWheelHandlerDelayStart;
         private bool drawScaleFactor;
 
@@ -62,9 +59,6 @@ namespace DnDCS.Client
             fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
             fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
-            mouseWheelHandlerThread = new Thread(MouseWheelHandlerStart);
-            mouseWheelHandlerThread.IsBackground = true;
-            mouseWheelHandlerThread.Start();
             mouseWheelHandlerDelayStart = new System.Threading.Timer(MouseWheelHandlerDelayStart);
 
             initialParentFormText = this.ParentForm.Text;
@@ -90,11 +84,8 @@ namespace DnDCS.Client
                 connection.Stop();
             if (gridPen != null)
                 gridPen.Dispose();
-            if (mouseWheelHandlerThread != null)
-            {
-                stopMouseWheelHandlerThread = true;
-                mouseWheelHandlerThreadWaitHandle.Set();
-            }
+            if (mouseWheelHandlerDelayStart != null)
+                mouseWheelHandlerDelayStart.Dispose();
         }
         
         private void pbxMap_Paint(object sender, PaintEventArgs e)
@@ -300,49 +291,36 @@ namespace DnDCS.Client
 
             ((HandledMouseEventArgs)e).Handled = true;
         }
-
-        /// <summary>
-        ///     By using a thread to handle the Mouse Wheel zooming functionality, we allow the user to implicitly "enqueue" zoom attempts
+        
+        /// <summary> Timer event that is raised after a period of inactivity by the user and his precious mouse wheel. </summary>
+        /// <remarks>
+        ///     By using a timer/thread to handle the Mouse Wheel zooming functionality, we allow the user to implicitly "enqueue" zoom attempts
         ///     and we'll ignore any that happen while we're creating the new bitmap. Then we'll apply it and re-check the Scale Factor to 
         ///     see if our latest build of the bitmap was ok. If not, we'll create one. That means scaling from 1.0 to 10.0 in 0.1 increments
         ///     won't end up generating 100 bitmaps but rather only a subset of them, as any increment steps that are skipped while
         ///     a bitmap is being generated are never consumed.
-        /// </summary>
-        private void MouseWheelHandlerStart()
-        {
-            var lastScaleFactor = variableScaleFactor;
-            while (!stopMouseWheelHandlerThread)
-            {
-                try
-                {
-                    if (lastScaleFactor == variableScaleFactor)
-                        mouseWheelHandlerThreadWaitHandle.WaitOne();
-                    lastScaleFactor = variableScaleFactor;
-
-                    var oldMap = this.assignedMap;
-                    var newMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * variableScaleFactor), (int)(receivedMapHeight * variableScaleFactor));
-                    pbxMap.Invoke(new Action(() =>
-                    {
-                        pbxMap.Image = this.assignedMap = newMap;
-                        assignedScaleFactor = variableScaleFactor;
-                        drawScaleFactor = false;
-                        pbxMap.Refresh();
-                    }));
-                    if (oldMap != null)
-                        oldMap.Dispose();
-                }
-                catch (Exception)
-                {
-                }
-            }
-            mouseWheelHandlerThreadWaitHandle.Dispose();
-        }
-
-        /// <summary> Timer event that is raised after a period of inactivity by the user and his precious mouse wheel. </summary>
+        /// </remarks>
         private void MouseWheelHandlerDelayStart(object state)
         {
-            mouseWheelHandlerThreadWaitHandle.Set();
-            RefreshMapPictureBox();
+            try
+            {
+                var oldMap = this.assignedMap;
+                var newMap = new Bitmap(this.receivedMap, (int)(receivedMapWidth * variableScaleFactor), (int)(receivedMapHeight * variableScaleFactor));
+                pbxMap.Invoke(new Action(() =>
+                {
+                    pbxMap.Image = this.assignedMap = newMap;
+                    assignedScaleFactor = variableScaleFactor;
+                    drawScaleFactor = false;
+                    pbxMap.Refresh();
+                }));
+                if (oldMap != null)
+                    oldMap.Dispose();
+
+                RefreshMapPictureBox();
+            }
+            catch (Exception)
+            {
+            }
         }
 
         private void DrawOnGraphics(Graphics g)
