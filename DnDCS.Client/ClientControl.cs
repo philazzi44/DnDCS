@@ -42,7 +42,7 @@ namespace DnDCS.Client
 
         private System.Threading.Timer mouseWheelHandlerDelayStart;
         private bool drawScaleFactor;
-        
+
         public Point ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
@@ -62,13 +62,6 @@ namespace DnDCS.Client
         
         private void ClientControl_Load(object sender, EventArgs e)
         {
-            float[][] matrixItems = { new float[] {1, 0, 0, 0, 0},
-                                      new float[] {0, 1, 0, 0, 0},
-                                      new float[] {0, 0, 1, 0, 0},
-                                      new float[] {0, 0, 0, 1, 0}, 
-                                      new float[] {0, 0, 0, 0, 1}
-                                    };
-            fogAttributes.SetColorMatrix(new ColorMatrix(matrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
             fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
             mouseWheelHandlerDelayStart = new System.Threading.Timer(MouseWheelHandlerDelayStart);
@@ -100,11 +93,6 @@ namespace DnDCS.Client
                 mouseWheelHandlerDelayStart.Dispose();
         }
         
-        private void pbxMap_Paint(object sender, PaintEventArgs e)
-        {
-            DrawOnGraphics(e.Graphics);
-        }
-
         public MainMenu GetMainMenu()
         {
             var menu = new MainMenu();
@@ -337,10 +325,12 @@ namespace DnDCS.Client
 
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         /// <remarks> TODO: Only need to realistically draw what the user can see. </remarks>
-        private void DrawOnGraphics(Graphics g)
+        private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             if (this.assignedMap == null)
                 return;
+
+            var g = e.Graphics;
 
             if (this.isBlackoutOn)
             {
@@ -349,8 +339,14 @@ namespace DnDCS.Client
                 return;
             }
 
+            // These scrolling offsets tell us the top/left of any image we need to draw.
+            var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+            var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
             g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
 
+            // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
+            // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
             if (gridSize.HasValue)
             {
                 for (int x = 0; x < receivedMapWidth; x += gridSize.Value)
@@ -364,7 +360,14 @@ namespace DnDCS.Client
             }
 
             if (fog != null)
-                g.DrawImage(fog, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+            {
+                //g.DrawImage(fog, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                g.DrawImage(fog, // Draw this
+                            new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
+                            scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
+                            GraphicsUnit.Pixel, // In Pixel units
+                            fogAttributes); // With Alpha shading
+            }
 
             if (drawScaleFactor)
             {
