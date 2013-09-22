@@ -335,6 +335,8 @@ namespace DnDCS.Client
             }
         }
 
+        /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
+        /// <remarks> TODO: Only need to realistically draw what the user can see. </remarks>
         private void DrawOnGraphics(Graphics g)
         {
             if (this.assignedMap == null)

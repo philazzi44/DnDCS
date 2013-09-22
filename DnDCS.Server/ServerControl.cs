@@ -18,7 +18,7 @@ namespace DnDCS.Server
     {
         private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
 
-        private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(50d);
+        private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(25d);
         private DateTime lastMouseMoveTime = DateTime.MinValue;
 
         private string initialParentFormText;
@@ -112,7 +112,7 @@ namespace DnDCS.Server
 
             FogBrushColor = Color.FromArgb(DEFAULT_FOG_BRUSH_ALPHA, Color.Black);
         }
-        
+
         private void connection_OnClientConnected()
         {
             if (connection.IsStopping)
@@ -355,11 +355,6 @@ namespace DnDCS.Server
             }
         }
         
-        private void pbxMap_Paint(object sender, PaintEventArgs e)
-        {
-            DrawOnGraphics(e.Graphics);
-        }
-        
         private void flpControls_SizeChanged(object sender, EventArgs e)
         {
             this.gbxCommands.Width = flpControls.Width - gbxCommands.Margin.Right;
@@ -519,15 +514,18 @@ namespace DnDCS.Server
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
+            // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
             if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
                 return;
             lastMouseMoveTime = DateTime.Now;
 
             // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
             currentFogUpdate.Add(e.Location);
+
             UpdateNewFogImage(currentFogUpdate);
 
-            pbxMap.Refresh();
+            // Invalidate only the region that we can see.
+            pbxMap.Invalidate(new Rectangle(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value, pnlMap.Width, pnlMap.Height));
         }
         
         private void pbxMap_MouseUp(object sender, MouseEventArgs e)
@@ -540,7 +538,8 @@ namespace DnDCS.Server
             
             var toBeDisposedFog = newFog;
             newFog = null;
-            toBeDisposedFog.Dispose();
+            if (toBeDisposedFog != null)
+                toBeDisposedFog.Dispose();
 
             // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
             // at least 3 points, then we don't have a shape that can be used.
@@ -637,16 +636,44 @@ namespace DnDCS.Server
             }
         }
 
-        private void DrawOnGraphics(Graphics g)
+        /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
+        /// <remarks> Only need to realistically draw what the user can see. </remarks>
+        private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             if (map == null || fog == null)
                 return;
 
-            g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+            var g = e.Graphics;
+
+            // These scrolling offsets tell us the top/left of any image we need to draw.
+            var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+            var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
+            // We only need to draw onto the Picture Box between the scroll offset and the width of the Panel that is wrapping the Picture Box, which would 
+            // be the visible area to the user.
+            // When drawing from a source image, the source data will be at the same location, since the Picture Box is the same size as the images.
+            // There's also no need to check the upper boundaries we are using to make sure we don't try to source or draw off the edge since the scroll bars will
+            // never let us scroll further than what can actually be shown.
+
+            //g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+            g.DrawImage(fog, // Draw this
+                        new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
+                        scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
+                        GraphicsUnit.Pixel, // In Pixel units
+                        fogAttributes); // With Alpha shading
 
             if (newFog != null)
-                g.DrawImage(newFog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+            {
+                //g.DrawImage(newFog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                g.DrawImage(newFog, // Draw this
+                            new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
+                            scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
+                            GraphicsUnit.Pixel, // In Pixel units
+                            fogAttributes); // With Alpha shading
+            }
 
+            // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
+            // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
             if (chkShowGrid.Checked)
             {
                 for (int x = (int)nudGridSize.Value; x < pbxMap.Width; x += (int)nudGridSize.Value)
