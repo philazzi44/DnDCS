@@ -171,24 +171,33 @@ namespace DnDCS.Client
                 }));
             }
 
-            // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
-            this.fog = new Bitmap(map.Width, map.Height);
-            using (var g = Graphics.FromImage(this.fog))
-                g.Clear(fogColor);
+            try
+            {
 
-            this.receivedMap = map;
-            this.assignedMap = new Bitmap(map, (int)(map.Width * assignedScaleFactor), (int)(map.Height * assignedScaleFactor));
-            this.receivedMapWidth = this.receivedMap.Width;
-            this.receivedMapHeight = this.receivedMap.Height;
+                // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
+                this.fog = new Bitmap(map.Width, map.Height);
+                using (var g = Graphics.FromImage(this.fog))
+                    g.Clear(fogColor);
 
-            if (isBlackoutOn)
-                return;
+                this.receivedMap = map;
+                this.assignedMap = new Bitmap(map, (int)(map.Width * assignedScaleFactor),
+                                              (int)(map.Height * assignedScaleFactor));
+                this.receivedMapWidth = this.receivedMap.Width;
+                this.receivedMapHeight = this.receivedMap.Height;
 
-            pbxMap.BeginInvoke((new Action(() =>
-                                               {
-                                                   pbxMap.Image = this.assignedMap;
-                                                   pbxMap.Refresh();
-                                               })));
+                if (isBlackoutOn)
+                    return;
+
+                pbxMap.BeginInvoke((new Action(() =>
+                                                   {
+                                                       pbxMap.Image = this.assignedMap;
+                                                       pbxMap.Refresh();
+                                                   })));
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Map Received Failure", e);
+            }
         }
 
         private void connection_OnFogReceived(Image fog)
@@ -311,15 +320,16 @@ namespace DnDCS.Client
                     pbxMap.Image = this.assignedMap = newMap;
                     assignedScaleFactor = variableScaleFactor;
                     drawScaleFactor = false;
-                    pbxMap.Refresh();
+                    //pbxMap.Refresh();
                 }));
                 if (oldMap != null)
                     oldMap.Dispose();
 
                 RefreshMapPictureBox();
             }
-            catch (Exception)
+            catch (Exception e)
             {
+                Logger.LogError("Zoom catastrophe!", e);
             }
         }
 
