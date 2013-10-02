@@ -10,6 +10,7 @@ namespace DnDCS.Libs.PersistenceObjects
         public bool RealTimeFogUpdates { get; set; }
         public bool ShowGridValues { get; set; }
         public bool ShowLog { get; set; }
+        public bool FitMapToScreen { get; set; }
 
         public string[] ServerImageUrlHistory { get; set; }
 

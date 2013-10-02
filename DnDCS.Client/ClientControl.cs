@@ -372,6 +372,7 @@ namespace DnDCS.Client
             if (fog != null)
             {
                 g.DrawImage(fog, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                // TODO: This kind of failed during heavy load.
                 //g.DrawImage(fog, // Draw this
                 //            new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
                 //            scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area

@@ -38,6 +38,7 @@ namespace DnDCS.Server
         private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
+        private MenuItem fitMapToScreenAction;
         private MenuItem undoLastFogAction;
         private MenuItem redoLastFogAction;
 
@@ -102,6 +103,7 @@ namespace DnDCS.Server
             realTimeFogUpdates = serverData.RealTimeFogUpdates;
             btnSyncFog.Visible = !realTimeFogUpdates;
             gbxLog.Visible = serverData.ShowLog;
+            pbxMap.SizeMode = serverData.FitMapToScreen ? PictureBoxSizeMode.StretchImage : PictureBoxSizeMode.AutoSize;
             gbxGridSize.Visible = serverData.ShowGridValues;
             chkShowGrid.Checked = serverData.ShowGrid;
             nudGridSize.Minimum = ConfigValues.MinimumGridSize;
@@ -218,6 +220,8 @@ namespace DnDCS.Server
                 new MenuItem("-"),
                 new MenuItem("Show Grid Values", OnShowGridValues_Click) { Checked = serverData.ShowGridValues },
                 new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog },
+                // This works, but performance with large images is so bad that I had to turn it off...
+                fitMapToScreenAction = new MenuItem("Fit Map to Screen (Server Only)", OnFitMapToScreen_Click) {Checked = serverData.FitMapToScreen },
                 new MenuItem("-"),
                 new MenuItem("Set Color Options", OnSetColorOptions_Click),
             });
@@ -333,6 +337,25 @@ namespace DnDCS.Server
             Persistence.SaveServerData(serverData);
         }
 
+        private void OnFitMapToScreen_Click(object sender, EventArgs e)
+        {
+            // Wipe any history, because the coordinates won't translate correctly anymore.
+            undoFogUpdates.Clear();
+            redoFogUpdates.Clear();
+            undoLastFogAction.Enabled = redoLastFogAction.Enabled = false;
+
+            var menuItem = sender as MenuItem;
+            var fitMapToScreen = (menuItem.Checked = !menuItem.Checked);
+            this.pnlMap.HorizontalScroll.Value = 0;
+            this.pnlMap.VerticalScroll.Value = 0;
+            this.pbxMap.SizeMode = (fitMapToScreen) ? PictureBoxSizeMode.StretchImage : PictureBoxSizeMode.AutoSize;
+            this.pbxMap.Location = Point.Empty;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.FitMapToScreen = (this.pbxMap.SizeMode == PictureBoxSizeMode.StretchImage);
+            Persistence.SaveServerData(serverData);
+        }
+
         private void OnSetColorOptions_Click(object sender, EventArgs e)
         {
             using (var colorOptions = new ColorOptionsDialog())
@@ -393,9 +416,21 @@ namespace DnDCS.Server
         
         private void btnFogAll_Click(object sender, EventArgs e)
         {
-            if (MessageBox.Show(this, "This will fog the entire map. Are you sure? This cannot be undone.", "Fog Entire Map?", MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
+            FogOrRevealAll(false);
+        }
+        
+        private void btnRevealAll_Click(object sender, EventArgs e)
+        {
+            FogOrRevealAll(true);
+        }
+
+        private void FogOrRevealAll(bool revealAll)
+        {
+            var message = (revealAll) ? "This will reveal the entire map. Are you sure? This cannot be undone." : "This will fog the entire map. Are you sure? This cannot be undone.";
+            var title = (revealAll) ? "Reveal Entire Map?" : "Fog Entire Map?";
+            if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
-                var fogAllFogUpdate = new FogUpdate(false);
+                var fogAllFogUpdate = new FogUpdate(revealAll);
                 fogAllFogUpdate.Add(new Point(0, 0));
                 fogAllFogUpdate.Add(new Point(fog.Width, 0));
                 fogAllFogUpdate.Add(new Point(fog.Width, fog.Height));
@@ -411,7 +446,7 @@ namespace DnDCS.Server
                     connection.WriteFog(fog);
             }
         }
-        
+
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
@@ -498,6 +533,12 @@ namespace DnDCS.Server
             pbxMap.MouseDown += new MouseEventHandler(pbxMap_MouseDown);
         }
 
+        private Point ConvertPointToStretchedImage(Point pt)
+        {
+            // If we're stretching the image to fit, then our point is actually somewhere else on the map by the reverse of how much we've stretched.
+            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new Point((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt;
+        }
+
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button != System.Windows.Forms.MouseButtons.Left && e.Button != System.Windows.Forms.MouseButtons.Right)
@@ -509,7 +550,7 @@ namespace DnDCS.Server
             newFog = new Bitmap(fog.Width, fog.Height);
 
             currentFogUpdate = new FogUpdate((e.Button == System.Windows.Forms.MouseButtons.Left));
-            currentFogUpdate.Add(e.Location);
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
         }
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
@@ -520,7 +561,7 @@ namespace DnDCS.Server
             lastMouseMoveTime = DateTime.Now;
 
             // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-            currentFogUpdate.Add(e.Location);
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
 
             UpdateNewFogImage(currentFogUpdate);
 
@@ -543,8 +584,8 @@ namespace DnDCS.Server
 
             // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
             // at least 3 points, then we don't have a shape that can be used.
-            
-            currentFogUpdate.Add(e.Location);
+
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
             if (currentFogUpdate.Length >= 3)
             {
                 UpdateFogImage(currentFogUpdate);
@@ -573,6 +614,18 @@ namespace DnDCS.Server
         {
             if (mapImage == null)
                 return;
+
+            // Arbitrary maximum enforced for allowing Fit Map functionality, because higher than this ends up with awful performance.
+            if (mapImage.Width > 1536 || mapImage.Height > 1152)
+            {
+                if (fitMapToScreenAction.Checked)
+                    fitMapToScreenAction.PerformClick();
+                fitMapToScreenAction.Enabled = false;
+            }
+            else
+            {
+                fitMapToScreenAction.Enabled = true;
+            }
 
             var oldMap = map;
 
@@ -635,6 +688,16 @@ namespace DnDCS.Server
                 g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : FOG_BRUSH, fogUpdate.Points);
             }
         }
+        
+        private void pnlMap_SizeChanged(object sender, EventArgs e)
+        {
+            // If we're stretching the Map as per the settings, then we'll enforce that the Picture Box is always the same size as the Panel.
+            if (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage)
+            {
+                pbxMap.Size = pnlMap.Size;
+                pbxMap.Refresh();
+            }
+        }
 
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         /// <remarks> Only need to realistically draw what the user can see. </remarks>
@@ -643,47 +706,57 @@ namespace DnDCS.Server
             if (map == null || fog == null)
                 return;
 
-            var g = e.Graphics;
-
-            // These scrolling offsets tell us the top/left of any image we need to draw.
-            var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
-            var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
-
-            // We only need to draw onto the Picture Box between the scroll offset and the width of the Panel that is wrapping the Picture Box, which would 
-            // be the visible area to the user.
-            // When drawing from a source image, the source data will be at the same location, since the Picture Box is the same size as the images.
-            // There's also no need to check the upper boundaries we are using to make sure we don't try to source or draw off the edge since the scroll bars will
-            // never let us scroll further than what can actually be shown.
-
-            //g.DrawImage(fog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
-            g.DrawImage(fog, // Draw this
-                        new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
-                        scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
-                        GraphicsUnit.Pixel, // In Pixel units
-                        fogAttributes); // With Alpha shading
-
-            if (newFog != null)
             {
-                //g.DrawImage(newFog, new Rectangle(Point.Empty, pbxMap.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
-                g.DrawImage(newFog, // Draw this
-                            new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
-                            scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
-                            GraphicsUnit.Pixel, // In Pixel units
-                            fogAttributes); // With Alpha shading
-            }
+                var g = e.Graphics;
 
-            // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
-            // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
-            if (chkShowGrid.Checked)
-            {
-                for (int x = (int)nudGridSize.Value; x < pbxMap.Width; x += (int)nudGridSize.Value)
+                // Note that if we're stretching the map to fit the space, then we need to scale accordingly.
+                if (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage)
                 {
-                    g.DrawLine(gridPen, x, 0, x, pbxMap.Height);
+                    g.ScaleTransform((float)pbxMap.Width / (float)map.Width, (float)pbxMap.Height / (float)map.Height);
                 }
-                for (int y = (int)nudGridSize.Value; y < pbxMap.Height; y += (int)nudGridSize.Value)
+
+                // We can draw only the area that is visible when newFog is set, because that means the user isn't scrolling the page at all.
+                if (newFog != null)
                 {
-                    g.DrawLine(gridPen, 0, y, pbxMap.Width, y);
+                    // These scrolling offsets tell us the top/left of any image we need to draw.
+                    var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+                    var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
+                    g.DrawImage(fog, // Draw this
+                                new Rectangle(scrollOffsetX, scrollOffsetY, map.Width, map.Height), // Onto this area
+                                scrollOffsetX, scrollOffsetY, map.Width, map.Height, // From this area
+                                GraphicsUnit.Pixel, // In Pixel units
+                                fogAttributes); // With Alpha shading
+
+                    g.DrawImage(newFog, // Draw this
+                                new Rectangle(scrollOffsetX, scrollOffsetY, map.Width, map.Height), // Onto this area
+                                scrollOffsetX, scrollOffsetY, map.Width, map.Height, // From this area
+                                GraphicsUnit.Pixel, // In Pixel units
+                                fogAttributes); // With Alpha shading
                 }
+                else
+                {
+                    // To prevent clipping while scrolling, we'll simply draw the full fog.
+                    g.DrawImage(fog, new Rectangle(Point.Empty, map.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                    if (newFog != null)
+                        g.DrawImage(newFog, new Rectangle(Point.Empty, map.Size), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, fogAttributes);
+                }
+
+                // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
+                // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
+                if (chkShowGrid.Checked)
+                {
+                    for (int x = (int)nudGridSize.Value; x < map.Width; x += (int)nudGridSize.Value)
+                    {
+                        g.DrawLine(gridPen, x, 0, x, map.Height);
+                    }
+                    for (int y = (int)nudGridSize.Value; y < map.Height; y += (int)nudGridSize.Value)
+                    {
+                        g.DrawLine(gridPen, 0, y, map.Width, y);
+                    }
+                }
+
+                return;
             }
         }
     }

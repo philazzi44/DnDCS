@@ -37,6 +37,7 @@
             this.btnSyncFog = new System.Windows.Forms.Button();
             this.btnSelectTool = new System.Windows.Forms.Button();
             this.btnFogTool = new System.Windows.Forms.Button();
+            this.btnRevealAll = new System.Windows.Forms.Button();
             this.btnFogAll = new System.Windows.Forms.Button();
             this.btnToggleBlackout = new System.Windows.Forms.Button();
             this.gbxGridSize = new System.Windows.Forms.GroupBox();
@@ -85,7 +86,7 @@
             // 
             this.spltServer.Panel2.Controls.Add(this.flpControls);
             this.spltServer.Panel2MinSize = 125;
-            this.spltServer.Size = new System.Drawing.Size(804, 490);
+            this.spltServer.Size = new System.Drawing.Size(804, 489);
             this.spltServer.SplitterDistance = 675;
             this.spltServer.TabIndex = 1;
             // 
@@ -96,8 +97,9 @@
             this.pnlMap.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlMap.Location = new System.Drawing.Point(0, 0);
             this.pnlMap.Name = "pnlMap";
-            this.pnlMap.Size = new System.Drawing.Size(671, 486);
+            this.pnlMap.Size = new System.Drawing.Size(671, 485);
             this.pnlMap.TabIndex = 0;
+            this.pnlMap.SizeChanged += new System.EventHandler(this.pnlMap_SizeChanged);
             // 
             // flpControls
             // 
@@ -108,7 +110,7 @@
             this.flpControls.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flpControls.Location = new System.Drawing.Point(0, 0);
             this.flpControls.Name = "flpControls";
-            this.flpControls.Size = new System.Drawing.Size(121, 486);
+            this.flpControls.Size = new System.Drawing.Size(121, 485);
             this.flpControls.TabIndex = 0;
             this.flpControls.WrapContents = false;
             this.flpControls.SizeChanged += new System.EventHandler(this.flpControls_SizeChanged);
@@ -118,6 +120,7 @@
             this.gbxCommands.Controls.Add(this.btnSyncFog);
             this.gbxCommands.Controls.Add(this.btnSelectTool);
             this.gbxCommands.Controls.Add(this.btnFogTool);
+            this.gbxCommands.Controls.Add(this.btnRevealAll);
             this.gbxCommands.Controls.Add(this.btnFogAll);
             this.gbxCommands.Controls.Add(this.btnToggleBlackout);
             this.gbxCommands.Enabled = false;
@@ -132,10 +135,10 @@
             // 
             this.btnSyncFog.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSyncFog.BackgroundImage")));
             this.btnSyncFog.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnSyncFog.Location = new System.Drawing.Point(61, 152);
+            this.btnSyncFog.Location = new System.Drawing.Point(61, 98);
             this.btnSyncFog.Name = "btnSyncFog";
             this.btnSyncFog.Size = new System.Drawing.Size(48, 48);
-            this.btnSyncFog.TabIndex = 4;
+            this.btnSyncFog.TabIndex = 2;
             this.btnSyncFog.UseVisualStyleBackColor = true;
             this.btnSyncFog.Click += new System.EventHandler(this.btnSyncFog_Click);
             // 
@@ -143,10 +146,10 @@
             // 
             this.btnSelectTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSelectTool.BackgroundImage")));
             this.btnSelectTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnSelectTool.Location = new System.Drawing.Point(6, 98);
+            this.btnSelectTool.Location = new System.Drawing.Point(6, 19);
             this.btnSelectTool.Name = "btnSelectTool";
             this.btnSelectTool.Size = new System.Drawing.Size(48, 48);
-            this.btnSelectTool.TabIndex = 1;
+            this.btnSelectTool.TabIndex = 0;
             this.btnSelectTool.UseVisualStyleBackColor = true;
             this.btnSelectTool.Click += new System.EventHandler(this.btnSelectTool_Click);
             // 
@@ -154,12 +157,24 @@
             // 
             this.btnFogTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogTool.BackgroundImage")));
             this.btnFogTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogTool.Location = new System.Drawing.Point(61, 98);
+            this.btnFogTool.Location = new System.Drawing.Point(6, 98);
             this.btnFogTool.Name = "btnFogTool";
             this.btnFogTool.Size = new System.Drawing.Size(48, 48);
-            this.btnFogTool.TabIndex = 2;
+            this.btnFogTool.TabIndex = 1;
             this.btnFogTool.UseVisualStyleBackColor = true;
             this.btnFogTool.Click += new System.EventHandler(this.btnFogTool_Click);
+            // 
+            // btnRevealAll
+            // 
+            this.btnRevealAll.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnRevealAll.BackgroundImage")));
+            this.btnRevealAll.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnRevealAll.Location = new System.Drawing.Point(60, 152);
+            this.btnRevealAll.Name = "btnRevealAll";
+            this.btnRevealAll.Size = new System.Drawing.Size(48, 48);
+            this.btnRevealAll.TabIndex = 4;
+            this.btnRevealAll.TabStop = false;
+            this.btnRevealAll.UseVisualStyleBackColor = true;
+            this.btnRevealAll.Click += new System.EventHandler(this.btnRevealAll_Click);
             // 
             // btnFogAll
             // 
@@ -288,7 +303,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.spltServer);
             this.Name = "ServerControl";
-            this.Size = new System.Drawing.Size(804, 490);
+            this.Size = new System.Drawing.Size(804, 489);
             this.Load += new System.EventHandler(this.ServerControl_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).EndInit();
             this.spltServer.Panel1.ResumeLayout(false);
@@ -326,5 +341,6 @@
         private System.Windows.Forms.Label lblGridSize;
         private System.Windows.Forms.NumericUpDown nudGridSize;
         private System.Windows.Forms.CheckBox chkShowGrid;
+        private System.Windows.Forms.Button btnRevealAll;
     }
 }
