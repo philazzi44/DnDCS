@@ -11,5 +11,6 @@ namespace DnDCS.Libs
     {
         MainMenu GetMainMenu();
         Point ScrollPosition { get; set; }
+        Action<bool> ToggleFullScreen { get; set; }
     }
 }

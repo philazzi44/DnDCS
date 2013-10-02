@@ -14,6 +14,12 @@ namespace DnDCS
 {
     public partial class Launcher : Form
     {
+        // Tracks the initial values on the form when we decide to toggle Full Screen mode.
+        private bool initialFormTopMost;
+        private FormBorderStyle initialFormBorderStyle;
+        private FormWindowState initialFormWindowState;
+        private MainMenu _menu;
+
         private Point lastScrollPosition = Point.Empty;
         private IDnDCSControl control;
 
@@ -25,6 +31,10 @@ namespace DnDCS
         private void Launcher_Load(object sender, EventArgs e)
         {
             this.Icon = DnDCS.Libs.Assets.AssetsLoader.LauncherIcon;
+
+            initialFormTopMost = this.TopMost;
+            initialFormBorderStyle = this.FormBorderStyle;
+            initialFormWindowState = this.WindowState;
         }
 
         private void Launcher_FormClosed(object sender, FormClosedEventArgs e)
@@ -56,7 +66,11 @@ namespace DnDCS
             del.Dispose();
 
             if (control is IDnDCSControl)
-                this.Menu = ((IDnDCSControl)control).GetMainMenu();
+            {
+                var dndCSControl = (IDnDCSControl)control;
+                this.Menu = this._menu = dndCSControl.GetMainMenu();
+                dndCSControl.ToggleFullScreen = ToggleFullScreen;
+            }
 
             ((Control)control).Dock = DockStyle.Fill;
             this.Controls.Add((Control)control);
@@ -72,6 +86,24 @@ namespace DnDCS
         {
             if (this.control != null)
                 lastScrollPosition = this.control.ScrollPosition;
+        }
+
+        private void ToggleFullScreen(bool goFullScreen)
+        {
+            if (goFullScreen)
+            {
+                this.TopMost = true;
+                this.FormBorderStyle = FormBorderStyle.None;
+                this.WindowState = FormWindowState.Maximized;
+                this.Menu = null;
+            }
+            else
+            {
+                this.TopMost = initialFormTopMost;
+                this.FormBorderStyle = initialFormBorderStyle;
+                this.WindowState = initialFormWindowState;
+                this.Menu = _menu;
+            }
         }
     }
 }

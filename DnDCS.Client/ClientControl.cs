@@ -16,6 +16,11 @@ namespace DnDCS.Client
 {
     public partial class ClientControl : UserControl, IDnDCSControl
     {
+        // Tracks the initial values on the form when we decide to toggle Full Screen mode.
+        private bool initialFormTopMost;
+        private FormBorderStyle initialFormBorderStyle;
+        private FormWindowState initialFormWindowState;
+
         private const int MouseWheelDelayInterval = 500;
 
         private float assignedScaleFactor = 1.0f;
@@ -43,6 +48,8 @@ namespace DnDCS.Client
         private System.Threading.Timer mouseWheelHandlerDelayStart;
         private bool drawScaleFactor;
 
+        private MenuItem fullScreenAction;
+
         public Point ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
@@ -55,6 +62,8 @@ namespace DnDCS.Client
             }
         }
 
+        public Action<bool> ToggleFullScreen { get; set; }
+
         public ClientControl()
         {
             InitializeComponent();
@@ -65,7 +74,7 @@ namespace DnDCS.Client
             fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
 
             mouseWheelHandlerDelayStart = new System.Threading.Timer(MouseWheelHandlerDelayStart);
-
+            
             initialParentFormText = this.ParentForm.Text;
             this.BackColor = fogColor;
             pnlMap.BackColor = fogColor;
@@ -101,11 +110,23 @@ namespace DnDCS.Client
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
                 new MenuItem("Force Focus Map", new EventHandler((o, e) => pbxMap.Focus())),
+                fullScreenAction = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false },
                 new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
             return menu;
+        }
+
+        private void OnFullScreen_Click(object sender, EventArgs e)
+        {
+            if (ToggleFullScreen == null)
+                return;
+
+            var menuItem = sender as MenuItem;
+
+            var goFullScreen = (menuItem.Checked = !menuItem.Checked);
+            ToggleFullScreen(goFullScreen);
         }
 
         private void OnExit_Click(object sender, EventArgs e)
@@ -270,6 +291,12 @@ namespace DnDCS.Client
 
         private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
+            if (e.KeyCode == Keys.F11 || (e.KeyCode == Keys.Escape && fullScreenAction.Checked))
+            {
+                fullScreenAction.PerformClick();
+                return;
+            }
+
             if (e.Control)
             {
                 if (e.KeyCode == Keys.Add)

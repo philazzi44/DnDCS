@@ -77,6 +77,8 @@ namespace DnDCS.Server
             }
         }
 
+        public Action<bool> ToggleFullScreen { get; set; }
+
         public ServerControl()
         {
             InitializeComponent();
