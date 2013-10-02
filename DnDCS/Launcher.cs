@@ -92,6 +92,10 @@ namespace DnDCS
         {
             if (goFullScreen)
             {
+                // Must force Normal state before trying to Maximize again.
+                if (this.WindowState == FormWindowState.Maximized)
+                    this.WindowState = FormWindowState.Normal;
+
                 this.TopMost = true;
                 this.FormBorderStyle = FormBorderStyle.None;
                 this.WindowState = FormWindowState.Maximized;
