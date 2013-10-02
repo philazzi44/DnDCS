@@ -71,6 +71,7 @@ namespace DnDCS.Client
             pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
+            pbxMap.PreviewKeyDown += new PreviewKeyDownEventHandler(pbxMap_PreviewKeyDown);
             this.Disposed += new EventHandler(ClientControl_Disposed);
 
             pbxMap.Focus();
@@ -267,38 +268,60 @@ namespace DnDCS.Client
             pbxMap.Refresh();
         }
 
+        private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.Control)
+            {
+                if (e.KeyCode == Keys.Add)
+                    ZoomInOrOut(true, e.Shift);
+                else if (e.KeyCode == Keys.Subtract)
+                    ZoomInOrOut(false, e.Shift);
+            }
+        }
+
         private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
         {
-            if (this.isBlackoutOn)
+            if (this.isBlackoutOn || e.Delta == 0)
                 return;
 
-            if (!Control.ModifierKeys.HasFlag(Keys.Control))
-                return;
+            var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
+            var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
 
-            var doubleScale = Control.ModifierKeys.HasFlag(Keys.Shift);
-            switch (Math.Sign(e.Delta))
+            if (isControl)
             {
-                // Zoom in
-                case 1:
-                    variableScaleFactor = (float)Math.Round(Math.Min(variableScaleFactor + ((doubleScale) ? 0.2f : 0.1f), ConfigValues.MaximumGridZoomFactor), 1);
-                    break;
-
-                // Zoom out
-                case -1:
-                    variableScaleFactor = (float)Math.Round(Math.Max(variableScaleFactor - ((doubleScale) ? 0.2f : 0.1f), ConfigValues.MinimumGridZoomFactor), 1);
-                    break;
-
-                default:
-                    return;
+                ZoomInOrOut((e.Delta > 0), isShift);
+                ((HandledMouseEventArgs)e).Handled = true;
             }
+            else if (isShift)
+            {
+                // Scroll right or left (arbitrary step size)
+                int newValue;
+                if (e.Delta > 0)
+                    newValue = Math.Max(pnlMap.HorizontalScroll.Value - (int)(pnlMap.Width * 0.20), pnlMap.HorizontalScroll.Minimum);
+                else
+                    newValue = Math.Min(pnlMap.HorizontalScroll.Value + (int)(pnlMap.Width * 0.20), pnlMap.HorizontalScroll.Maximum);
+
+                // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
+                pnlMap.HorizontalScroll.Value = newValue;
+                pnlMap.HorizontalScroll.Value = newValue;
+
+                // Shift alone forces a horizontal scroll.
+                ((HandledMouseEventArgs)e).Handled = true;
+            }
+        }
+
+        private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
+        {
+            if (zoomIn)
+                variableScaleFactor = (float)Math.Round(Math.Min(variableScaleFactor + ((doubleFactor) ? 0.2f : 0.1f), ConfigValues.MaximumGridZoomFactor), 1);
+            else
+                variableScaleFactor = (float)Math.Round(Math.Max(variableScaleFactor - ((doubleFactor) ? 0.2f : 0.1f), ConfigValues.MinimumGridZoomFactor), 1);
 
             // Setup the delayed handler, so we only generate the new image after the mouse wheel sits idle for half a second, in 
             // case the user is actively scrolling.
             mouseWheelHandlerDelayStart.Change(MouseWheelDelayInterval, Timeout.Infinite);
             drawScaleFactor = true;
             pbxMap.Refresh();
-
-            ((HandledMouseEventArgs)e).Handled = true;
         }
         
         /// <summary> Timer event that is raised after a period of inactivity by the user and his precious mouse wheel. </summary>
