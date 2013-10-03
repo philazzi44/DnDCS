@@ -22,9 +22,9 @@ namespace DnDCS.Libs
 
         public event Action<Image> OnMapReceived;
         public event Action<Image> OnFogReceived;
-        public event Action<Point[], bool> OnFogUpdateReceived;
+        public event Action<SocketPoint[], bool> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
-        public event Action<Color> OnGridColorReceived;
+        public event Action<SocketColor> OnGridColorReceived;
         public event Action OnExitReceived;
         public event Action<bool> OnBlackoutReceived;
 

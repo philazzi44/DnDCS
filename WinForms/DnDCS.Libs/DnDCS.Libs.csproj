@@ -57,12 +57,14 @@
     <Compile Include="SocketObjects\FogUpdateSocketObject.cs" />
     <Compile Include="SocketObjects\GridSizeSocketObject.cs" />
     <Compile Include="SocketObjects\ImageSocketObject.cs" />
+    <Compile Include="SocketObjects\SocketColor.cs" />
     <Compile Include="SocketObjects\SocketConstants.cs" />
     <Compile Include="IDnDCSControl.cs" />
     <Compile Include="Logger.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ServerSocketConnection.cs" />
     <Compile Include="SocketObjects\BaseSocketObject.cs" />
+    <Compile Include="SocketObjects\SocketPoint.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

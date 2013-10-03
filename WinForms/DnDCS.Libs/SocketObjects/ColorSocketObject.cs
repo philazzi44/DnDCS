@@ -7,9 +7,9 @@ namespace DnDCS.Libs.SocketObjects
 {
     public class ColorSocketObject : BaseSocketObject
     {
-        public System.Drawing.Color Value
+        public SocketColor Value
         {
-            get { return System.Drawing.Color.FromArgb(A, R, G, B); }
+            get { return new SocketColor(A, R, G, B); }
             set
             {
                 A = value.A;
@@ -31,7 +31,7 @@ namespace DnDCS.Libs.SocketObjects
         public ColorSocketObject(SocketConstants.SocketAction socketAction, System.Drawing.Color gridColor)
             : base(socketAction)
         {
-            Value = gridColor;
+            Value = new SocketColor(gridColor.A, gridColor.R, gridColor.G, gridColor.B);
         }
 
         public static ColorSocketObject GridColorObjectFromBytes(byte[] bytes)

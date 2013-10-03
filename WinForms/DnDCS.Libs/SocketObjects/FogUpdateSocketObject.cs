@@ -9,21 +9,26 @@ namespace DnDCS.Libs.SocketObjects
 {
     public class FogUpdateSocketObject : BaseSocketObject
     {
-        public Point[] Points { get; set; }
+        public SocketPoint[] Points { get; set; }
         public bool IsClearing { get; set; }
+
+        public FogUpdateSocketObject(SocketConstants.SocketAction action, SocketPoint[] points, bool isClearing)
+            : base(action)
+        {
+            Points = (points ?? new SocketPoint[0]).ToArray();
+            IsClearing = isClearing;
+        }
 
         public FogUpdateSocketObject(SocketConstants.SocketAction action, Point[] points, bool isClearing)
             : base(action)
         {
-            Points = points;
+            Points = (points ?? new Point[0]).Select(p => new SocketPoint(p.X, p.Y)).ToArray();
             IsClearing = isClearing;
         }
 
         public FogUpdateSocketObject(SocketConstants.SocketAction action, FogUpdate fogUpdate)
-            : base(action)
+            : this(action, fogUpdate.Points, fogUpdate.IsClearing)
         {
-            Points = (fogUpdate.Points ?? new Point[0]).ToArray();
-            IsClearing = fogUpdate.IsClearing;
         }
 
         public static FogUpdateSocketObject PointArrayObjectFromBytes(byte[] bytes)
@@ -32,14 +37,14 @@ namespace DnDCS.Libs.SocketObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.FogUpdate:
-                    return new FogUpdateSocketObject(action, ConvertBytesToPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1);
+                    return new FogUpdateSocketObject(action, ConvertBytesToSocketPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
             }
         }
 
-        private static byte[] ConvertPointsToBytes(Point[] points)
+        private static byte[] ConvertSocketPointsToBytes(SocketPoint[] points)
         {
             var pointBytes = new List<byte>(points.Length * 4);
             foreach (var point in points)
@@ -50,14 +55,14 @@ namespace DnDCS.Libs.SocketObjects
             return pointBytes.ToArray();
         }
 
-        private static Point[] ConvertBytesToPointArray(byte[] pointBytes)
+        private static SocketPoint[] ConvertBytesToSocketPointArray(byte[] pointBytes)
         {
-            var points = new List<Point>(pointBytes.Length / 4);
+            var points = new List<SocketPoint>(pointBytes.Length / 4);
             for (int i = 0; i < pointBytes.Length; i += 8)
             {
                 var x = BitConverter.ToInt32(pointBytes, i);
                 var y = BitConverter.ToInt32(pointBytes, i + 4);
-                points.Add(new Point(x, y));
+                points.Add(new SocketPoint(x, y));
             }
             return points.ToArray();
         }
@@ -67,7 +72,7 @@ namespace DnDCS.Libs.SocketObjects
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
             bytes.Add(IsClearing ? (byte)1 : (byte)0);
-            bytes.AddRange(ConvertPointsToBytes(this.Points));
+            bytes.AddRange(ConvertSocketPointsToBytes(this.Points));
             return bytes.ToArray();
         }
 

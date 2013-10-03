@@ -163,9 +163,9 @@ namespace DnDCS.Client
             connection = new ClientSocketConnection(address, port);
             connection.OnMapReceived += new Action<Image>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
-            connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
+            connection.OnFogUpdateReceived += new Action<SocketPoint[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
-            connection.OnGridColorReceived += new Action<Color>(connection_OnGridColorReceived);
+            connection.OnGridColorReceived += new Action<SocketColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
@@ -231,7 +231,7 @@ namespace DnDCS.Client
             RefreshMapPictureBox();
         }
 
-        private void connection_OnFogUpdateReceived(Point[] fogUpdate, bool isClearing)
+        private void connection_OnFogUpdateReceived(SocketPoint[] fogUpdate, bool isClearing)
         {
             var fogImageToUpdate = this.fog;
             var isNewFogImage = (fogImageToUpdate == null);
@@ -242,7 +242,7 @@ namespace DnDCS.Client
             {
                 if (isNewFogImage)
                     g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
-                g.FillPolygon((isClearing) ? fogClearBrush : fogBrush, fogUpdate);
+                g.FillPolygon((isClearing) ? fogClearBrush : fogBrush, fogUpdate.Select(p => new Point(p.X, p.Y)).ToArray());
             }
 
             if (isNewFogImage)
@@ -260,11 +260,11 @@ namespace DnDCS.Client
             RefreshMapPictureBox();
         }
 
-        private void connection_OnGridColorReceived(Color gridColor)
+        private void connection_OnGridColorReceived(SocketColor gridColor)
         {
             if (gridPen != null)
                 gridPen.Dispose();
-            gridPen = new Pen(gridColor);
+            gridPen = new Pen(Color.FromArgb(gridColor.A, gridColor.R, gridColor.G, gridColor.B));
 
             RefreshMapPictureBox();
         }
