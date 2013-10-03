@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
     public class GridSizeSocketObject : BaseSocketObject
     {

@@ -1,6 +1,6 @@
 ﻿using System.Drawing;
 using System.IO;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -23,24 +23,24 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        public static Point ToPoint(this DnDPoint point)
+        public static Point ToPoint(this SimplePoint point)
         {
             return new Point(point.X, point.Y);
         }
 
-        public static DnDPoint ToDnDPoint(this Point point)
+        public static SimplePoint ToDnDPoint(this Point point)
         {
-            return new DnDPoint(point.X, point.Y);
+            return new SimplePoint(point.X, point.Y);
         }
 
-        public static Color ToColor(this SocketColor color)
+        public static Color ToColor(this SimpleColor color)
         {
             return Color.FromArgb(color.A, color.R, color.G, color.B);
         }
 
-        public static SocketColor ToSocketColor(this Color color)
+        public static SimpleColor ToSocketColor(this Color color)
         {
-            return new SocketColor(color.A, color.R, color.G, color.B);
+            return new SimpleColor(color.A, color.R, color.G, color.B);
         }
     }
 }

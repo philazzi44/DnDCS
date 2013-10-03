@@ -5,7 +5,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using DnDCS.Libs.ServerEvents;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 
 namespace DnDCS.Libs
 {
@@ -39,7 +39,7 @@ namespace DnDCS.Libs
 
         private void PollTimerCallback(object state)
         {
-            Write(SocketObjects.SocketConstants.PingSocketObject, false);
+            Write(SimpleObjects.SocketConstants.PingSocketObject, false);
         }
 
         private void Start()
@@ -163,7 +163,7 @@ namespace DnDCS.Libs
         public void WriteFogUpdate(FogUpdate fogUpdate)
         {
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new DnDPoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
+                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new SimplePoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)
@@ -171,7 +171,7 @@ namespace DnDCS.Libs
             Write(new GridSizeSocketObject(showGrid, gridSize));
         }
 
-        public void WriteGridColor(SocketColor color)
+        public void WriteGridColor(SimpleColor color)
         {
             Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color.A, color.R, color.G, color.B));
         }

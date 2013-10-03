@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
     public class ColorSocketObject : BaseSocketObject
     {
-        public SocketColor Value
+        public SimpleColor Value
         {
-            get { return new SocketColor(A, R, G, B); }
+            get { return new SimpleColor(A, R, G, B); }
             set
             {
                 A = value.A;
@@ -24,10 +24,10 @@ namespace DnDCS.Libs.SocketObjects
         public ColorSocketObject(SocketConstants.SocketAction socketAction, byte a, byte r, byte g, byte b) :
             base(socketAction)
         {
-            Value = new SocketColor(a, r, g, b);
+            Value = new SimpleColor(a, r, g, b);
         }
 
-        public ColorSocketObject(SocketConstants.SocketAction socketAction, SocketColor color) :
+        public ColorSocketObject(SocketConstants.SocketAction socketAction, SimpleColor color) :
             this(socketAction, color.A, color.R, color.G, color.B)
         {
         }

@@ -9,7 +9,7 @@ using System.Windows.Forms;
 using DnDCS.Libs;
 using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.Libs.ServerEvents;
 using DnDCS.WinFormsLibs;
 
@@ -66,10 +66,10 @@ namespace DnDCS.Server
 
         private ServerSocketConnection connection;
 
-        public DnDPoint ScrollPosition
+        public SimplePoint ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
-            get { return new DnDPoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            get { return new SimplePoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
             set
             {
                 // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
@@ -440,10 +440,10 @@ namespace DnDCS.Server
             if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
                 var fogAllFogUpdate = new FogUpdate(revealAll);
-                fogAllFogUpdate.Add(new DnDPoint(0, 0));
-                fogAllFogUpdate.Add(new DnDPoint(fog.Width, 0));
-                fogAllFogUpdate.Add(new DnDPoint(fog.Width, fog.Height));
-                fogAllFogUpdate.Add(new DnDPoint(0, fog.Height));
+                fogAllFogUpdate.Add(new SimplePoint(0, 0));
+                fogAllFogUpdate.Add(new SimplePoint(fog.Width, 0));
+                fogAllFogUpdate.Add(new SimplePoint(fog.Width, fog.Height));
+                fogAllFogUpdate.Add(new SimplePoint(0, fog.Height));
 
                 UpdateFogImage(fogAllFogUpdate);
                 undoFogUpdates.Clear();
@@ -542,10 +542,10 @@ namespace DnDCS.Server
             pbxMap.MouseDown += new MouseEventHandler(pbxMap_MouseDown);
         }
 
-        private DnDPoint ConvertPointToStretchedImage(Point pt)
+        private SimplePoint ConvertPointToStretchedImage(Point pt)
         {
             // If we're stretching the image to fit, then our point is actually somewhere else on the map by the reverse of how much we've stretched.
-            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new DnDPoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToDnDPoint();
+            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new SimplePoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToDnDPoint();
         }
 
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)

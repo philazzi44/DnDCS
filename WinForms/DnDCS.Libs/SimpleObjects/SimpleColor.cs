@@ -1,18 +1,18 @@
 ﻿
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
-    public class SocketColor
+    public class SimpleColor
     {
         public byte R { get; set; }
         public byte G { get; set; }
         public byte B { get; set; }
         public byte A { get; set; }
 
-        public SocketColor()
+        public SimpleColor()
         {
         }
 
-        public SocketColor(byte a, byte r, byte g, byte b)
+        public SimpleColor(byte a, byte r, byte g, byte b)
         {
             this.A = a;
             this.R = r;

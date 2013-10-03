@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
     public class ImageSocketObject : BaseSocketObject
     {

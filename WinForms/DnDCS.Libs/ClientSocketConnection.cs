@@ -4,7 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 
 namespace DnDCS.Libs
 {
@@ -20,9 +20,9 @@ namespace DnDCS.Libs
 
         public event Action<byte[]> OnMapReceived;
         public event Action<byte[]> OnFogReceived;
-        public event Action<DnDPoint[], bool> OnFogUpdateReceived;
+        public event Action<SimplePoint[], bool> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
-        public event Action<SocketColor> OnGridColorReceived;
+        public event Action<SimpleColor> OnGridColorReceived;
         public event Action OnExitReceived;
         public event Action<bool> OnBlackoutReceived;
 

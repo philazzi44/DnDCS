@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using DnDCS.Client;
 using DnDCS.Libs;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.Server;
 using DnDCS.WinFormsLibs;
 
@@ -17,7 +17,7 @@ namespace DnDCS
         private FormWindowState initialFormWindowState;
         private MainMenu _menu;
 
-        private DnDPoint lastScrollPosition = DnDPoint.Empty;
+        private SimplePoint lastScrollPosition = SimplePoint.Empty;
         private IDnDCSControl control;
 
         public Launcher()

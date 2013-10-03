@@ -1,28 +1,28 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 
 namespace DnDCS.Libs
 {
     public class FogUpdate
     {
-        private readonly LinkedList<DnDPoint> _points = new LinkedList<DnDPoint>();
-        public DnDPoint[] Points { get { return _points.ToArray(); } }
+        private readonly LinkedList<SimplePoint> _points = new LinkedList<SimplePoint>();
+        public SimplePoint[] Points { get { return _points.ToArray(); } }
         public bool IsClearing { get; set; }
         public int Length { get { return _points.Count; } }
 
         public FogUpdate(bool isClearing)
-            : this(new LinkedList<DnDPoint>(), isClearing)
+            : this(new LinkedList<SimplePoint>(), isClearing)
         {
         }
 
-        public FogUpdate(LinkedList<DnDPoint> points, bool isClearing)
+        public FogUpdate(LinkedList<SimplePoint> points, bool isClearing)
         {
-            _points = points ?? new LinkedList<DnDPoint>();
+            _points = points ?? new LinkedList<SimplePoint>();
             IsClearing = isClearing;
         }
 
-        public void Add(DnDPoint point)
+        public void Add(SimplePoint point)
         {
             _points.AddLast(point);
         }

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
     public class BaseSocketObject
     {

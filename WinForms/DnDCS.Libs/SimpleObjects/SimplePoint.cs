@@ -1,18 +1,18 @@
 ﻿
-namespace DnDCS.Libs.SocketObjects
+namespace DnDCS.Libs.SimpleObjects
 {
-    public class DnDPoint
+    public class SimplePoint
     {
-        public static readonly DnDPoint Empty = new DnDPoint(0, 0);
+        public static readonly SimplePoint Empty = new SimplePoint(0, 0);
 
         public int X { get; set; }
         public int Y { get; set; }
 
-        public DnDPoint()
+        public SimplePoint()
         {
         }
 
-        public DnDPoint(int x, int y)
+        public SimplePoint(int x, int y)
         {
             this.X = x;
             this.Y = y;

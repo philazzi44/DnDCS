@@ -5,7 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Windows.Forms;
 using DnDCS.Libs;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.WinFormsLibs;
 using DnDCS.WinFormsLibs.Assets;
 
@@ -47,10 +47,10 @@ namespace DnDCS.Client
 
         private MenuItem fullScreenAction;
 
-        public DnDPoint ScrollPosition
+        public SimplePoint ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
-            get { return new DnDPoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            get { return new SimplePoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
             set
             {
                 // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
@@ -160,9 +160,9 @@ namespace DnDCS.Client
             connection = new ClientSocketConnection(address, port);
             connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
-            connection.OnFogUpdateReceived += new Action<DnDPoint[], bool>(connection_OnFogUpdateReceived);
+            connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
-            connection.OnGridColorReceived += new Action<SocketColor>(connection_OnGridColorReceived);
+            connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
@@ -236,7 +236,7 @@ namespace DnDCS.Client
             }
         }
 
-        private void connection_OnFogUpdateReceived(DnDPoint[] fogUpdate, bool isClearing)
+        private void connection_OnFogUpdateReceived(SimplePoint[] fogUpdate, bool isClearing)
         {
             var fogImageToUpdate = this.fog;
             var isNewFogImage = (fogImageToUpdate == null);
@@ -265,7 +265,7 @@ namespace DnDCS.Client
             RefreshMapPictureBox();
         }
 
-        private void connection_OnGridColorReceived(SocketColor gridColor)
+        private void connection_OnGridColorReceived(SimpleColor gridColor)
         {
             if (gridPen != null)
                 gridPen.Dispose();
