@@ -28,6 +28,7 @@ namespace DnDCS_Client
         private object newFogLock = new object();
         private Texture2D newFog;
         private Texture2D blackoutImage;
+        private Texture2D noMapImage;
 
         private Nullable<int> gridSize;
         private Texture2D gridTileImage;
@@ -76,8 +77,13 @@ namespace DnDCS_Client
 
         public Game()
         {
-            graphics = new GraphicsDeviceManager(this);
+            graphics = new GraphicsDeviceManager(this)
+            {
+                PreferredBackBufferWidth = 1024,
+                PreferredBackBufferHeight = 768,
+            };
             Content.RootDirectory = "Content";
+            this.Window.AllowUserResizing = true;
         }
 
         /// <summary>
@@ -187,8 +193,8 @@ namespace DnDCS_Client
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            this.map = this.Content.Load<Texture2D>("fatty");
             this.blackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
+            this.noMapImage = this.Content.Load<Texture2D>("NoMapImage");
             this.debugFont = this.Content.Load<SpriteFont>("Debug");
             this.genericMessageFont = this.Content.Load<SpriteFont>("GenericMessage");
 
@@ -203,9 +209,18 @@ namespace DnDCS_Client
         /// </summary>
         protected override void UnloadContent()
         {
-            this.map.Dispose();
-            if (connection != null)
-                connection.Stop();
+            if (this.map != null)
+                this.map.Dispose();
+            if (this.newMap != null)
+                this.newMap.Dispose();
+            if (this.fog != null)
+                this.fog.Dispose();
+            if (this.newFog != null)
+                this.newFog.Dispose();
+            if (this.blackoutImage != null)
+                this.blackoutImage.Dispose();
+            if (this.connection != null)
+                this.connection.Stop();
         }
 
         /// <summary>
@@ -241,9 +256,12 @@ namespace DnDCS_Client
             debugText.Add("Zoom Factor: " + zoomFactor);
             debugText.Add("Vertical Scroll Position: " + verticalScrollPosition);
             debugText.Add("Horizontal Scroll Position: " + horizontalScrollPosition);
-            debugText.Add("Map Size: " + map.Width + "x" + map.Height);
-            debugText.Add("Map Bounds: " + ActualMapWidth + "x" + ActualMapHeight);
-            debugText.Add("Logical Map Bounds: " + LogicalMapWidth + "x" + LogicalMapHeight);
+            if (map != null)
+            {
+                debugText.Add("Map Size: " + map.Width + "x" + map.Height);
+                debugText.Add("Map Bounds: " + ActualMapWidth + "x" + ActualMapHeight);
+                debugText.Add("Logical Map Bounds: " + LogicalMapWidth + "x" + LogicalMapHeight);
+            }
             debugText.Add("Client Bounds: " + ActualClientWidth + "x" + ActualClientHeight);
             debugText.Add("Logical Client Bounds: " + LogicalClientWidth + "x" + LogicalClientHeight);
             base.Update(gameTime);
@@ -379,11 +397,16 @@ namespace DnDCS_Client
                 {
                     Draw_Exit();
                 }
+
                 else if (isBlackoutOn)
                 {
                     Draw_Blackout(gameTime);
                 }
-                else
+                else if (map == null)
+                {
+                    Draw_NoMap(gameTime);
+                }
+                else 
                 {
                     spriteBatch.Draw(map, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
 
@@ -434,6 +457,11 @@ namespace DnDCS_Client
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
             spriteBatch.Draw(blackoutImage, new Vector2(this.ActualClientWidth / 2 - blackoutImage.Width / 2, this.ActualClientHeight / 2 - blackoutImage.Height / 2), color);
+        }
+        private void Draw_NoMap(GameTime gameTime)
+        {
+            var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
+            spriteBatch.Draw(noMapImage, new Vector2(this.ActualClientWidth / 2 - noMapImage.Width / 2, this.ActualClientHeight / 2 - noMapImage.Height / 2), color);
         }
 
         private void DrawCenteredMessage(string msg)
