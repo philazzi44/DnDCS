@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using DnDCS.Libs;
+using DnDCS.Libs.SocketObjects;
 
 namespace DnDCS_Client
 {
@@ -19,6 +20,8 @@ namespace DnDCS_Client
         private Texture2D blackoutImage;
 
         private Nullable<int> gridSize;
+        private Texture2D gridTileImage;
+        private Color gridTileColor;
 
         // TODO: Should be prompted.
         private string address;
@@ -76,11 +79,16 @@ namespace DnDCS_Client
             // connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
             // connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
-            // connection.OnGridColorReceived += new Action<Color>(connection_OnGridColorReceived);
+            connection.OnGridColorReceived += new Action<SocketColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
             base.Initialize();
+        }
+
+        private void connection_OnGridColorReceived(SocketColor gridColor)
+        {
+            gridTileColor = new Color(gridColor.R, gridColor.G, gridColor.B, gridColor.A);
         }
 
         private void connection_OnGridSizeReceived(bool showGrid, int gridSize)
@@ -111,6 +119,10 @@ namespace DnDCS_Client
             this.blackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
             this.debugFont = this.Content.Load<SpriteFont>("Debug");
             this.exitFont = this.Content.Load<SpriteFont>("Exit");
+
+            gridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
+            gridTileImage.SetData<Color>(new[] { Color.White });
+
         }
 
         /// <summary>
@@ -248,22 +260,25 @@ namespace DnDCS_Client
                     return;
                 }
 
-                if (!isBlackoutOn)
+                if (isBlackoutOn)
                 {
                     Draw_Blackout(gameTime);
                     return;
                 }
 
                 spriteBatch.Draw(map, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
+
                 if (gridSize.HasValue)
                 {
-                    for (var x = 0; x < 0; x += gridSize.Value)
+                    // TODO: We can change the math to only draw what's visible, if necessary.
+                    var gridSizeStep = (int)(gridSize.Value * zoomFactor);
+                    for (var x = -horizontalScrollPosition; x < ActualMapWidth; x += gridSizeStep)
                     {
-                        // g.DrawLine(gridPen, x, 0, x, receivedMapHeight);
+                        spriteBatch.Draw(gridTileImage, new Rectangle(x, 0, 1, ActualClientHeight + verticalScrollPosition), gridTileColor);
                     }
-                    for (var y = 0; y < 0; y += gridSize.Value)
+                    for (var y = -verticalScrollPosition; y < ActualMapHeight + verticalScrollPosition; y += gridSizeStep)
                     {
-                        //g.DrawLine(gridPen, 0, y, receivedMapWidth, y);
+                        spriteBatch.Draw(gridTileImage, new Rectangle(0, y, ActualClientWidth + horizontalScrollPosition, 1), gridTileColor);
                     }
                 }
 
