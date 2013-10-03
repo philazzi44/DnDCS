@@ -158,6 +158,7 @@ namespace DnDCS.Client
                 connection.Stop();
 
             connection = new ClientSocketConnection(address, port);
+            connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
             connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
@@ -165,8 +166,18 @@ namespace DnDCS.Client
             connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
-
+            
             this.ParentForm.Text = string.Format("{0} - Connecting to {1}:{2}...", initialParentFormText, address, port);
+            connection.Start();
+        }
+
+        private void connection_OnConnectionEstablished()
+        {
+            isConnected = true;
+            this.ParentForm.BeginInvoke(new Action(() =>
+            {
+                this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, connection.Address, connection.Port);
+            }));
         }
 
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
@@ -181,15 +192,6 @@ namespace DnDCS.Client
 
         private void connection_OnMapReceived(byte[] mapImageBytes)
         {
-            if (!isConnected)
-            {
-                isConnected = true;
-                this.ParentForm.BeginInvoke(new Action(() =>
-                {
-                    this.ParentForm.Text = string.Format("{0} - Connected to {1}:{2}", initialParentFormText, connection.Address, connection.Port);
-                }));
-            }
-
             try
             {
                 var map = mapImageBytes.ToImage();

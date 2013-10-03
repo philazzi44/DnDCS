@@ -138,8 +138,10 @@ namespace DnDCS.Server
             else
                 connection.WriteBlackout(true);
 
-            connection.WriteMap(map.ToBytes());
-            connection.WriteFog(fog.ToBytes());
+            if (map != null)
+                connection.WriteMap(map.ToBytes());
+            if (fog != null)
+                connection.WriteFog(fog.ToBytes());
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }

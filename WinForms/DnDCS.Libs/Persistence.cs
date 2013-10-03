@@ -81,11 +81,15 @@ namespace DnDCS.Libs
 
         private static T LoadData<T>(string fileName) where T : class
         {
-            var serializer = new XmlSerializer(typeof(T));
-            using (var stream = new StreamReader(fileName))
+            if (File.Exists(fileName))
             {
-                return serializer.Deserialize(stream) as T;
+                var serializer = new XmlSerializer(typeof(T));
+                using (var stream = new StreamReader(fileName))
+                {
+                    return serializer.Deserialize(stream) as T;
+                }
             }
+            return null;
         }
     }
 }

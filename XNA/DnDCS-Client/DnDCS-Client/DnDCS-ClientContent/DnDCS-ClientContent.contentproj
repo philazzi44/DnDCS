@@ -56,10 +56,11 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Exit.spritefont">
-      <Name>Exit</Name>
+    <Compile Include="GenericMessage.spritefont">
+      <Name>GenericMessage</Name>
       <Importer>FontDescriptionImporter</Importer>
       <Processor>FontDescriptionProcessor</Processor>
+      <SubType>Designer</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>

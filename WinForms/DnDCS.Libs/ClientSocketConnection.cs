@@ -10,6 +10,10 @@ namespace DnDCS.Libs
 {
     public class ClientSocketConnection
     {
+        private const string ErrorStartingStoppedConnection = "Client Connection - Cannot start a stopped connection.";
+
+        private readonly Thread socketThread;
+
         private Socket server;
 
         public string Address { get { return address; } }
@@ -18,6 +22,7 @@ namespace DnDCS.Libs
         private readonly int port;
         private bool isStopped;
 
+        public event Action OnConnectionEstablished;
         public event Action<byte[]> OnMapReceived;
         public event Action<byte[]> OnFogReceived;
         public event Action<SimplePoint[], bool> OnFogUpdateReceived;
@@ -31,16 +36,22 @@ namespace DnDCS.Libs
             this.address = address;
             this.port = port;
 
-            var socketThread = new Thread(Start);
+            socketThread = new Thread(SocketThreadStart);
             socketThread.IsBackground = true;
             socketThread.Name = "Client Socket Thread";
+        }
+
+        public void Start()
+        {
+            if (isStopped)
+                throw new ObjectDisposedException(ErrorStartingStoppedConnection);
             socketThread.Start();
         }
 
-        private void Start()
+        private void SocketThreadStart()
         {
             if (isStopped)
-                throw new ObjectDisposedException("Client Connection - Cannot start a stopped connection.");
+                throw new ObjectDisposedException(ErrorStartingStoppedConnection);
 
             try
             {
@@ -149,6 +160,8 @@ namespace DnDCS.Libs
                 if (ackObject == null || ackObject.Action != SocketConstants.SocketAction.Acknowledge)
                     throw new InvalidOperationException("Acknowledge not received.");
                 Logger.LogDebug("Client Socket - Acknowledge received.");
+                if (OnConnectionEstablished != null)
+                    OnConnectionEstablished();
             }
             catch (Exception e)
             {

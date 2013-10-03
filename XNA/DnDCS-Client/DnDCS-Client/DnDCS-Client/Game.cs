@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -32,9 +34,9 @@ namespace DnDCS_Client
         private Color gridTileColor;
 
         // TODO: Should be prompted.
-        private string address;
+        private string address = "pazzi.parse3.local";
         // TODO: Should be prompted.
-        private int port;
+        private int port = 11000;
 
         private int lastWheelValue;
 
@@ -64,9 +66,12 @@ namespace DnDCS_Client
         private readonly List<string> debugText = new List<string>();
         private string FullDebugText { get { return string.Join("\n", debugText); } }
 
-        private bool IsConnected { get { return !isConnectionClosed && this.map != null; } }
+        private bool updateTitle;
+        private bool isConnecting;
+        private bool isConnected;
         private bool isConnectionClosed;
-        private SpriteFont exitFont;
+
+        private SpriteFont genericMessageFont;
         private bool isBlackoutOn;
 
         public Game()
@@ -83,7 +88,9 @@ namespace DnDCS_Client
         /// </summary>
         protected override void Initialize()
         {
+
             connection = new ClientSocketConnection(address, port);
+            connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
             connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
             connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
             //connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
@@ -92,16 +99,20 @@ namespace DnDCS_Client
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
+            isConnecting = true;
+            connection.Start();
+
             base.Initialize();
+        }
+
+        private void connection_OnConnectionEstablished()
+        {
+            this.isConnected = true;
+            this.updateTitle = true;
         }
 
         private void connection_OnMapReceived(byte[] mapImageBytes)
         {
-            if (!IsConnected)
-            {
-                this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", connection.Address, connection.Port);
-            }
-
             try
             {
                 lock (newMapLock)
@@ -179,7 +190,7 @@ namespace DnDCS_Client
             this.map = this.Content.Load<Texture2D>("fatty");
             this.blackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
             this.debugFont = this.Content.Load<SpriteFont>("Debug");
-            this.exitFont = this.Content.Load<SpriteFont>("Exit");
+            this.genericMessageFont = this.Content.Load<SpriteFont>("GenericMessage");
 
             gridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             gridTileImage.SetData<Color>(new[] { Color.White });
@@ -204,13 +215,20 @@ namespace DnDCS_Client
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            Update_TryUseNewMap();
-            Update_TryUseNewFog();
-
             debugText.Clear();
 
+            // TODO: This stinks, because we need to check the condition every single update... Have to do this until I figure out how to post to the Game thread.
+            if (updateTitle)
+            {
+                updateTitle = false;
+                this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", connection.Address, connection.Port);
+            }
             currentKeyboardState = Keyboard.GetState();
             currentMouseState = Mouse.GetState();
+
+            Update_TryUseNewMap();
+            Update_TryUseNewFog();
+            
 
             if (currentMouseState.ScrollWheelValue != lastWheelValue)
             {
@@ -349,32 +367,42 @@ namespace DnDCS_Client
                 if (isConnectionClosed)
                 {
                     Draw_Exit();
-                    return;
                 }
-
-                if (isBlackoutOn)
+                else if (!this.isConnected)
+                {
+                    if (isConnecting)
+                        Draw_Connecting();
+                    else
+                        Draw_NotConnected();
+                }
+                else if (isConnectionClosed)
+                {
+                    Draw_Exit();
+                }
+                else if (isBlackoutOn)
                 {
                     Draw_Blackout(gameTime);
-                    return;
                 }
-
-                spriteBatch.Draw(map, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
-
-                if (gridSize.HasValue)
+                else
                 {
-                    // TODO: We can change the math to only draw what's visible, if necessary.
-                    var gridSizeStep = (int)(gridSize.Value * zoomFactor);
-                    for (var x = -horizontalScrollPosition; x < ActualMapWidth; x += gridSizeStep)
-                    {
-                        spriteBatch.Draw(gridTileImage, new Rectangle(x, 0, 1, ActualClientHeight + verticalScrollPosition), gridTileColor);
-                    }
-                    for (var y = -verticalScrollPosition; y < ActualMapHeight + verticalScrollPosition; y += gridSizeStep)
-                    {
-                        spriteBatch.Draw(gridTileImage, new Rectangle(0, y, ActualClientWidth + horizontalScrollPosition, 1), gridTileColor);
-                    }
-                }
+                    spriteBatch.Draw(map, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
 
-                // TODO: Draw fog overtop
+                    if (gridSize.HasValue)
+                    {
+                        // TODO: We can change the math to only draw what's visible, if necessary.
+                        var gridSizeStep = (int)(gridSize.Value * zoomFactor);
+                        for (var x = -horizontalScrollPosition; x < ActualMapWidth; x += gridSizeStep)
+                        {
+                            spriteBatch.Draw(gridTileImage, new Rectangle(x, 0, 1, ActualClientHeight + verticalScrollPosition), gridTileColor);
+                        }
+                        for (var y = -verticalScrollPosition; y < ActualMapHeight + verticalScrollPosition; y += gridSizeStep)
+                        {
+                            spriteBatch.Draw(gridTileImage, new Rectangle(0, y, ActualClientWidth + horizontalScrollPosition, 1), gridTileColor);
+                        }
+                    }
+
+                    // TODO: Draw fog overtop
+                }
 
                 spriteBatch.DrawString(debugFont, FullDebugText, Vector2.Zero, Color.Aqua);
             }
@@ -386,17 +414,32 @@ namespace DnDCS_Client
             base.Draw(gameTime);
         }
 
+        private void Draw_NotConnected()
+        {
+            DrawCenteredMessage("Not connected");
+        }
+
+        private void Draw_Connecting()
+        {
+            if (connection != null)
+                DrawCenteredMessage(string.Format("Connecting to {0}:{1}...", connection.Address, connection.Port));
+        }
+
         private void Draw_Exit()
         {
-            const string msg = "The server has closed the connection.";
-            var msgSize = exitFont.MeasureString(msg);
-            spriteBatch.DrawString(exitFont, msg, new Vector2((int)((this.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((this.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
+            DrawCenteredMessage("The server has closed the connection");
         }
 
         private void Draw_Blackout(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
             spriteBatch.Draw(blackoutImage, new Vector2(this.ActualClientWidth / 2 - blackoutImage.Width / 2, this.ActualClientHeight / 2 - blackoutImage.Height / 2), color);
+        }
+
+        private void DrawCenteredMessage(string msg)
+        {
+            var msgSize = genericMessageFont.MeasureString(msg);
+            spriteBatch.DrawString(genericMessageFont, msg, new Vector2((int)((this.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((this.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
         }
     }
 }
