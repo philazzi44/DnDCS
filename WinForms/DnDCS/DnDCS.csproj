@@ -118,6 +118,10 @@
       <Project>{E306AAE7-51E4-442A-ACBB-793F496FA80B}</Project>
       <Name>DnDCS.Server</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DnDCS.WinFormsLibs\DnDCS.WinFormsLibs.csproj">
+      <Project>{70F6B07C-0D5E-4373-A21F-1D446A59B33F}</Project>
+      <Name>DnDCS.WinFormsLibs</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Content Include="LauncherIcon.ico" />

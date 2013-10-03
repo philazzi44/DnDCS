@@ -11,6 +11,7 @@ using System.Drawing.Imaging;
 using System.Drawing.Drawing2D;
 using DnDCS.Libs.SocketObjects;
 using DnDCS.Libs.ServerEvents;
+using DnDCS.WinFormsLibs;
 
 namespace DnDCS.Server
 {
@@ -65,15 +66,15 @@ namespace DnDCS.Server
 
         private ServerSocketConnection connection;
 
-        public Point ScrollPosition
+        public DnDPoint ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
-            get { return new Point(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            get { return new DnDPoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
             set
             {
                 // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
-                this.pnlMap.AutoScrollPosition = value;
-                this.pnlMap.AutoScrollPosition = value;
+                this.pnlMap.AutoScrollPosition = value.ToPoint();
+                this.pnlMap.AutoScrollPosition = value.ToPoint();
             }
         }
 
@@ -137,10 +138,10 @@ namespace DnDCS.Server
             else
                 connection.WriteBlackout(true);
 
-            connection.WriteMap(map);
-            connection.WriteFog(fog);
+            connection.WriteMap(map.ToBytes());
+            connection.WriteFog(fog.ToBytes());
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
-            connection.WriteGridColor(gridPen.Color);
+            connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }
 
         private void connection_OnClientCountChanged(int count)
@@ -282,7 +283,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = true;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                    connection.WriteFog(fog.ToBytes());
             }
         }
         
@@ -301,7 +302,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = redoFogUpdates.Any();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                    connection.WriteFog(fog.ToBytes());
             }
         }
 
@@ -368,12 +369,18 @@ namespace DnDCS.Server
                 if (colorOptions.ShowDialog(this) == DialogResult.OK)
                 {
                     gridPen.Dispose();
-                    gridPen = new Pen(colorOptions.GridLineColor);
-                    serverData.GridColor = colorOptions.GridLineColor;
+                    var newColor = colorOptions.GridLineColor;
+                    gridPen = new Pen(newColor);
+
+                    serverData.GridColorA = newColor.A;
+                    serverData.GridColorR = newColor.R;
+                    serverData.GridColorG = newColor.G;
+                    serverData.GridColorB = newColor.B;
+                    serverData.IsGridColorSet = true;
 
                     Persistence.SaveServerData(serverData);
 
-                    connection.WriteGridColor(colorOptions.GridLineColor);
+                    connection.WriteGridColor(colorOptions.GridLineColor.ToSocketColor());
 
                     pbxMap.Refresh();
                 }
@@ -433,10 +440,10 @@ namespace DnDCS.Server
             if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
                 var fogAllFogUpdate = new FogUpdate(revealAll);
-                fogAllFogUpdate.Add(new Point(0, 0));
-                fogAllFogUpdate.Add(new Point(fog.Width, 0));
-                fogAllFogUpdate.Add(new Point(fog.Width, fog.Height));
-                fogAllFogUpdate.Add(new Point(0, fog.Height));
+                fogAllFogUpdate.Add(new DnDPoint(0, 0));
+                fogAllFogUpdate.Add(new DnDPoint(fog.Width, 0));
+                fogAllFogUpdate.Add(new DnDPoint(fog.Width, fog.Height));
+                fogAllFogUpdate.Add(new DnDPoint(0, fog.Height));
 
                 UpdateFogImage(fogAllFogUpdate);
                 undoFogUpdates.Clear();
@@ -445,14 +452,14 @@ namespace DnDCS.Server
                 pbxMap.Refresh();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                    connection.WriteFog(fog.ToBytes());
             }
         }
 
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
-            connection.WriteFog(fog);
+            connection.WriteFog(fog.ToBytes());
         }
         
         private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
@@ -535,10 +542,10 @@ namespace DnDCS.Server
             pbxMap.MouseDown += new MouseEventHandler(pbxMap_MouseDown);
         }
 
-        private Point ConvertPointToStretchedImage(Point pt)
+        private DnDPoint ConvertPointToStretchedImage(Point pt)
         {
             // If we're stretching the image to fit, then our point is actually somewhere else on the map by the reverse of how much we've stretched.
-            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new Point((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt;
+            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new DnDPoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToDnDPoint();
         }
 
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
@@ -679,7 +686,7 @@ namespace DnDCS.Server
         {
             using (var g = Graphics.FromImage(newFog))
             {
-                g.FillPolygon((fogUpdate.IsClearing) ? newFogClearBrush : newFogBrush, fogUpdate.Points);
+                g.FillPolygon((fogUpdate.IsClearing) ? newFogClearBrush : newFogBrush, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
             }
         }
 
@@ -687,7 +694,7 @@ namespace DnDCS.Server
         {
             using (var g = Graphics.FromImage(fog))
             {
-                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : FOG_BRUSH, fogUpdate.Points);
+                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
             }
         }
         

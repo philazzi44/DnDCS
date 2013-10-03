@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Drawing;
 using System.Windows.Forms;
+using DnDCS.Libs.SocketObjects;
 
-namespace DnDCS.Libs
+namespace DnDCS.WinFormsLibs
 {
     public interface IDnDCSControl
     {
         MainMenu GetMainMenu();
-        Point ScrollPosition { get; set; }
+        DnDPoint ScrollPosition { get; set; }
         Action<bool> ToggleFullScreen { get; set; }
     }
 }

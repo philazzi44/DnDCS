@@ -22,14 +22,14 @@ namespace DnDCS.Libs.SocketObjects
         public byte B { get; private set; }
 
         public ColorSocketObject(SocketConstants.SocketAction socketAction, byte a, byte r, byte g, byte b) :
-            this(socketAction, System.Drawing.Color.FromArgb(a, r, g, b))
+            base(socketAction)
         {
+            Value = new SocketColor(a, r, g, b);
         }
 
-        public ColorSocketObject(SocketConstants.SocketAction socketAction, System.Drawing.Color gridColor)
-            : base(socketAction)
+        public ColorSocketObject(SocketConstants.SocketAction socketAction, SocketColor color) :
+            this(socketAction, color.A, color.R, color.G, color.B)
         {
-            Value = new SocketColor(gridColor.A, gridColor.R, gridColor.G, gridColor.B);
         }
 
         public static ColorSocketObject GridColorObjectFromBytes(byte[] bytes)

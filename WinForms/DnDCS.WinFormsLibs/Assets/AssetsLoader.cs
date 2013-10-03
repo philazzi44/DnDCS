@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Drawing;
 
-namespace DnDCS.Libs.Assets
+namespace DnDCS.WinFormsLibs.Assets
 {
     public static class AssetsLoader
     {

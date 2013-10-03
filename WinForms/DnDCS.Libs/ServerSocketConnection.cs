@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -149,22 +148,22 @@ namespace DnDCS.Libs
             }
         }
 
-        public void WriteMap(Image map)
+        public void WriteMap(byte[] mapImageBytes)
         {
-            if (map != null)
-                Write(ImageSocketObject.CreateMap(map));
+            if (mapImageBytes != null && mapImageBytes.Length > 0)
+                Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageBytes));
         }
 
-        public void WriteFog(Image fog)
+        public void WriteFog(byte[] fogImageBytes)
         {
-            if (fog != null)
-                Write(ImageSocketObject.CreateFog(fog));
+            if (fogImageBytes != null && fogImageBytes.Length > 0)
+                Write(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageBytes));
         }
 
         public void WriteFogUpdate(FogUpdate fogUpdate)
         {
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new SocketPoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
+                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new DnDPoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)
@@ -172,9 +171,9 @@ namespace DnDCS.Libs
             Write(new GridSizeSocketObject(showGrid, gridSize));
         }
 
-        public void WriteGridColor(Color color)
+        public void WriteGridColor(SocketColor color)
         {
-            Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color));
+            Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color.A, color.R, color.G, color.B));
         }
 
         public void WriteBlackout(bool isBlackoutOn)

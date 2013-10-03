@@ -6,13 +6,13 @@ namespace DnDCS.Libs.SocketObjects
 {
     public class FogUpdateSocketObject : BaseSocketObject
     {
-        public SocketPoint[] Points { get; set; }
+        public DnDPoint[] Points { get; set; }
         public bool IsClearing { get; set; }
 
-        public FogUpdateSocketObject(SocketConstants.SocketAction action, SocketPoint[] points, bool isClearing)
+        public FogUpdateSocketObject(SocketConstants.SocketAction action, DnDPoint[] points, bool isClearing)
             : base(action)
         {
-            Points = (points ?? new SocketPoint[0]).ToArray();
+            Points = (points ?? new DnDPoint[0]).ToArray();
             IsClearing = isClearing;
         }
         
@@ -29,7 +29,7 @@ namespace DnDCS.Libs.SocketObjects
             }
         }
 
-        private static byte[] ConvertSocketPointsToBytes(SocketPoint[] points)
+        private static byte[] ConvertSocketPointsToBytes(DnDPoint[] points)
         {
             var pointBytes = new List<byte>(points.Length * 4);
             foreach (var point in points)
@@ -40,14 +40,14 @@ namespace DnDCS.Libs.SocketObjects
             return pointBytes.ToArray();
         }
 
-        private static SocketPoint[] ConvertBytesToSocketPointArray(byte[] pointBytes)
+        private static DnDPoint[] ConvertBytesToSocketPointArray(byte[] pointBytes)
         {
-            var points = new List<SocketPoint>(pointBytes.Length / 4);
+            var points = new List<DnDPoint>(pointBytes.Length / 4);
             for (int i = 0; i < pointBytes.Length; i += 8)
             {
                 var x = BitConverter.ToInt32(pointBytes, i);
                 var y = BitConverter.ToInt32(pointBytes, i + 4);
-                points.Add(new SocketPoint(x, y));
+                points.Add(new DnDPoint(x, y));
             }
             return points.ToArray();
         }

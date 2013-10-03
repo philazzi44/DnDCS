@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
+using System.Drawing.Imaging;
 using System.Linq;
-using System.Text;
+using System.Threading;
 using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SocketObjects;
-using System.Drawing.Imaging;
-using DnDCS.Libs.Assets;
-using System.Threading;
+using DnDCS.WinFormsLibs;
+using DnDCS.WinFormsLibs.Assets;
 
 namespace DnDCS.Client
 {
@@ -50,15 +47,15 @@ namespace DnDCS.Client
 
         private MenuItem fullScreenAction;
 
-        public Point ScrollPosition
+        public DnDPoint ScrollPosition
         {
             // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
-            get { return new Point(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
+            get { return new DnDPoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
             set
             {
                 // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
-                this.pnlMap.AutoScrollPosition = value;
-                this.pnlMap.AutoScrollPosition = value;
+                this.pnlMap.AutoScrollPosition = value.ToPoint();
+                this.pnlMap.AutoScrollPosition = value.ToPoint();
             }
         }
 
@@ -161,9 +158,9 @@ namespace DnDCS.Client
                 connection.Stop();
 
             connection = new ClientSocketConnection(address, port);
-            connection.OnMapReceived += new Action<Image>(connection_OnMapReceived);
-            connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
-            connection.OnFogUpdateReceived += new Action<SocketPoint[], bool>(connection_OnFogUpdateReceived);
+            connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
+            connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
+            connection.OnFogUpdateReceived += new Action<DnDPoint[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnGridColorReceived += new Action<SocketColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
@@ -182,7 +179,7 @@ namespace DnDCS.Client
                                                })));
         }
 
-        private void connection_OnMapReceived(Image map)
+        private void connection_OnMapReceived(byte[] mapImageBytes)
         {
             if (!isConnected)
             {
@@ -195,6 +192,7 @@ namespace DnDCS.Client
 
             try
             {
+                var map = mapImageBytes.ToImage();
 
                 // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
                 this.fog = new Bitmap(map.Width, map.Height);
@@ -222,16 +220,23 @@ namespace DnDCS.Client
             }
         }
 
-        private void connection_OnFogReceived(Image fog)
+        private void connection_OnFogReceived(byte[] fogImageBytes)
         {
-            this.fog = fog;
-            if (isBlackoutOn)
-                return;
+            try
+            {
+                this.fog = fogImageBytes.ToImage();
+                if (isBlackoutOn)
+                    return;
 
-            RefreshMapPictureBox();
+                RefreshMapPictureBox();
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Fog received failure.", e);
+            }
         }
 
-        private void connection_OnFogUpdateReceived(SocketPoint[] fogUpdate, bool isClearing)
+        private void connection_OnFogUpdateReceived(DnDPoint[] fogUpdate, bool isClearing)
         {
             var fogImageToUpdate = this.fog;
             var isNewFogImage = (fogImageToUpdate == null);

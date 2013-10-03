@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
-using System.Net;
-using System.Drawing;
 using DnDCS.Libs.SocketObjects;
 
 namespace DnDCS.Libs
@@ -20,9 +18,9 @@ namespace DnDCS.Libs
         private readonly int port;
         private bool isStopped;
 
-        public event Action<Image> OnMapReceived;
-        public event Action<Image> OnFogReceived;
-        public event Action<SocketPoint[], bool> OnFogUpdateReceived;
+        public event Action<byte[]> OnMapReceived;
+        public event Action<byte[]> OnFogReceived;
+        public event Action<DnDPoint[], bool> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
         public event Action<SocketColor> OnGridColorReceived;
         public event Action OnExitReceived;
@@ -77,13 +75,13 @@ namespace DnDCS.Libs
                         case SocketConstants.SocketAction.Map:
                             Logger.LogDebug("Read Map action.");
                             if (OnMapReceived != null)
-                                OnMapReceived(((ImageSocketObject)socketObject).Image);
+                                OnMapReceived(((ImageSocketObject)socketObject).ImageBytes);
                             break;
 
                         case SocketConstants.SocketAction.Fog:
                             Logger.LogDebug("Read Fog action.");
                             if (OnFogReceived != null)
-                                OnFogReceived(((ImageSocketObject)socketObject).Image);
+                                OnFogReceived(((ImageSocketObject)socketObject).ImageBytes);
                             break;
 
                         case SocketConstants.SocketAction.FogUpdate:

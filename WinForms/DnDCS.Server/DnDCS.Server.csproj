@@ -96,6 +96,10 @@
       <Project>{EAB1B144-0E8B-4BA2-958A-42B1E70B32AB}</Project>
       <Name>DnDCS.Libs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\DnDCS.WinFormsLibs\DnDCS.WinFormsLibs.csproj">
+      <Project>{70F6B07C-0D5E-4373-A21F-1D446A59B33F}</Project>
+      <Name>DnDCS.WinFormsLibs</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

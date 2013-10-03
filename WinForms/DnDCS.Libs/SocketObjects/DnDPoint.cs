@@ -1,16 +1,18 @@
 ﻿
 namespace DnDCS.Libs.SocketObjects
 {
-    public class SocketPoint
+    public class DnDPoint
     {
+        public static readonly DnDPoint Empty = new DnDPoint(0, 0);
+
         public int X { get; set; }
         public int Y { get; set; }
 
-        public SocketPoint()
+        public DnDPoint()
         {
         }
 
-        public SocketPoint(int x, int y)
+        public DnDPoint(int x, int y)
         {
             this.X = x;
             this.Y = y;

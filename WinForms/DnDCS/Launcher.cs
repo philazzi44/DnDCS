@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using DnDCS.Client;
-using DnDCS.Server;
 using DnDCS.Libs;
+using DnDCS.Libs.SocketObjects;
+using DnDCS.Server;
+using DnDCS.WinFormsLibs;
 
 namespace DnDCS
 {
@@ -20,7 +17,7 @@ namespace DnDCS
         private FormWindowState initialFormWindowState;
         private MainMenu _menu;
 
-        private Point lastScrollPosition = Point.Empty;
+        private DnDPoint lastScrollPosition = DnDPoint.Empty;
         private IDnDCSControl control;
 
         public Launcher()
@@ -30,7 +27,7 @@ namespace DnDCS
         
         private void Launcher_Load(object sender, EventArgs e)
         {
-            this.Icon = DnDCS.Libs.Assets.AssetsLoader.LauncherIcon;
+            this.Icon = DnDCS.WinFormsLibs.Assets.AssetsLoader.LauncherIcon;
 
             initialFormTopMost = this.TopMost;
             initialFormBorderStyle = this.FormBorderStyle;
@@ -44,12 +41,12 @@ namespace DnDCS
         
         private void btnClient_Click(object sender, EventArgs e)
         {
-            SetMode("Client", DnDCS.Libs.Assets.AssetsLoader.ClientIcon, new ClientControl());
+            SetMode("Client", DnDCS.WinFormsLibs.Assets.AssetsLoader.ClientIcon, new ClientControl());
         }
 
         private void btnServer_Click(object sender, EventArgs e)
         {
-            SetMode("Server", DnDCS.Libs.Assets.AssetsLoader.ServerIcon, new ServerControl());
+            SetMode("Server", DnDCS.WinFormsLibs.Assets.AssetsLoader.ServerIcon, new ServerControl());
         }
 
         private void SetMode(string mode, Icon icon, IDnDCSControl control)

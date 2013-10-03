@@ -1,39 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
-using System.IO;
 
 namespace DnDCS.Libs.SocketObjects
 {
     public class ImageSocketObject : BaseSocketObject
     {
-        private Image image;
-        public Image Image
-        {
-            get
-            {
-                if (image == null)
-                    image = ConvertBytesToImage(ImageBytes);
-                return image;
-            }
-        }
-
         public byte[] ImageBytes { get; private set; }
 
-        private ImageSocketObject(SocketConstants.SocketAction action, byte[] imageBytes)
+        public ImageSocketObject(SocketConstants.SocketAction action, byte[] imageBytes)
             : base(action)
         {
             ImageBytes = imageBytes;
         }
-
-        private ImageSocketObject(SocketConstants.SocketAction action, Image image)
-            : base(action)
-        {
-            this.image = (Image)image.Clone();
-            ImageBytes = ConvertImageToBytes(this.image);
-        }
-
+        
         public static ImageSocketObject ImageObjectFromBytes(byte[] bytes)
         {
             var action = (SocketConstants.SocketAction)bytes[0];
@@ -45,35 +25,6 @@ namespace DnDCS.Libs.SocketObjects
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
-            }
-        }
-
-        public static ImageSocketObject CreateMap(Image map)
-        {
-            var socketObject = new ImageSocketObject(SocketConstants.SocketAction.Map, map);
-            return socketObject;
-        }
-
-        public static ImageSocketObject CreateFog(Image fog)
-        {
-            var socketObject = new ImageSocketObject(SocketConstants.SocketAction.Fog, fog);
-            return socketObject;
-        }
-
-        private static byte[] ConvertImageToBytes(Image image)
-        {
-            using (var ms = new MemoryStream())
-            {
-                image.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
-                return ms.ToArray();
-            }
-        }
-
-        private static Image ConvertBytesToImage(byte[] dataBytes)
-        {
-            using (var ms = new MemoryStream(dataBytes))
-            {
-                return Image.FromStream(ms);
             }
         }
 
