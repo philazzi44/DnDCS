@@ -4,7 +4,8 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
 using DnDCS.Libs;
-using DnDCS.Libs.SocketObjects;
+using DnDCS.Libs.SimpleObjects;
+using System.Linq;
 
 namespace DnDCS_Client
 {
@@ -17,6 +18,13 @@ namespace DnDCS_Client
         private readonly GraphicsDeviceManager graphics;
         private SpriteBatch spriteBatch;
         private Texture2D map;
+        // Used as a placeholder for a new image coming in, so the next Update cycle will switch the image.
+        private object newMapLock = new object();
+        private Texture2D newMap;
+        private Texture2D fog;
+        // Used as a placeholder for a new image coming in, so the next Update cycle will switch the image.
+        private object newFogLock = new object();
+        private Texture2D newFog;
         private Texture2D blackoutImage;
 
         private Nullable<int> gridSize;
@@ -56,6 +64,7 @@ namespace DnDCS_Client
         private readonly List<string> debugText = new List<string>();
         private string FullDebugText { get { return string.Join("\n", debugText); } }
 
+        private bool IsConnected { get { return !isConnectionClosed && this.map != null; } }
         private bool isConnectionClosed;
         private SpriteFont exitFont;
         private bool isBlackoutOn;
@@ -75,18 +84,70 @@ namespace DnDCS_Client
         protected override void Initialize()
         {
             connection = new ClientSocketConnection(address, port);
-            // connection.OnMapReceived += new Action<Image>(connection_OnMapReceived);
-            // connection.OnFogReceived += new Action<Image>(connection_OnFogReceived);
-            // connection.OnFogUpdateReceived += new Action<Point[], bool>(connection_OnFogUpdateReceived);
+            connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
+            connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
+            //connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
-            connection.OnGridColorReceived += new Action<SocketColor>(connection_OnGridColorReceived);
+            connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
             connection.OnExitReceived += new Action(connection_OnExitReceived);
 
             base.Initialize();
         }
 
-        private void connection_OnGridColorReceived(SocketColor gridColor)
+        private void connection_OnMapReceived(byte[] mapImageBytes)
+        {
+            if (!IsConnected)
+            {
+                this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", connection.Address, connection.Port);
+            }
+
+            try
+            {
+                lock (newMapLock)
+                {
+                    if (this.newMap != null)
+                    {
+                        this.newMap.Dispose();
+                        this.newMap = null;
+                    }
+
+                    // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
+                    this.newMap = new Texture2D(GraphicsDevice, 1024, 768);
+                    this.newMap.SetData(mapImageBytes);
+
+                    lock (newFogLock)
+                    {
+                        // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
+                        this.newFog = new Texture2D(GraphicsDevice, newMap.Width, newMap.Height);
+                        this.newFog.SetData<Color>(Enumerable.Repeat(Color.Black, newMap.Width * newMap.Height).ToArray());
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Map Received Failure", e);
+            }
+        }
+        
+        private void connection_OnFogReceived(byte[] fogImageBytes)
+        {
+            try
+            {
+                lock (newFogLock)
+                {
+                    // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
+                    this.newFog = new Texture2D(GraphicsDevice, 1024, 768);
+                    this.newFog.SetData(fogImageBytes);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Fog received failure.", e);
+            }
+        }
+
+        private void connection_OnGridColorReceived(SimpleColor gridColor)
         {
             gridTileColor = new Color(gridColor.R, gridColor.G, gridColor.B, gridColor.A);
         }
@@ -143,6 +204,9 @@ namespace DnDCS_Client
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            Update_TryUseNewMap();
+            Update_TryUseNewFog();
+
             debugText.Clear();
 
             currentKeyboardState = Keyboard.GetState();
@@ -165,6 +229,34 @@ namespace DnDCS_Client
             debugText.Add("Client Bounds: " + ActualClientWidth + "x" + ActualClientHeight);
             debugText.Add("Logical Client Bounds: " + LogicalClientWidth + "x" + LogicalClientHeight);
             base.Update(gameTime);
+        }
+
+        private void Update_TryUseNewMap()
+        {
+            if (this.newMap != null)
+            {
+                lock (newMapLock)
+                {
+                    if (this.map != null)
+                        this.map.Dispose();
+                    this.map = this.newMap;
+                    this.newMap = null;
+                }
+            }
+        }
+
+        private void Update_TryUseNewFog()
+        {
+            if (this.newFog != null)
+            {
+                lock (newFogLock)
+                {
+                    if (this.fog != null)
+                        this.fog.Dispose();
+                    this.fog = this.newFog;
+                    this.newFog = null;
+                }
+            }
         }
 
         private void Update_HandleScroll()
