@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Drawing;
-using System.IO;
 
 namespace DnDCS.Libs.SocketObjects
 {
@@ -18,19 +15,7 @@ namespace DnDCS.Libs.SocketObjects
             Points = (points ?? new SocketPoint[0]).ToArray();
             IsClearing = isClearing;
         }
-
-        public FogUpdateSocketObject(SocketConstants.SocketAction action, Point[] points, bool isClearing)
-            : base(action)
-        {
-            Points = (points ?? new Point[0]).Select(p => new SocketPoint(p.X, p.Y)).ToArray();
-            IsClearing = isClearing;
-        }
-
-        public FogUpdateSocketObject(SocketConstants.SocketAction action, FogUpdate fogUpdate)
-            : this(action, fogUpdate.Points, fogUpdate.IsClearing)
-        {
-        }
-
+        
         public static FogUpdateSocketObject PointArrayObjectFromBytes(byte[] bytes)
         {
             var action = (SocketConstants.SocketAction)bytes[0];

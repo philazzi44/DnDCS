@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using DnDCS.Libs.PersistenceObjects;
-using System.Xml.Serialization;
 using System.IO;
+using System.Xml.Serialization;
+using DnDCS.Libs.PersistenceObjects;
 
 namespace DnDCS.Libs
 {

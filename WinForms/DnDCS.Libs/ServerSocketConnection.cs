@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net.Sockets;
-using System.Net;
-using System.Threading;
 using System.Drawing;
-using DnDCS.Libs.SocketObjects;
-using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
 using DnDCS.Libs.ServerEvents;
+using DnDCS.Libs.SocketObjects;
 
 namespace DnDCS.Libs
 {
@@ -166,8 +164,7 @@ namespace DnDCS.Libs
         public void WriteFogUpdate(FogUpdate fogUpdate)
         {
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
-
+                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new SocketPoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)
