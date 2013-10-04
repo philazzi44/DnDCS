@@ -1,4 +1,5 @@
 using System;
+using DnDCS_Client.GameLogic;
 
 namespace DnDCS_Client
 {
