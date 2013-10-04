@@ -35,7 +35,8 @@ namespace DnDCS_Client
         private Color gridTileColor;
 
         // TODO: Should be prompted.
-        private string address = "pazzi.parse3.local";
+        // private string address = "pazzi.parse3.local";
+        private string address = "desktop-win7";
         // TODO: Should be prompted.
         private int port = 11000;
 
