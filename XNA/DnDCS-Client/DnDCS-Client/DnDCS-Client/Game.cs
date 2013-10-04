@@ -15,6 +15,8 @@ namespace DnDCS_Client
     {
         private const float scrollDeltaPercent = 0.1f;
 
+        private BasicEffect effect;
+
         private ClientSocketConnection connection;
 
         private readonly GraphicsDeviceManager graphics;
@@ -221,6 +223,13 @@ namespace DnDCS_Client
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            effect = new BasicEffect(GraphicsDevice);
+            effect.World = Matrix.Identity;
+            effect.View = Matrix.CreateLookAt(new Vector3(0, 0, 5), Vector3.Zero, Vector3.Up);
+            float aspect = (float)Window.ClientBounds.Width / (float)Window.ClientBounds.Height;
+            effect.Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect, 1, 100);
+            effect.VertexColorEnabled = true;
+
             this.blackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
             this.noMapImage = this.Content.Load<Texture2D>("NoMapImage");
             this.debugFont = this.Content.Load<SpriteFont>("Debug");
@@ -318,7 +327,6 @@ namespace DnDCS_Client
             {
                 lock (newFogLock)
                 {
-                    this.newFog.SaveAsPng(new System.IO.FileStream("newfog.png", System.IO.FileMode.Create), newFog.Width, newFog.Height);
                     if (this.fog != null)
                         this.fog.Dispose();
                     this.fog = this.newFog;
@@ -403,27 +411,94 @@ namespace DnDCS_Client
             }
         }
 
-        public struct VertexPositionNormalColor : IVertexType
+        private void Draw_Init()
         {
-            public VertexPositionNormalColor(Vector3 pos, Color c)
+            GraphicsDevice.Clear(Color.Black);
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+                pass.Apply();
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            Draw_Init();
+
+            if (fogUpdates.Count > 0)
             {
-                Position = pos;
-                Color = new Vector4(c.A, c.R, c.G, c.B);
-                Normal = Vector3.One;
+                FogUpdate[] newFogUpdates;
+                lock (fogUpdatesLock)
+                {
+                    newFogUpdates = fogUpdates.ToArray();
+                    //fogUpdates.Clear();
+                }
+                //var pp = GraphicsDevice.PresentationParameters;
+                //var renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
+                //GraphicsDevice.SetRenderTarget(renderTarget);
+                foreach (var newFogUpdate in newFogUpdates)
+                {
+                    var points = newFogUpdate.Points;
+
+                    // [0] is [0]
+                    // [1] is [1]
+                    // [2] is [2]
+                    // [3] is [0]
+                    // [4] is [3]
+                    // [5] is [4]
+                    // [6] is [0]
+                    // ...
+                    var vertices = new List<VertexPositionColor>();
+                    for (var i = 1; i < points.Length - 1; i++)
+                    {
+                        // TODO: Normalize
+                        vertices.Add(new VertexPositionColor(new Vector3(points[0].X / 1458f, points[0].Y / 1089f, 0), Color.White));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i].X / 1458f, points[i].Y / 1089f, 0), Color.White));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i + 1].X / 1458f, points[i + 1].Y / 1089f, 0), Color.White));
+                    }
+
+                    RasterizerState rs = new RasterizerState();
+                    rs.CullMode = CullMode.None;
+                    GraphicsDevice.RasterizerState = rs;
+
+                    GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, vertices.ToArray(), 0, vertices.Count / 3, VertexPositionColor.VertexDeclaration);
+
+                    //VertexBuffer vb = new VertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                    //vb.SetData<VertexPositionColor>(vertices.ToArray());
+                    //GraphicsDevice.SetVertexBuffer(vb);
+                    //GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, vertices.Count / 3);
+
+                }
+                base.Draw(gameTime);
+                return;
+                //GraphicsDevice.SetRenderTarget(null);
+                //lock (newFogLock)
+                //{
+                //    if (newFog != null)
+                //        newFog.Dispose();
+                //    newFog = renderTarget;
+                //}
             }
 
-            public Vector3 Position;
-            public Vector3 Normal;
-            public Vector4 Color;
-
-            public VertexDeclaration VertexDeclaration
             {
-                get
-                {
-                    return new VertexDeclaration(new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-                                                 new VertexElement(12, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
-                                                 new VertexElement(24, VertexElementFormat.Vector4, VertexElementUsage.Color, 0));
-                }
+                var vertices = new VertexPositionColor[3];
+
+                //vertices[0].Position = new Vector3(0f, 0f, 0f);
+                //vertices[0].Color = Color.White;
+                //vertices[1].Position = new Vector3(1, 1f, 0f);
+                //vertices[1].Color = Color.White;
+                //vertices[2].Position = new Vector3(0, 1f, 0f);
+                //vertices[2].Color = Color.White;
+
+                vertices[0].Position = new Vector3(0.3642578f, 0.0546875f, 0f);
+                vertices[0].Color = Color.White;
+                vertices[1].Position = new Vector3(0.3642578f, 0.2546875f, 0f);
+                vertices[1].Color = Color.White;
+                vertices[2].Position = new Vector3(0.4818359f, 0.5625f, 0f);
+                vertices[2].Color = Color.White;
+
+                RasterizerState rs = new RasterizerState();
+                rs.CullMode = CullMode.None;
+                GraphicsDevice.RasterizerState = rs;
+
+                GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, vertices, 0, 1, VertexPositionColor.VertexDeclaration);
             }
         }
 
@@ -431,7 +506,7 @@ namespace DnDCS_Client
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Draw(GameTime gameTime)
+        protected void Draw2(GameTime gameTime)
         {
             // If we have any Fog Updates, we need to now render them onto the Fog texture.
             if (fogUpdates.Count > 0)
@@ -440,11 +515,11 @@ namespace DnDCS_Client
                 lock (fogUpdatesLock)
                 {
                     newFogUpdates = fogUpdates.ToArray();
-                    fogUpdates.Clear();
+                    //fogUpdates.Clear();
                 }
-                var pp = GraphicsDevice.PresentationParameters;
-                var renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
-                GraphicsDevice.SetRenderTarget(renderTarget);
+                //var pp = GraphicsDevice.PresentationParameters;
+                //var renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
+                //GraphicsDevice.SetRenderTarget(renderTarget);
                 GraphicsDevice.Clear(Color.Black);
                 foreach (var newFogUpdate in newFogUpdates)
                 {
@@ -453,7 +528,7 @@ namespace DnDCS_Client
 
                     var vertices = new List<VertexPositionColor>()
                     {
-                        new VertexPositionColor(new Vector3(firstPoint.X, firstPoint.Y, 0), Color.Red),
+                        new VertexPositionColor(new Vector3(firstPoint.X, firstPoint.Y, 1), Color.Red),
                     };
                     
                     
@@ -469,40 +544,41 @@ namespace DnDCS_Client
                     // ...
                     for (var i = 1; i < points.Length - 1; i++)
                     {
-                        vertices.Add(new VertexPositionColor(new Vector3(points[0].X, points[0].Y, 0), Color.Red));
-                        vertices.Add(new VertexPositionColor(new Vector3(points[i].X, points[i].Y, 0), Color.Red));
-                        vertices.Add(new VertexPositionColor(new Vector3(points[i + 1].X, points[i + 1].Y, 0), Color.Red));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[0].X, points[0].Y, 1), Color.White));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i].X, points[i].Y, 1), Color.White));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i + 1].X, points[i + 1].Y, 1), Color.White));
                     }
                     var basicEffect = new BasicEffect(graphics.GraphicsDevice);
                     basicEffect.VertexColorEnabled = true;
+                    basicEffect.LightingEnabled = false;
                     basicEffect.Projection = Matrix.CreateOrthographicOffCenter
                        (0, graphics.GraphicsDevice.Viewport.Width,     // left, right
                         graphics.GraphicsDevice.Viewport.Height, 0,    // bottom, top
                         0, 1);                                         // near, far plane
 
-                    VertexBuffer vb = new VertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
-                    vb.SetData<VertexPositionColor>(vertices.ToArray());
-                    GraphicsDevice.SetVertexBuffer(vb);
                     RasterizerState rs = new RasterizerState();
                     rs.CullMode = CullMode.None;
                     GraphicsDevice.RasterizerState = rs;
                     basicEffect.CurrentTechnique.Passes[0].Apply();
-                    GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, vertices.Count / 3);
 
-                    //BasicEffect effect = new BasicEffect(GraphicsDevice);
-                    //effect.VertexColorEnabled = true;
-                    //effect.TextureEnabled = false;
-                    //effect.LightingEnabled = false;
-                    //GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, vertices.ToArray(), 0, vertices.Count / 3, VertexPositionColor.VertexDeclaration);
+                    GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, vertices.ToArray(), 0, vertices.Count / 3, VertexPositionColor.VertexDeclaration);
+
+                    //VertexBuffer vb = new VertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                    //vb.SetData<VertexPositionColor>(vertices.ToArray());
+                    //GraphicsDevice.SetVertexBuffer(vb);
+                    //GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, vertices.Count / 3);
+
+                    base.Draw(gameTime);
+                    return;
 
                 }
-                GraphicsDevice.SetRenderTarget(null);
-                lock (newFogLock)
-                {
-                    if (newFog != null)
-                        newFog.Dispose();
-                    newFog = renderTarget;
-                }
+                //GraphicsDevice.SetRenderTarget(null);
+                //lock (newFogLock)
+                //{
+                //    if (newFog != null)
+                //        newFog.Dispose();
+                //    newFog = renderTarget;
+                //}
             }
 
             GraphicsDevice.Clear(Color.Black);
