@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
 using System.Linq;
+using System.IO;
 
 namespace DnDCS_Client
 {
@@ -37,8 +38,8 @@ namespace DnDCS_Client
         private Color gridTileColor;
 
         // TODO: Should be prompted.
-        // private string address = "pazzi.parse3.local";
-        private string address = "desktop-win7";
+        private string address = "pazzi.parse3.local";
+        //private string address = "desktop-win7";
         // TODO: Should be prompted.
         private int port = 11000;
 
@@ -152,16 +153,17 @@ namespace DnDCS_Client
                         this.newMap = null;
                     }
 
-                    // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
-                    this.newMap = new Texture2D(GraphicsDevice, mapImage.Width, mapImage.Height);
-                    this.newMap.SetData(mapImage.Bytes);
-
-                    lock (newFogLock)
+                    using (var stream = new MemoryStream(mapImage.Bytes))
                     {
-                        // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
-                        this.newFog = new Texture2D(GraphicsDevice, newMap.Width, newMap.Height);
-                        this.newFog.SetData<Color>(Enumerable.Repeat(Color.Black, newMap.Width * newMap.Height).ToArray());
+                        this.newMap = Texture2D.FromStream(GraphicsDevice, stream);
                     }
+
+                    //lock (newFogLock)
+                    //{
+                    //    // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
+                    //    this.newFog = new Texture2D(GraphicsDevice, newMap.Width, newMap.Height);
+                    //    this.newFog.SetData<Color>(Enumerable.Repeat(Color.Black, newMap.Width * newMap.Height).ToArray());
+                    //}
                 }
             }
             catch (Exception e)
@@ -180,9 +182,16 @@ namespace DnDCS_Client
             {
                 lock (newFogLock)
                 {
-                    // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
-                    this.newFog = new Texture2D(GraphicsDevice, fogImage.Width, fogImage.Height);
-                    this.newFog.SetData(fogImage.Bytes);
+                    if (this.newFog != null)
+                    {
+                        this.newFog.Dispose();
+                        this.newFog = null;
+                    }
+
+                    using (var stream = new MemoryStream(fogImage.Bytes))
+                    {
+                        this.newFog = Texture2D.FromStream(GraphicsDevice, stream);
+                    }
                 }
             }
             catch (Exception e)
@@ -420,6 +429,9 @@ namespace DnDCS_Client
 
         protected override void Draw(GameTime gameTime)
         {
+            Draw2(gameTime);
+            return;
+
             Draw_Init();
 
             if (fogUpdates.Count > 0)
@@ -509,7 +521,8 @@ namespace DnDCS_Client
         protected void Draw2(GameTime gameTime)
         {
             // If we have any Fog Updates, we need to now render them onto the Fog texture.
-            if (fogUpdates.Count > 0)
+            // TODO: This doesn't work right. See the official Draw method for work in progress on this.
+            if (false && fogUpdates.Count > 0)
             {
                 FogUpdate[] newFogUpdates;
                 lock (fogUpdatesLock)
@@ -632,7 +645,8 @@ namespace DnDCS_Client
                         }
                     }
 
-                    // TODO: Draw fog overtop
+                    // TODO: Need to apply alpha masking somehow.
+                    spriteBatch.Draw(fog, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
                 }
 
                 spriteBatch.DrawString(debugFont, FullDebugText, Vector2.Zero, Color.Aqua);
