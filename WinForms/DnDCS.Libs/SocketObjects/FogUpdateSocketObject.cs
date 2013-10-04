@@ -6,14 +6,12 @@ namespace DnDCS.Libs.SimpleObjects
 {
     public class FogUpdateSocketObject : BaseSocketObject
     {
-        public SimplePoint[] Points { get; set; }
-        public bool IsClearing { get; set; }
+        public FogUpdate FogUpdateInstance { get; set; }
 
-        public FogUpdateSocketObject(SocketConstants.SocketAction action, SimplePoint[] points, bool isClearing)
-            : base(action)
+        public FogUpdateSocketObject(SocketConstants.SocketAction action, FogUpdate fogUpdate) :
+            base(SocketConstants.SocketAction.FogUpdate)
         {
-            Points = (points ?? new SimplePoint[0]).ToArray();
-            IsClearing = isClearing;
+            FogUpdateInstance = new FogUpdate(fogUpdate.Points, fogUpdate.IsClearing);
         }
         
         public static FogUpdateSocketObject PointArrayObjectFromBytes(byte[] bytes)
@@ -22,7 +20,7 @@ namespace DnDCS.Libs.SimpleObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.FogUpdate:
-                    return new FogUpdateSocketObject(action, ConvertBytesToSocketPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1);
+                    return new FogUpdateSocketObject(action, new FogUpdate(ConvertBytesToSocketPointArray(bytes.Skip(2).ToArray()), bytes[1] == (byte)1));
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
@@ -56,14 +54,14 @@ namespace DnDCS.Libs.SimpleObjects
         {
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
-            bytes.Add(IsClearing ? (byte)1 : (byte)0);
-            bytes.AddRange(ConvertSocketPointsToBytes(this.Points));
+            bytes.Add(FogUpdateInstance.IsClearing ? (byte)1 : (byte)0);
+            bytes.AddRange(ConvertSocketPointsToBytes(FogUpdateInstance.Points));
             return bytes.ToArray();
         }
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: {2}", Action, Points.Length, IsClearing);
+            return string.Format("Socket Action: '{0}', Number of Points: {1}, IsClearing: {2}", Action, FogUpdateInstance.Length, FogUpdateInstance.IsClearing);
         }
     }
 }

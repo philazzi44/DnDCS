@@ -159,9 +159,10 @@ namespace DnDCS.Client
 
             connection = new ClientSocketConnection(address, port);
             connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
-            connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
-            connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
-            connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
+            connection.OnServerNotFound += new Action(connection_OnServerNotFound);
+            connection.OnMapReceived += new Action<SimpleImage>(connection_OnMapReceived);
+            connection.OnFogReceived += new Action<SimpleImage>(connection_OnFogReceived);
+            connection.OnFogUpdateReceived += new Action<FogUpdate>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
@@ -180,6 +181,16 @@ namespace DnDCS.Client
             }));
         }
 
+        private void connection_OnServerNotFound()
+        {
+            this.BeginInvoke(new Action(() =>
+            {
+                MessageBox.Show(this, "The server was not found. Client application will now close.",
+                                "Server Connection Not Found", MessageBoxButtons.OK);
+                this.ParentForm.Close();
+            }));
+        }
+
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
         {
             this.isBlackoutOn = isBlackoutOn;
@@ -190,11 +201,11 @@ namespace DnDCS.Client
                                                })));
         }
 
-        private void connection_OnMapReceived(byte[] mapImageBytes)
+        private void connection_OnMapReceived(SimpleImage mapImage)
         {
             try
             {
-                var map = mapImageBytes.ToImage();
+                var map = mapImage.Bytes.ToImage();
 
                 // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
                 this.fog = new Bitmap(map.Width, map.Height);
@@ -222,11 +233,11 @@ namespace DnDCS.Client
             }
         }
 
-        private void connection_OnFogReceived(byte[] fogImageBytes)
+        private void connection_OnFogReceived(SimpleImage fogImage)
         {
             try
             {
-                this.fog = fogImageBytes.ToImage();
+                this.fog = fogImage.Bytes.ToImage();
                 if (isBlackoutOn)
                     return;
 
@@ -238,7 +249,7 @@ namespace DnDCS.Client
             }
         }
 
-        private void connection_OnFogUpdateReceived(SimplePoint[] fogUpdate, bool isClearing)
+        private void connection_OnFogUpdateReceived(FogUpdate fogUpdate)
         {
             var fogImageToUpdate = this.fog;
             var isNewFogImage = (fogImageToUpdate == null);
@@ -249,7 +260,7 @@ namespace DnDCS.Client
             {
                 if (isNewFogImage)
                     g.FillRectangle(fogBrush, 0, 0, fog.Width, fog.Height);
-                g.FillPolygon((isClearing) ? fogClearBrush : fogBrush, fogUpdate.Select(p => new Point(p.X, p.Y)).ToArray());
+                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : fogBrush, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
             }
 
             if (isNewFogImage)

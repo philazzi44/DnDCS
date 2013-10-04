@@ -69,12 +69,16 @@ namespace DnDCS_Client
         private string FullDebugText { get { return string.Join("\n", debugText); } }
 
         private bool updateTitle;
+        private bool isServerNotFound;
         private bool isConnecting;
         private bool isConnected;
         private bool isConnectionClosed;
 
         private SpriteFont genericMessageFont;
         private bool isBlackoutOn;
+
+        private readonly object fogUpdatesLock = new object();
+        private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
         public Game()
         {
@@ -85,6 +89,7 @@ namespace DnDCS_Client
             };
             Content.RootDirectory = "Content";
             this.Window.AllowUserResizing = true;
+
         }
 
         /// <summary>
@@ -95,12 +100,14 @@ namespace DnDCS_Client
         /// </summary>
         protected override void Initialize()
         {
+            Logger.FileSuffix = "Client";
 
             connection = new ClientSocketConnection(address, port);
             connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
-            connection.OnMapReceived += new Action<byte[]>(connection_OnMapReceived);
-            connection.OnFogReceived += new Action<byte[]>(connection_OnFogReceived);
-            //connection.OnFogUpdateReceived += new Action<SimplePoint[], bool>(connection_OnFogUpdateReceived);
+            connection.OnServerNotFound += new Action(connection_OnServerNotFound);
+            connection.OnMapReceived += new Action<SimpleImage>(connection_OnMapReceived);
+            connection.OnFogReceived += new Action<SimpleImage>(connection_OnFogReceived);
+            connection.OnFogUpdateReceived += new Action<FogUpdate>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
@@ -112,13 +119,26 @@ namespace DnDCS_Client
             base.Initialize();
         }
 
+        private void connection_OnFogUpdateReceived(FogUpdate fogUpdate)
+        {
+            lock (fogUpdatesLock)
+            {
+                fogUpdates.Add(fogUpdate);
+            }
+        }
+
         private void connection_OnConnectionEstablished()
         {
             this.isConnected = true;
             this.updateTitle = true;
         }
 
-        private void connection_OnMapReceived(byte[] mapImageBytes)
+        private void connection_OnServerNotFound()
+        {
+            this.isServerNotFound = true;
+        }
+
+        private void connection_OnMapReceived(SimpleImage mapImage)
         {
             try
             {
@@ -131,8 +151,8 @@ namespace DnDCS_Client
                     }
 
                     // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
-                    this.newMap = new Texture2D(GraphicsDevice, 1024, 768);
-                    this.newMap.SetData(mapImageBytes);
+                    this.newMap = new Texture2D(GraphicsDevice, mapImage.Width, mapImage.Height);
+                    this.newMap.SetData(mapImage.Bytes);
 
                     lock (newFogLock)
                     {
@@ -145,23 +165,30 @@ namespace DnDCS_Client
             catch (Exception e)
             {
                 Logger.LogError("Map Received Failure", e);
+                if (this.newMap != null)
+                    this.newMap.Dispose();
+                this.newMap = null;
+
             }
         }
         
-        private void connection_OnFogReceived(byte[] fogImageBytes)
+        private void connection_OnFogReceived(SimpleImage fogImage)
         {
             try
             {
                 lock (newFogLock)
                 {
                     // TODO: Width/Height needs to come from the arguments, since we can't infer it from the bytes.
-                    this.newFog = new Texture2D(GraphicsDevice, 1024, 768);
-                    this.newFog.SetData(fogImageBytes);
+                    this.newFog = new Texture2D(GraphicsDevice, fogImage.Width, fogImage.Height);
+                    this.newFog.SetData(fogImage.Bytes);
                 }
             }
             catch (Exception e)
             {
                 Logger.LogError("Fog received failure.", e);
+                if (this.newFog != null)
+                    this.newFog.Dispose();
+                this.newFog = null;
             }
         }
 
@@ -231,6 +258,9 @@ namespace DnDCS_Client
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            if (!this.isConnected)
+                return;
+
             debugText.Clear();
 
             // TODO: This stinks, because we need to check the condition every single update... Have to do this until I figure out how to post to the Game thread.
@@ -239,13 +269,13 @@ namespace DnDCS_Client
                 updateTitle = false;
                 this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", connection.Address, connection.Port);
             }
+
             currentKeyboardState = Keyboard.GetState();
             currentMouseState = Mouse.GetState();
-
+            
             Update_TryUseNewMap();
             Update_TryUseNewFog();
             
-
             if (currentMouseState.ScrollWheelValue != lastWheelValue)
             {
                 Update_HandleScroll();
@@ -288,6 +318,7 @@ namespace DnDCS_Client
             {
                 lock (newFogLock)
                 {
+                    this.newFog.SaveAsPng(new System.IO.FileStream("newfog.png", System.IO.FileMode.Create), newFog.Width, newFog.Height);
                     if (this.fog != null)
                         this.fog.Dispose();
                     this.fog = this.newFog;
@@ -300,7 +331,7 @@ namespace DnDCS_Client
         {
             // TODO: Add support for scrolling off screen, so we don't know when the map actually ends. Cap it at Window.Width/Height offscreen though - no reason to know exactly where it ends.
             // Control forces a Zoom, so overrides all Scrolling.
-            if (!currentKeyboardState.IsKeyDown(Keys.LeftControl))
+            if (this.map != null && !currentKeyboardState.IsKeyDown(Keys.LeftControl))
             {
                 Update_HandleVerticalScroll();
                 Update_HandleHorizontalScroll();
@@ -372,18 +403,118 @@ namespace DnDCS_Client
             }
         }
 
+        public struct VertexPositionNormalColor : IVertexType
+        {
+            public VertexPositionNormalColor(Vector3 pos, Color c)
+            {
+                Position = pos;
+                Color = new Vector4(c.A, c.R, c.G, c.B);
+                Normal = Vector3.One;
+            }
+
+            public Vector3 Position;
+            public Vector3 Normal;
+            public Vector4 Color;
+
+            public VertexDeclaration VertexDeclaration
+            {
+                get
+                {
+                    return new VertexDeclaration(new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
+                                                 new VertexElement(12, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0),
+                                                 new VertexElement(24, VertexElementFormat.Vector4, VertexElementUsage.Color, 0));
+                }
+            }
+        }
+
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            // If we have any Fog Updates, we need to now render them onto the Fog texture.
+            if (fogUpdates.Count > 0)
+            {
+                FogUpdate[] newFogUpdates;
+                lock (fogUpdatesLock)
+                {
+                    newFogUpdates = fogUpdates.ToArray();
+                    fogUpdates.Clear();
+                }
+                var pp = GraphicsDevice.PresentationParameters;
+                var renderTarget = new RenderTarget2D(GraphicsDevice, pp.BackBufferWidth, pp.BackBufferHeight, true, GraphicsDevice.DisplayMode.Format, DepthFormat.Depth24);
+                GraphicsDevice.SetRenderTarget(renderTarget);
+                GraphicsDevice.Clear(Color.Black);
+                foreach (var newFogUpdate in newFogUpdates)
+                {
+                    var points = newFogUpdate.Points;
+                    var firstPoint = points[0];
+
+                    var vertices = new List<VertexPositionColor>()
+                    {
+                        new VertexPositionColor(new Vector3(firstPoint.X, firstPoint.Y, 0), Color.Red),
+                    };
+                    
+                    
+                    // [0] is [0]
+                    // [1] is [1]
+                    // [2] is [2]
+                    // [3] is [0]
+                    // [4] is [3]
+                    // [5] is [4]
+                    // [6] is [0]
+                    // [7] is [5]
+                    // [8] is [6]
+                    // ...
+                    for (var i = 1; i < points.Length - 1; i++)
+                    {
+                        vertices.Add(new VertexPositionColor(new Vector3(points[0].X, points[0].Y, 0), Color.Red));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i].X, points[i].Y, 0), Color.Red));
+                        vertices.Add(new VertexPositionColor(new Vector3(points[i + 1].X, points[i + 1].Y, 0), Color.Red));
+                    }
+                    var basicEffect = new BasicEffect(graphics.GraphicsDevice);
+                    basicEffect.VertexColorEnabled = true;
+                    basicEffect.Projection = Matrix.CreateOrthographicOffCenter
+                       (0, graphics.GraphicsDevice.Viewport.Width,     // left, right
+                        graphics.GraphicsDevice.Viewport.Height, 0,    // bottom, top
+                        0, 1);                                         // near, far plane
+
+                    VertexBuffer vb = new VertexBuffer(GraphicsDevice, VertexPositionColor.VertexDeclaration, vertices.Count, BufferUsage.WriteOnly);
+                    vb.SetData<VertexPositionColor>(vertices.ToArray());
+                    GraphicsDevice.SetVertexBuffer(vb);
+                    RasterizerState rs = new RasterizerState();
+                    rs.CullMode = CullMode.None;
+                    GraphicsDevice.RasterizerState = rs;
+                    basicEffect.CurrentTechnique.Passes[0].Apply();
+                    GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, vertices.Count / 3);
+
+                    //BasicEffect effect = new BasicEffect(GraphicsDevice);
+                    //effect.VertexColorEnabled = true;
+                    //effect.TextureEnabled = false;
+                    //effect.LightingEnabled = false;
+                    //GraphicsDevice.DrawUserPrimitives<VertexPositionColor>(PrimitiveType.TriangleList, vertices.ToArray(), 0, vertices.Count / 3, VertexPositionColor.VertexDeclaration);
+
+                }
+                GraphicsDevice.SetRenderTarget(null);
+                lock (newFogLock)
+                {
+                    if (newFog != null)
+                        newFog.Dispose();
+                    newFog = renderTarget;
+                }
+            }
+
             GraphicsDevice.Clear(Color.Black);
 
             spriteBatch.Begin();
             try
             {
-                if (isConnectionClosed)
+                if (isServerNotFound)
+                {
+                    Draw_ServerNotFound();
+                }
+                else if (isConnectionClosed)
                 {
                     Draw_Exit();
                 }
@@ -443,6 +574,11 @@ namespace DnDCS_Client
             DrawCenteredMessage("Not connected");
         }
 
+        private void Draw_ServerNotFound()
+        {
+            DrawCenteredMessage(string.Format("Server at {0}:{1} could not be found", connection.Address, connection.Port));
+        }
+
         private void Draw_Connecting()
         {
             if (connection != null)
@@ -451,7 +587,7 @@ namespace DnDCS_Client
 
         private void Draw_Exit()
         {
-            DrawCenteredMessage("The server has closed the connection");
+            DrawCenteredMessage("Server has closed the connection");
         }
 
         private void Draw_Blackout(GameTime gameTime)
@@ -459,6 +595,7 @@ namespace DnDCS_Client
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
             spriteBatch.Draw(blackoutImage, new Vector2(this.ActualClientWidth / 2 - blackoutImage.Width / 2, this.ActualClientHeight / 2 - blackoutImage.Height / 2), color);
         }
+
         private void Draw_NoMap(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;

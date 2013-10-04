@@ -47,6 +47,7 @@
     <Compile Include="PersistenceObjects\ServerData.cs" />
     <Compile Include="PersistenceObjects\ServerAddress.cs" />
     <Compile Include="ServerEvents\SocketEvent.cs" />
+    <Compile Include="SimpleObjects\SimpleImage.cs" />
     <Compile Include="SocketObjects\ColorSocketObject.cs" />
     <Compile Include="SocketObjects\FogUpdateSocketObject.cs" />
     <Compile Include="SocketObjects\GridSizeSocketObject.cs" />

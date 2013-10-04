@@ -6,12 +6,16 @@ namespace DnDCS.Libs.SimpleObjects
 {
     public class ImageSocketObject : BaseSocketObject
     {
-        public byte[] ImageBytes { get; private set; }
-
-        public ImageSocketObject(SocketConstants.SocketAction action, byte[] imageBytes)
+        public SimpleImage Image { get; private set; }
+        public ImageSocketObject(SocketConstants.SocketAction action, SimpleImage image)
             : base(action)
         {
-            ImageBytes = imageBytes;
+            Image = image;
+        }
+
+        public ImageSocketObject(SocketConstants.SocketAction action, int imageWidth, int imageHeight, byte[] imageBytes)
+            : this(action, new SimpleImage(imageWidth, imageHeight, imageBytes))
+        {
         }
         
         public static ImageSocketObject ImageObjectFromBytes(byte[] bytes)
@@ -21,7 +25,7 @@ namespace DnDCS.Libs.SimpleObjects
             {
                 case SocketConstants.SocketAction.Map:
                 case SocketConstants.SocketAction.Fog:
-                    return new ImageSocketObject(action, bytes.Skip(1).ToArray());
+                    return new ImageSocketObject(action, BitConverter.ToInt32(bytes, 1), BitConverter.ToInt32(bytes, 5), bytes.Skip(9).ToArray());
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
@@ -32,13 +36,15 @@ namespace DnDCS.Libs.SimpleObjects
         {
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
-            bytes.AddRange(ImageBytes);
+            bytes.AddRange(BitConverter.GetBytes(Image.Width));
+            bytes.AddRange(BitConverter.GetBytes(Image.Height));
+            bytes.AddRange(Image.Bytes);
             return bytes.ToArray();
         }
 
         public override string ToString()
         {
-            return string.Format("Socket Action: '{0}', Image Bytes Length: {1}", Action, ImageBytes.Length);
+            return string.Format("Socket Action: '{0}', Width x Height: {1}x{2}, Image Bytes Length: {3}", Action, Image.Width, Image.Height, Image.Bytes.Length);
         }
     }
 }

@@ -23,9 +23,10 @@ namespace DnDCS.Libs
         private bool isStopped;
 
         public event Action OnConnectionEstablished;
-        public event Action<byte[]> OnMapReceived;
-        public event Action<byte[]> OnFogReceived;
-        public event Action<SimplePoint[], bool> OnFogUpdateReceived;
+        public event Action OnServerNotFound;
+        public event Action<SimpleImage> OnMapReceived;
+        public event Action<SimpleImage> OnFogReceived;
+        public event Action<FogUpdate> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
         public event Action<SimpleColor> OnGridColorReceived;
         public event Action OnExitReceived;
@@ -86,19 +87,19 @@ namespace DnDCS.Libs
                         case SocketConstants.SocketAction.Map:
                             Logger.LogDebug("Read Map action.");
                             if (OnMapReceived != null)
-                                OnMapReceived(((ImageSocketObject)socketObject).ImageBytes);
+                                OnMapReceived(((ImageSocketObject)socketObject).Image);
                             break;
 
                         case SocketConstants.SocketAction.Fog:
                             Logger.LogDebug("Read Fog action.");
                             if (OnFogReceived != null)
-                                OnFogReceived(((ImageSocketObject)socketObject).ImageBytes);
+                                OnFogReceived(((ImageSocketObject)socketObject).Image);
                             break;
 
                         case SocketConstants.SocketAction.FogUpdate:
                             Logger.LogDebug("Read Fog Update action.");
                             if (OnFogUpdateReceived != null)
-                                OnFogUpdateReceived(((FogUpdateSocketObject)socketObject).Points, ((FogUpdateSocketObject)socketObject).IsClearing);
+                                OnFogUpdateReceived(((FogUpdateSocketObject)socketObject).FogUpdateInstance);
                             break;
 
                         case SocketConstants.SocketAction.GridSize:
@@ -166,6 +167,8 @@ namespace DnDCS.Libs
             catch (Exception e)
             {
                 Logger.LogError("Client Socket - An error occurred trying to establish initial connection to server.", e);
+                if (OnServerNotFound != null)
+                    OnServerNotFound();
             }
         }
 

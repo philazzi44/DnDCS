@@ -12,13 +12,16 @@ namespace DnDCS.Libs
         public int Length { get { return _points.Count; } }
 
         public FogUpdate(bool isClearing)
-            : this(new LinkedList<SimplePoint>(), isClearing)
+            : this(new SimplePoint[0], isClearing)
         {
         }
 
-        public FogUpdate(LinkedList<SimplePoint> points, bool isClearing)
+        public FogUpdate(IEnumerable<SimplePoint> points, bool isClearing)
         {
-            _points = points ?? new LinkedList<SimplePoint>();
+            _points = new LinkedList<SimplePoint>();
+            foreach (var p in points)
+                _points.AddLast(p);
+
             IsClearing = isClearing;
         }
 

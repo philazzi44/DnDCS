@@ -34,7 +34,7 @@ namespace DnDCS.Libs
             serverListenerThread.Name = "Server Socket Thread";
             serverListenerThread.Start();
 
-            socketPollTimer = new Timer(PollTimerCallback, null, 5000, 5000);
+            socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
         }
 
         private void PollTimerCallback(object state)
@@ -148,22 +148,22 @@ namespace DnDCS.Libs
             }
         }
 
-        public void WriteMap(byte[] mapImageBytes)
+        public void WriteMap(int mapImageWidth, int mapImageHeight, byte[] mapImageBytes)
         {
             if (mapImageBytes != null && mapImageBytes.Length > 0)
-                Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageBytes));
+                Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageWidth, mapImageHeight, mapImageBytes));
         }
 
-        public void WriteFog(byte[] fogImageBytes)
+        public void WriteFog(int fogImageWidth, int fogImageHeight, byte[] fogImageBytes)
         {
             if (fogImageBytes != null && fogImageBytes.Length > 0)
-                Write(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageBytes));
+                Write(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageWidth, fogImageHeight, fogImageBytes));
         }
 
         public void WriteFogUpdate(FogUpdate fogUpdate)
         {
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate.Points.Select(p => new SimplePoint(p.X, p.Y)).ToArray(), fogUpdate.IsClearing));
+                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)

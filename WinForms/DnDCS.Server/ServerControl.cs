@@ -139,9 +139,9 @@ namespace DnDCS.Server
                 connection.WriteBlackout(true);
 
             if (map != null)
-                connection.WriteMap(map.ToBytes());
+                connection.WriteMap(map.Width, map.Height, map.ToBytes());
             if (fog != null)
-                connection.WriteFog(fog.ToBytes());
+                connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }
@@ -285,7 +285,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = true;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.ToBytes());
+                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
             }
         }
         
@@ -304,7 +304,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = redoFogUpdates.Any();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.ToBytes());
+                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
             }
         }
 
@@ -454,14 +454,14 @@ namespace DnDCS.Server
                 pbxMap.Refresh();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.ToBytes());
+                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
             }
         }
 
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
-            connection.WriteFog(fog.ToBytes());
+            connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
         }
         
         private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
