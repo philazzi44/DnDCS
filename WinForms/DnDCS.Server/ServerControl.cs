@@ -139,9 +139,9 @@ namespace DnDCS.Server
                 connection.WriteBlackout(true);
 
             if (map != null)
-                connection.WriteMap(map.Width, map.Height, map.ToBytes());
+                connection.WriteMap(map);
             if (fog != null)
-                connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+                connection.WriteFog(fog);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }
@@ -285,7 +285,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = true;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+                    connection.WriteFog(fog);
             }
         }
         
@@ -304,7 +304,7 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = redoFogUpdates.Any();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+                    connection.WriteFog(fog);
             }
         }
 
@@ -454,14 +454,14 @@ namespace DnDCS.Server
                 pbxMap.Refresh();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+                    connection.WriteFog(fog);
             }
         }
 
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
-            connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+            connection.WriteFog(fog);
         }
         
         private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
@@ -614,7 +614,7 @@ namespace DnDCS.Server
 
                 // TODO: Because the XNA client doesn't support Fog Updates yet due to problems trying to draw the Polygon, we'll
                 // send along the entire fog for now.
-                connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+                connection.WriteFog(fog);
             }
         }
 

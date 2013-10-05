@@ -32,34 +32,21 @@ namespace DnDCS_Client.GameLogic
         {
             try
             {
-                lock (newMapLock)
+                using (var stream = new MemoryStream(mapImage.Bytes))
                 {
-                    if (this.newMap != null)
-                    {
-                        this.newMap.Dispose();
-                        this.newMap = null;
-                    }
-
-                    using (var stream = new MemoryStream(mapImage.Bytes))
-                    {
-                        this.newMap = Texture2D.FromStream(GraphicsDevice, stream);
-                    }
-
-                    //lock (newFogLock)
-                    //{
-                    //    // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
-                    //    this.newFog = new Texture2D(GraphicsDevice, newMap.Width, newMap.Height);
-                    //    this.newFog.SetData<Color>(Enumerable.Repeat(Color.Black, newMap.Width * newMap.Height).ToArray());
-                    //}
+                    gameState.Map = Texture2D.FromStream(GraphicsDevice, stream);
                 }
+
+                //lock (newFogLock)
+                //{
+                //    // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
+                //    this.newFog = new Texture2D(GraphicsDevice, newMap.Width, newMap.Height);
+                //    this.newFog.SetData<Color>(Enumerable.Repeat(Color.Black, newMap.Width * newMap.Height).ToArray());
+                //}
             }
             catch (Exception e)
             {
                 Logger.LogError("Map Received Failure", e);
-                if (this.newMap != null)
-                    this.newMap.Dispose();
-                this.newMap = null;
-
             }
         }
 
@@ -67,26 +54,14 @@ namespace DnDCS_Client.GameLogic
         {
             try
             {
-                lock (newFogLock)
+                using (var stream = new MemoryStream(fogImage.Bytes))
                 {
-                    if (this.newFog != null)
-                    {
-                        this.newFog.Dispose();
-                        this.newFog = null;
-                    }
-
-                    using (var stream = new MemoryStream(fogImage.Bytes))
-                    {
-                        this.newFog = Texture2D.FromStream(GraphicsDevice, stream);
-                    }
+                    this.gameState.Fog = Texture2D.FromStream(GraphicsDevice, stream);
                 }
             }
             catch (Exception e)
             {
                 Logger.LogError("Fog received failure.", e);
-                if (this.newFog != null)
-                    this.newFog.Dispose();
-                this.newFog = null;
             }
         }
 

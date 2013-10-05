@@ -11,53 +11,23 @@ namespace DnDCS_Client.GameLogic
 {
     public partial class Game : Microsoft.Xna.Framework.Game
     {
-        private readonly GameState gameState = new GameState();
+        private readonly GameState gameState;
+
         private readonly GraphicsDeviceManager graphics;
-        private readonly List<string> debugText = new List<string>();
-
-        private BasicEffect effect;
-
         private SpriteBatch spriteBatch;
-        private Texture2D map;
-        // Used as a placeholder for a new image coming in, so the next Update cycle will switch the image.
-        private readonly object newMapLock = new object();
-        private Texture2D newMap;
-        private Texture2D fog;
-        // Used as a placeholder for a new image coming in, so the next Update cycle will switch the image.
-        private readonly object newFogLock = new object();
-        private Texture2D newFog;
+        private BasicEffect effect;
 
         private Nullable<int> gridSize;
         private Color gridTileColor;
 
-        // TODO: Should be prompted.
-        private string address = "pazzi.parse3.local";
-        //private string address = "desktop-win7";
-        // TODO: Should be prompted.
-        private int port = 11000;
-
-        private int lastWheelValue;
-
-        private int verticalScrollPosition;
-        private int horizontalScrollPosition;
-
-        private float zoomFactor = 1.0f;
-
-        private int ActualMapWidth { get { return this.map.Width; } }
-        private int ActualMapHeight { get { return this.map.Height; } }
-        private int LogicalMapWidth { get { return (int)(ActualMapWidth * zoomFactor); } }
-        private int LogicalMapHeight { get { return (int)(ActualMapHeight * zoomFactor); } }
-
-        private int ActualClientWidth { get { return this.Window.ClientBounds.Width; } }
-        private int ActualClientHeight { get { return this.Window.ClientBounds.Height; } }
-        private int LogicalClientWidth { get { return (int)(ActualClientWidth * zoomFactor); } }
-        private int LogicalClientHeight { get { return (int)(ActualClientHeight * zoomFactor); } }
 
         private readonly object fogUpdatesLock = new object();
         private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
         public Game()
         {
+            this.gameState = new GameState(this.Window);
+
             graphics = new GraphicsDeviceManager(this)
             {
                 PreferredBackBufferWidth = 1024,
@@ -65,7 +35,6 @@ namespace DnDCS_Client.GameLogic
             };
             Content.RootDirectory = "Content";
             this.Window.AllowUserResizing = true;
-
         }
 
         /// <summary>
@@ -78,7 +47,7 @@ namespace DnDCS_Client.GameLogic
         {
             Logger.FileSuffix = "Client";
 
-            gameState.Connection = new ClientSocketConnection(address, port);
+            gameState.Connection = new ClientSocketConnection(gameState.Address, gameState.Port);
             gameState.Connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
             gameState.Connection.OnServerNotFound += new Action(connection_OnServerNotFound);
             gameState.Connection.OnMapReceived += new Action<SimpleImage>(connection_OnMapReceived);
@@ -128,20 +97,12 @@ namespace DnDCS_Client.GameLogic
         /// </summary>
         protected override void UnloadContent()
         {
-            if (this.map != null)
-                this.map.Dispose();
-            if (this.newMap != null)
-                this.newMap.Dispose();
-            if (this.fog != null)
-                this.fog.Dispose();
-            if (this.newFog != null)
-                this.newFog.Dispose();
+            if (this.gameState != null)
+                this.gameState.Dispose();
             if (GameConstants.BlackoutImage != null)
                 GameConstants.BlackoutImage.Dispose();
             if (GameConstants.NoMapImage != null)
                 GameConstants.NoMapImage.Dispose();
-            if (this.gameState.Connection != null)
-                this.gameState.Connection.Stop();
         }
     }
 }

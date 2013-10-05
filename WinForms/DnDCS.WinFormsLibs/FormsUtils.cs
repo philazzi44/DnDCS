@@ -1,6 +1,7 @@
 ﻿using System.Drawing;
 using System.IO;
 using DnDCS.Libs.SimpleObjects;
+using DnDCS.Libs;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -42,5 +43,16 @@ namespace DnDCS.WinFormsLibs
         {
             return new SimpleColor(color.A, color.R, color.G, color.B);
         }
+
+        public static void WriteMap(this ServerSocketConnection connection, Image map)
+        {
+            connection.WriteMap(map.Width, map.Height, map.ToBytes());
+        }
+
+        public static void WriteFog(this ServerSocketConnection connection, Image fog)
+        {
+            connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
+        }
+
     }
 }

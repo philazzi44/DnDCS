@@ -9,8 +9,6 @@ namespace DnDCS_Client.GameLogic
 {
     public partial class Game
     {
-        private string FullDebugText { get { return string.Join("\n", this.debugText); } }
-
         private void Draw_Init()
         {
             GraphicsDevice.Clear(Color.Black);
@@ -214,33 +212,33 @@ namespace DnDCS_Client.GameLogic
                 {
                     Draw_Blackout(gameTime);
                 }
-                else if (map == null)
+                else if (gameState.Map == null)
                 {
                     Draw_NoMap(gameTime);
                 }
                 else
                 {
-                    spriteBatch.Draw(map, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
+                    spriteBatch.Draw(gameState.Map, new Vector2(-gameState.HorizontalScrollPosition, -gameState.VerticalScrollPosition), null, Color.White, 0f, Vector2.Zero, gameState.ZoomFactor, SpriteEffects.None, 0);
 
                     if (gridSize.HasValue)
                     {
                         // TODO: We can change the math to only draw what's visible, if necessary.
-                        var gridSizeStep = (int)(gridSize.Value * zoomFactor);
-                        for (var x = -horizontalScrollPosition; x < ActualMapWidth; x += gridSizeStep)
+                        var gridSizeStep = (int)(gridSize.Value * gameState.ZoomFactor);
+                        for (var x = -gameState.HorizontalScrollPosition; x < gameState.ActualMapWidth; x += gridSizeStep)
                         {
-                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(x, 0, 1, ActualClientHeight + verticalScrollPosition), gridTileColor);
+                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(x, 0, 1, gameState.ActualClientHeight + gameState.VerticalScrollPosition), gridTileColor);
                         }
-                        for (var y = -verticalScrollPosition; y < ActualMapHeight + verticalScrollPosition; y += gridSizeStep)
+                        for (var y = -gameState.VerticalScrollPosition; y < gameState.ActualMapHeight + gameState.VerticalScrollPosition; y += gridSizeStep)
                         {
-                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(0, y, ActualClientWidth + horizontalScrollPosition, 1), gridTileColor);
+                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(0, y, gameState.ActualClientWidth + gameState.HorizontalScrollPosition, 1), gridTileColor);
                         }
                     }
 
                     // TODO: Need to apply alpha masking somehow.
-                    spriteBatch.Draw(fog, new Vector2(-horizontalScrollPosition, -verticalScrollPosition), null, Color.White, 0f, Vector2.Zero, zoomFactor, SpriteEffects.None, 0);
+                    spriteBatch.Draw(gameState.Fog, new Vector2(-gameState.HorizontalScrollPosition, -gameState.VerticalScrollPosition), null, Color.White, 0f, Vector2.Zero, gameState.ZoomFactor, SpriteEffects.None, 0);
                 }
 
-                spriteBatch.DrawString(GameConstants.DebugFont, FullDebugText, Vector2.Zero, Color.Aqua);
+                spriteBatch.DrawString(GameConstants.DebugFont, gameState.FullDebugText, Vector2.Zero, Color.Aqua);
             }
             finally
             {
@@ -275,19 +273,19 @@ namespace DnDCS_Client.GameLogic
         private void Draw_Blackout(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            spriteBatch.Draw(GameConstants.BlackoutImage, new Vector2(this.ActualClientWidth / 2 - GameConstants.BlackoutImage.Width / 2, this.ActualClientHeight / 2 - GameConstants.BlackoutImage.Height / 2), color);
+            spriteBatch.Draw(GameConstants.BlackoutImage, new Vector2(gameState.ActualClientWidth / 2 - GameConstants.BlackoutImage.Width / 2, gameState.ActualClientHeight / 2 - GameConstants.BlackoutImage.Height / 2), color);
         }
 
         private void Draw_NoMap(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            spriteBatch.Draw(GameConstants.NoMapImage, new Vector2(this.ActualClientWidth / 2 - GameConstants.NoMapImage.Width / 2, this.ActualClientHeight / 2 - GameConstants.NoMapImage.Height / 2), color);
+            spriteBatch.Draw(GameConstants.NoMapImage, new Vector2(gameState.ActualClientWidth / 2 - GameConstants.NoMapImage.Width / 2, gameState.ActualClientHeight / 2 - GameConstants.NoMapImage.Height / 2), color);
         }
 
         private void DrawCenteredMessage(string msg)
         {
             var msgSize = GameConstants.GenericMessageFont.MeasureString(msg);
-            spriteBatch.DrawString(GameConstants.GenericMessageFont, msg, new Vector2((int)((this.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((this.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
+            spriteBatch.DrawString(GameConstants.GenericMessageFont, msg, new Vector2((int)((gameState.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((gameState.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
         }
     }
 }

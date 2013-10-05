@@ -7,6 +7,8 @@ namespace DnDCS_Client.GameLogic
 {
     public partial class Game
     {
+        private int lastWheelValue;
+
         /// <summary>
         /// Allows the game to run logic such as updating the world,
         /// checking for collisions, gathering input, and playing audio.
@@ -17,21 +19,15 @@ namespace DnDCS_Client.GameLogic
             if (!this.gameState.IsConnected)
                 return;
 
-            debugText.Clear();
-
+            gameState.Update();
+            
             // TODO: This stinks, because we need to check the condition every single update... Have to do this until I figure out how to post to the Game thread.
             if (gameState.UpdateTitle)
             {
                 gameState.UpdateTitle = false;
                 this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", gameState.Connection.Address, gameState.Connection.Port);
             }
-
-            gameState.CurrentKeyboardState = Keyboard.GetState();
-            gameState.CurrentMouseState = Mouse.GetState();
-
-            Update_TryUseNewMap();
-            Update_TryUseNewFog();
-
+            
             if (gameState.CurrentMouseState.ScrollWheelValue != lastWheelValue)
             {
                 Update_HandleScroll();
@@ -40,53 +36,25 @@ namespace DnDCS_Client.GameLogic
 
             lastWheelValue = gameState.CurrentMouseState.ScrollWheelValue;
 
-            debugText.Add("Zoom Factor: " + zoomFactor);
-            debugText.Add("Vertical Scroll Position: " + verticalScrollPosition);
-            debugText.Add("Horizontal Scroll Position: " + horizontalScrollPosition);
-            if (map != null)
+            gameState.DebugText.Add("Zoom Factor: " + gameState.ZoomFactor);
+            gameState.DebugText.Add("Vertical Scroll Position: " + gameState.VerticalScrollPosition);
+            gameState.DebugText.Add("Horizontal Scroll Position: " + gameState.HorizontalScrollPosition);
+            if (gameState.Map != null)
             {
-                debugText.Add("Map Size: " + map.Width + "x" + map.Height);
-                debugText.Add("Map Bounds: " + ActualMapWidth + "x" + ActualMapHeight);
-                debugText.Add("Logical Map Bounds: " + LogicalMapWidth + "x" + LogicalMapHeight);
+                gameState.DebugText.Add("Map Size: " + gameState.Map.Width + "x" + gameState.Map.Height);
+                gameState.DebugText.Add("Map Bounds: " + gameState.ActualMapWidth + "x" + gameState.ActualMapHeight);
+                gameState.DebugText.Add("Logical Map Bounds: " + gameState.LogicalMapWidth + "x" + gameState.LogicalMapHeight);
             }
-            debugText.Add("Client Bounds: " + ActualClientWidth + "x" + ActualClientHeight);
-            debugText.Add("Logical Client Bounds: " + LogicalClientWidth + "x" + LogicalClientHeight);
+            gameState.DebugText.Add("Client Bounds: " + gameState.ActualClientWidth + "x" + gameState.ActualClientHeight);
+            gameState.DebugText.Add("Logical Client Bounds: " + gameState.LogicalClientWidth + "x" + gameState.LogicalClientHeight);
             base.Update(gameTime);
         }
-
-        private void Update_TryUseNewMap()
-        {
-            if (this.newMap != null)
-            {
-                lock (newMapLock)
-                {
-                    if (this.map != null)
-                        this.map.Dispose();
-                    this.map = this.newMap;
-                    this.newMap = null;
-                }
-            }
-        }
-
-        private void Update_TryUseNewFog()
-        {
-            if (this.newFog != null)
-            {
-                lock (newFogLock)
-                {
-                    if (this.fog != null)
-                        this.fog.Dispose();
-                    this.fog = this.newFog;
-                    this.newFog = null;
-                }
-            }
-        }
-
+        
         private void Update_HandleScroll()
         {
             // TODO: Add support for scrolling off screen, so we don't know when the map actually ends. Cap it at Window.Width/Height offscreen though - no reason to know exactly where it ends.
             // Control forces a Zoom, so overrides all Scrolling.
-            if (this.map != null && !gameState.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
+            if (this.gameState.Map != null && !gameState.CurrentKeyboardState.IsKeyDown(Keys.LeftControl))
             {
                 Update_HandleVerticalScroll();
                 Update_HandleHorizontalScroll();
@@ -101,12 +69,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // Up
-                    verticalScrollPosition = Math.Max(0, verticalScrollPosition - (int)Math.Abs(map.Height * GameConstants.ScrollDeltaPercent));
+                    gameState.VerticalScrollPosition = Math.Max(0, gameState.VerticalScrollPosition - (int)Math.Abs(gameState.ActualMapHeight * GameConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Down
-                    verticalScrollPosition = Math.Min(verticalScrollPosition + (int)Math.Abs(map.Height * GameConstants.ScrollDeltaPercent), LogicalMapHeight - ActualClientHeight);
+                    gameState.VerticalScrollPosition = Math.Min(gameState.VerticalScrollPosition + (int)Math.Abs(gameState.ActualMapHeight * GameConstants.ScrollDeltaPercent), gameState.LogicalMapHeight - gameState.ActualClientHeight);
                 }
             }
 
@@ -120,12 +88,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // Left
-                    horizontalScrollPosition = Math.Max(0, horizontalScrollPosition - (int)Math.Abs(map.Width * GameConstants.ScrollDeltaPercent));
+                    gameState.HorizontalScrollPosition = Math.Max(0, gameState.HorizontalScrollPosition - (int)Math.Abs(gameState.ActualMapWidth * GameConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Right
-                    horizontalScrollPosition = Math.Min(horizontalScrollPosition + (int)Math.Abs(map.Width * GameConstants.ScrollDeltaPercent), LogicalMapWidth - ActualClientWidth);
+                    gameState.HorizontalScrollPosition = Math.Min(gameState.HorizontalScrollPosition + (int)Math.Abs(gameState.ActualMapWidth * GameConstants.ScrollDeltaPercent), gameState.LogicalMapWidth - gameState.ActualClientWidth);
                 }
             }
 
@@ -140,12 +108,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // In
-                    zoomFactor = Math.Min((float)Math.Round(zoomFactor + GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMaximumFactor);
+                    gameState.ZoomFactor = Math.Min((float)Math.Round(gameState.ZoomFactor + GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMaximumFactor);
                 }
                 else if (wheelDelta < 0)
                 {
                     // Out
-                    zoomFactor = Math.Max((float)Math.Round(zoomFactor - GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMinimumFactor);
+                    gameState.ZoomFactor = Math.Max((float)Math.Round(gameState.ZoomFactor - GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMinimumFactor);
                 }
                 else
                 {
@@ -153,8 +121,8 @@ namespace DnDCS_Client.GameLogic
                 }
 
                 // After any zoom, we need to re-bound the Scroll Positions so we're not over-showing the map.
-                horizontalScrollPosition = Math.Max(0, Math.Min(horizontalScrollPosition, LogicalMapWidth - ActualClientWidth));
-                verticalScrollPosition = Math.Max(0, Math.Min(verticalScrollPosition, LogicalMapHeight - ActualClientHeight));
+                gameState.HorizontalScrollPosition = Math.Max(0, Math.Min(gameState.HorizontalScrollPosition, gameState.LogicalMapWidth - gameState.ActualClientWidth));
+                gameState.VerticalScrollPosition = Math.Max(0, Math.Min(gameState.VerticalScrollPosition, gameState.LogicalMapHeight - gameState.ActualClientHeight));
             }
         }
     }
