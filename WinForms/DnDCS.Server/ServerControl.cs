@@ -611,10 +611,6 @@ namespace DnDCS.Server
                     connection.WriteFogUpdate(currentFogUpdate);
 
                 currentFogUpdate = null;
-
-                // TODO: Because the XNA client doesn't support Fog Updates yet due to problems trying to draw the Polygon, we'll
-                // send along the entire fog for now.
-                connection.WriteFog(fog);
             }
         }
 

@@ -20,7 +20,6 @@ namespace DnDCS_Client.GameLogic
         private Nullable<int> gridSize;
         private Color gridTileColor;
 
-
         private readonly object fogUpdatesLock = new object();
         private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
@@ -46,6 +45,8 @@ namespace DnDCS_Client.GameLogic
         protected override void Initialize()
         {
             Logger.FileSuffix = "Client";
+
+            this.Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
 
             gameState.Connection = new ClientSocketConnection(gameState.Address, gameState.Port);
             gameState.Connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
@@ -73,14 +74,6 @@ namespace DnDCS_Client.GameLogic
             // Create a new SpriteBatch, which can be used to draw textures.
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
-            var aspect = (float)Window.ClientBounds.Width / (float)Window.ClientBounds.Height;
-            effect = new BasicEffect(GraphicsDevice)
-                         {
-                             World = Matrix.Identity,
-                             View = Matrix.CreateLookAt(new Vector3(0, 0, 5), Vector3.Zero, Vector3.Up),
-                             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect, 1, 100),
-                             VertexColorEnabled = true
-                         };
 
             GameConstants.BlackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
             GameConstants.NoMapImage = this.Content.Load<Texture2D>("NoMapImage");
@@ -104,5 +97,11 @@ namespace DnDCS_Client.GameLogic
             if (GameConstants.NoMapImage != null)
                 GameConstants.NoMapImage.Dispose();
         }
+
+        private void Window_ClientSizeChanged(object sender, EventArgs e)
+        {
+            gameState.CreateEffect = true;
+        }
+
     }
 }

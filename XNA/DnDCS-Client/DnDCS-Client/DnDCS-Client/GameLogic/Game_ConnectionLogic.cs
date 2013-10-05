@@ -14,6 +14,7 @@ namespace DnDCS_Client.GameLogic
             lock (fogUpdatesLock)
             {
                 fogUpdates.Add(fogUpdate);
+                gameState.ConsumeFogUpdates = true;
             }
         }
 
@@ -50,13 +51,22 @@ namespace DnDCS_Client.GameLogic
             }
         }
 
-        private void connection_OnFogReceived(SimpleImage fogImage)
+        private void connection_OnFogReceived(SimpleImage fogSimpleImage)
         {
             try
             {
-                using (var stream = new MemoryStream(fogImage.Bytes))
+                using (var stream = new MemoryStream(fogSimpleImage.Bytes))
                 {
-                    this.gameState.Fog = Texture2D.FromStream(GraphicsDevice, stream);
+                    var fogImage = System.Drawing.Image.FromStream(stream);
+                    
+                    stream.Position = 0;
+
+                    var fogTexture = Texture2D.FromStream(GraphicsDevice, stream);
+                    // TODO: The Bitmap uses White to simulate Transparency. This is stupid but acceptable for now.
+                    ReplaceNonBlackWithTransparent(fogTexture);
+
+                    this.gameState.FogImage = fogImage;
+                    this.gameState.Fog = fogTexture;
                 }
             }
             catch (Exception e)

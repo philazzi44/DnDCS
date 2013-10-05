@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Linq;
 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Graphics;
+using DnDCS.Libs;
 
 namespace DnDCS_Client.GameLogic
 {
@@ -20,14 +23,65 @@ namespace DnDCS_Client.GameLogic
                 return;
 
             gameState.Update();
-            
+
+            if (gameState.CreateEffect)
+            {
+                gameState.CreateEffect = false;
+
+                if (this.effect != null)
+                    this.effect.Dispose();
+
+                var aspect = (float)Window.ClientBounds.Width / (float)Window.ClientBounds.Height;
+                effect = new BasicEffect(GraphicsDevice)
+                {
+                    World = Matrix.Identity,
+                    View = Matrix.CreateLookAt(new Vector3(0, 0, 1), Vector3.Zero, Vector3.Up),
+                    Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspect, 1, 100),
+                    VertexColorEnabled = true
+                };
+            }
+
             // TODO: This stinks, because we need to check the condition every single update... Have to do this until I figure out how to post to the Game thread.
             if (gameState.UpdateTitle)
             {
                 gameState.UpdateTitle = false;
                 this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", gameState.Connection.Address, gameState.Connection.Port);
             }
-            
+
+            // TODO: This is the biggest piece of garbage I've written for this entire thing. Currently disabled because I can't stand it.
+            if (gameState.ConsumeFogUpdates)
+            {
+                gameState.ConsumeFogUpdates = false;
+                FogUpdate[] newFogUpdates;
+                lock (fogUpdatesLock)
+                {
+                    newFogUpdates = this.fogUpdates.ToArray();
+                    this.fogUpdates.Clear();
+                }
+
+                using (var g = System.Drawing.Graphics.FromImage(gameState.FogImage))
+                {
+                    // Draw all Fog Updates into the Bitmap.
+                    foreach (var newFogUpdate in newFogUpdates)
+                    {
+                        g.FillPolygon((newFogUpdate.IsClearing) ? System.Drawing.Brushes.White : System.Drawing.Brushes.Black, newFogUpdate.Points.Select(p => new System.Drawing.Point(p.X, p.Y)).ToArray());
+                    }
+
+                    // Push the Bitmap into a Texture2D instance
+                    using (var ms = new System.IO.MemoryStream())
+                    {
+                        gameState.FogImage.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+                        var newFogTexture = Texture2D.FromStream(GraphicsDevice, ms);
+
+                        // TODO: The Bitmap uses White to simulate Transparency. This is stupid but acceptable for now.
+                        ReplaceNonBlackWithTransparent(newFogTexture);
+
+                        // Finally push the fog into the next Game State.
+                        gameState.Fog = newFogTexture;
+                    }
+                }
+            }
+
             if (gameState.CurrentMouseState.ScrollWheelValue != lastWheelValue)
             {
                 Update_HandleScroll();
@@ -49,7 +103,21 @@ namespace DnDCS_Client.GameLogic
             gameState.DebugText.Add("Logical Client Bounds: " + gameState.LogicalClientWidth + "x" + gameState.LogicalClientHeight);
             base.Update(gameTime);
         }
-        
+
+        /// <summary> Replaces all non-black colors with a Transparent color. This should only be used in the context of Fogs. </summary>
+        private void ReplaceNonBlackWithTransparent(Texture2D texture)
+        {
+            // Replace the old fog with the newly merged fog texture
+            Color[] colors = new Color[texture.Width * texture.Height];
+            texture.GetData<Color>(colors);
+            for (var i = 0; i < colors.Length; i++)
+            {
+                if (!colors[i].Equals(Color.Black))
+                    colors[i] = Color.Transparent;
+            }
+            texture.SetData<Color>(colors);
+        }
+
         private void Update_HandleScroll()
         {
             // TODO: Add support for scrolling off screen, so we don't know when the map actually ends. Cap it at Window.Width/Height offscreen though - no reason to know exactly where it ends.
