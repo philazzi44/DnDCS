@@ -11,11 +11,8 @@ namespace DnDCS_Client.ClientLogic
         public List<string> DebugText { get; set; }
         public string FullDebugText { get { return string.Join("\n", this.DebugText); } }
 
-        // TODO: Should be prompted.
-        //private string address = "pazzi.parse3.local";
-        public string Address = "desktop-win7";
-        // TODO: Should be prompted.
-        public int Port = 11000;
+        public string Address { get; private set; }
+        public int Port { get; private set; }
 
         public bool UpdateTitle { get; set; }
         public bool IsServerNotFound { get; set; }
@@ -85,8 +82,11 @@ namespace DnDCS_Client.ClientLogic
 
         public bool ConsumeFogUpdates { get; set; }
 
-        public ClientState()
+        public ClientState(string address, int port)
         {
+            this.Address = address;
+            this.Port = port;
+
             DebugText = new List<string>();
             ZoomFactor = 1.0f;
 

@@ -2,11 +2,14 @@
 using DnDCS_Client.ClientLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using DnDCS_Client.MenuLogic;
 
 namespace DnDCS_Client
 {
     public partial class Game : Microsoft.Xna.Framework.Game
     {
+        private GameComponent activeGameComponent;
+
         public Game()
         {
             SharedResources.Game = this;
@@ -33,11 +36,11 @@ namespace DnDCS_Client
             Logger.FileSuffix = "Client";
             SharedResources.GraphicsDevice = this.GraphicsDevice;
 
-            this.Components.Add(new Client());
+            ShowMenuComponent();
 
             base.Initialize();
         }
-
+        
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
@@ -56,6 +59,51 @@ namespace DnDCS_Client
         /// </summary>
         protected override void UnloadContent()
         {
+        }
+
+        private void ShowMenuComponent()
+        {
+            var menuComponent = new Menu();
+            menuComponent.OnConnect += new System.Action<DnDCS.Libs.PersistenceObjects.ServerAddress>(menu_OnConnect);
+            menuComponent.OnExit += new System.Action(menuComponent_OnExit);
+            this.SwitchGameComponent(menuComponent);
+        }
+
+
+        private void ShowClientComponent(DnDCS.Libs.PersistenceObjects.ServerAddress serverAddress)
+        {
+            var clientComponent = new Client(serverAddress.Address, serverAddress.Port);
+            clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            clientComponent.Initialize();
+
+            this.SwitchGameComponent(clientComponent);
+        }
+
+        private void SwitchGameComponent(GameComponent newGameComponent)
+        {
+            if (this.activeGameComponent != null)
+            {
+                this.Components.Remove(this.activeGameComponent);
+                this.activeGameComponent.Dispose();
+                this.activeGameComponent = null;
+            }
+
+            this.Components.Add(this.activeGameComponent = newGameComponent);
+        }
+
+        private void menu_OnConnect(DnDCS.Libs.PersistenceObjects.ServerAddress serverAddress)
+        {
+            ShowClientComponent(serverAddress);
+        }
+
+        private void menuComponent_OnExit()
+        {
+            this.Exit();
+        }
+
+        private void clientComponent_OnEscape()
+        {
+            ShowMenuComponent();
         }
     }
 }

@@ -10,6 +10,8 @@ namespace DnDCS_Client.ClientLogic
 {
     public partial class Client
     {
+        public event Action OnEscape;
+
         private int lastWheelValue;
 
         /// <summary>
@@ -19,10 +21,16 @@ namespace DnDCS_Client.ClientLogic
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Update(GameTime gameTime)
         {
+            gameState.Update();
+
+            if (gameState.CurrentKeyboardState.IsKeyDown(Keys.Escape) && OnEscape != null)
+            {
+                OnEscape();
+                return;
+            }
+
             if (!this.gameState.IsConnected)
                 return;
-
-            gameState.Update();
 
             if (gameState.CreateEffect)
             {

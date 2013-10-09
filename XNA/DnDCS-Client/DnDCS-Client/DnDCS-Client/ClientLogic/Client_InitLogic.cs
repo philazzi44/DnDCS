@@ -19,9 +19,9 @@ namespace DnDCS_Client.ClientLogic
         private readonly object fogUpdatesLock = new object();
         private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
-        public Client() : base(SharedResources.Game)
+        public Client(string address, int port) : base(SharedResources.Game)
         {
-            this.gameState = new ClientState();
+            this.gameState = new ClientState(address, port);
         }
 
         /// <summary>
@@ -51,6 +51,10 @@ namespace DnDCS_Client.ClientLogic
             base.Initialize();
         }
 
+        public void Reset()
+        {
+        }
+        
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
