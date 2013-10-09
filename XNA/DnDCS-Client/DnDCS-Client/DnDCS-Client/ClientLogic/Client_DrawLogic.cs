@@ -1,14 +1,11 @@
 ﻿
-using System.Collections.Generic;
-using System.Linq;
-using DnDCS.Libs;
+using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using System;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public partial class Game
+    public partial class Client
     {
         private void Draw_Init()
         {
@@ -20,9 +17,11 @@ namespace DnDCS_Client.GameLogic
             }
         }
 
-        protected override void Draw(GameTime gameTime)
+        public override void Draw(GameTime gameTime)
         {
             Draw_Init();
+
+            var spriteBatch = SharedResources.SpriteBatch;
 
             spriteBatch.Begin();
             try
@@ -64,18 +63,18 @@ namespace DnDCS_Client.GameLogic
                         var gridSizeStep = (int)(gridSize.Value * gameState.ZoomFactor);
                         for (var x = -gameState.HorizontalScrollPosition; x < gameState.LogicalMapWidth; x += gridSizeStep)
                         {
-                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(x, 0, 1, Math.Min(gameState.LogicalMapHeight, gameState.ActualClientHeight + gameState.VerticalScrollPosition)), gridTileColor);
+                            spriteBatch.Draw(ClientConstants.GridTileImage, new Rectangle(x, 0, 1, Math.Min(gameState.LogicalMapHeight, gameState.ActualClientHeight + gameState.VerticalScrollPosition)), gridTileColor);
                         }
                         for (var y = -gameState.VerticalScrollPosition; y < gameState.LogicalMapHeight; y += gridSizeStep)
                         {
-                            spriteBatch.Draw(GameConstants.GridTileImage, new Rectangle(0, y, Math.Min(gameState.LogicalMapWidth, gameState.ActualClientWidth + gameState.HorizontalScrollPosition), 1), gridTileColor);
+                            spriteBatch.Draw(ClientConstants.GridTileImage, new Rectangle(0, y, Math.Min(gameState.LogicalMapWidth, gameState.ActualClientWidth + gameState.HorizontalScrollPosition), 1), gridTileColor);
                         }
                     }
 
                     spriteBatch.Draw(gameState.Fog, new Vector2(-gameState.HorizontalScrollPosition, -gameState.VerticalScrollPosition), null, Color.White, 0f, Vector2.Zero, gameState.ZoomFactor, SpriteEffects.None, 0);
                 }
 
-                spriteBatch.DrawString(GameConstants.DebugFont, gameState.FullDebugText, Vector2.Zero, Color.Red);
+                spriteBatch.DrawString(ClientConstants.DebugFont, gameState.FullDebugText, Vector2.Zero, Color.Red);
             }
             finally
             {
@@ -110,19 +109,19 @@ namespace DnDCS_Client.GameLogic
         private void Draw_Blackout(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            spriteBatch.Draw(GameConstants.BlackoutImage, new Vector2(gameState.ActualClientWidth / 2 - GameConstants.BlackoutImage.Width / 2, gameState.ActualClientHeight / 2 - GameConstants.BlackoutImage.Height / 2), color);
+            SharedResources.SpriteBatch.Draw(ClientConstants.BlackoutImage, new Vector2(gameState.ActualClientWidth / 2 - ClientConstants.BlackoutImage.Width / 2, gameState.ActualClientHeight / 2 - ClientConstants.BlackoutImage.Height / 2), color);
         }
 
         private void Draw_NoMap(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            spriteBatch.Draw(GameConstants.NoMapImage, new Vector2(gameState.ActualClientWidth / 2 - GameConstants.NoMapImage.Width / 2, gameState.ActualClientHeight / 2 - GameConstants.NoMapImage.Height / 2), color);
+            SharedResources.SpriteBatch.Draw(ClientConstants.NoMapImage, new Vector2(gameState.ActualClientWidth / 2 - ClientConstants.NoMapImage.Width / 2, gameState.ActualClientHeight / 2 - ClientConstants.NoMapImage.Height / 2), color);
         }
 
         private void DrawCenteredMessage(string msg)
         {
-            var msgSize = GameConstants.GenericMessageFont.MeasureString(msg);
-            spriteBatch.DrawString(GameConstants.GenericMessageFont, msg, new Vector2((int)((gameState.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((gameState.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
+            var msgSize = ClientConstants.GenericMessageFont.MeasureString(msg);
+            SharedResources.SpriteBatch.DrawString(ClientConstants.GenericMessageFont, msg, new Vector2((int)((gameState.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((gameState.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
         }
     }
 }

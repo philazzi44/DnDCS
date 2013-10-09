@@ -1,5 +1,3 @@
-using System;
-using DnDCS_Client.GameLogic;
 
 namespace DnDCS_Client
 {
@@ -11,7 +9,7 @@ namespace DnDCS_Client
         /// </summary>
         static void Main(string[] args)
         {
-            using (Game game = new Game())
+            using (var game = new Game())
             {
                 game.Run();
             }

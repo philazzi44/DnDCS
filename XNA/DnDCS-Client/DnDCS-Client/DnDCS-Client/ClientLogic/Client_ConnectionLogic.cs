@@ -5,9 +5,9 @@ using DnDCS.Libs.SimpleObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public partial class Game
+    public partial class Client
     {
         private void connection_OnFogUpdateReceived(FogUpdate fogUpdate)
         {

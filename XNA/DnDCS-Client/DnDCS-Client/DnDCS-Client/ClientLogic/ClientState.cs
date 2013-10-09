@@ -1,18 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.Xna.Framework.Input;
 using DnDCS.Libs;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public class GameState : IDisposable
+    public class ClientState : IDisposable
     {
-        public GameWindow Window { get; private set; }
-
         public List<string> DebugText { get; set; }
         public string FullDebugText { get { return string.Join("\n", this.DebugText); } }
 
@@ -80,8 +75,8 @@ namespace DnDCS_Client.GameLogic
             }
         }
 
-        public int ActualClientWidth { get { return this.Window.ClientBounds.Width; } }
-        public int ActualClientHeight { get { return this.Window.ClientBounds.Height; } }
+        public int ActualClientWidth { get { return SharedResources.GameWindow.ClientBounds.Width; } }
+        public int ActualClientHeight { get { return SharedResources.GameWindow.ClientBounds.Height; } }
         public int LogicalClientWidth { get { return (int)(ActualClientWidth * this.ZoomFactor); } }
         public int LogicalClientHeight { get { return (int)(ActualClientHeight * this.ZoomFactor); } }
 
@@ -90,9 +85,8 @@ namespace DnDCS_Client.GameLogic
 
         public bool ConsumeFogUpdates { get; set; }
 
-        public GameState(GameWindow window)
+        public ClientState()
         {
-            this.Window = window;
             DebugText = new List<string>();
             ZoomFactor = 1.0f;
 

@@ -6,9 +6,9 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using DnDCS.Libs;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public partial class Game
+    public partial class Client
     {
         private int lastWheelValue;
 
@@ -17,7 +17,7 @@ namespace DnDCS_Client.GameLogic
         /// checking for collisions, gathering input, and playing audio.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
-        protected override void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime)
         {
             if (!this.gameState.IsConnected)
                 return;
@@ -30,8 +30,8 @@ namespace DnDCS_Client.GameLogic
 
                 if (this.effect != null)
                     this.effect.Dispose();
-
-                var aspect = (float)Window.ClientBounds.Width / (float)Window.ClientBounds.Height;
+                
+                var aspect = (float)this.gameState.ActualClientWidth / (float)this.gameState.ActualClientHeight;
                 effect = new BasicEffect(GraphicsDevice)
                 {
                     World = Matrix.Identity,
@@ -45,7 +45,7 @@ namespace DnDCS_Client.GameLogic
             if (gameState.UpdateTitle)
             {
                 gameState.UpdateTitle = false;
-                this.Window.Title = string.Format("DnDCS Client - Connected to {0}:{1}", gameState.Connection.Address, gameState.Connection.Port);
+                SharedResources.GameWindow.Title = string.Format("DnDCS Client - Connected to {0}:{1}", gameState.Connection.Address, gameState.Connection.Port);
             }
 
             // TODO: This is the biggest piece of garbage I've written for this entire thing. Currently disabled because I can't stand it.
@@ -137,12 +137,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // Up
-                    gameState.VerticalScrollPosition = Math.Max(0, gameState.VerticalScrollPosition - (int)Math.Abs(gameState.ActualMapHeight * GameConstants.ScrollDeltaPercent));
+                    gameState.VerticalScrollPosition = Math.Max(0, gameState.VerticalScrollPosition - (int)Math.Abs(gameState.ActualMapHeight * ClientConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Down
-                    gameState.VerticalScrollPosition = Math.Min(gameState.VerticalScrollPosition + (int)Math.Abs(gameState.ActualMapHeight * GameConstants.ScrollDeltaPercent), gameState.LogicalMapHeight - gameState.ActualClientHeight);
+                    gameState.VerticalScrollPosition = Math.Min(gameState.VerticalScrollPosition + (int)Math.Abs(gameState.ActualMapHeight * ClientConstants.ScrollDeltaPercent), gameState.LogicalMapHeight - gameState.ActualClientHeight);
                 }
             }
 
@@ -156,12 +156,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // Left
-                    gameState.HorizontalScrollPosition = Math.Max(0, gameState.HorizontalScrollPosition - (int)Math.Abs(gameState.ActualMapWidth * GameConstants.ScrollDeltaPercent));
+                    gameState.HorizontalScrollPosition = Math.Max(0, gameState.HorizontalScrollPosition - (int)Math.Abs(gameState.ActualMapWidth * ClientConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Right
-                    gameState.HorizontalScrollPosition = Math.Min(gameState.HorizontalScrollPosition + (int)Math.Abs(gameState.ActualMapWidth * GameConstants.ScrollDeltaPercent), gameState.LogicalMapWidth - gameState.ActualClientWidth);
+                    gameState.HorizontalScrollPosition = Math.Min(gameState.HorizontalScrollPosition + (int)Math.Abs(gameState.ActualMapWidth * ClientConstants.ScrollDeltaPercent), gameState.LogicalMapWidth - gameState.ActualClientWidth);
                 }
             }
 
@@ -176,12 +176,12 @@ namespace DnDCS_Client.GameLogic
                 if (wheelDelta > 0)
                 {
                     // In
-                    gameState.ZoomFactor = Math.Min((float)Math.Round(gameState.ZoomFactor + GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMaximumFactor);
+                    gameState.ZoomFactor = Math.Min((float)Math.Round(gameState.ZoomFactor + ClientConstants.ZoomFactorDelta, 1), ClientConstants.ZoomMaximumFactor);
                 }
                 else if (wheelDelta < 0)
                 {
                     // Out
-                    gameState.ZoomFactor = Math.Max((float)Math.Round(gameState.ZoomFactor - GameConstants.ZoomFactorDelta, 1), GameConstants.ZoomMinimumFactor);
+                    gameState.ZoomFactor = Math.Max((float)Math.Round(gameState.ZoomFactor - ClientConstants.ZoomFactorDelta, 1), ClientConstants.ZoomMinimumFactor);
                 }
                 else
                 {

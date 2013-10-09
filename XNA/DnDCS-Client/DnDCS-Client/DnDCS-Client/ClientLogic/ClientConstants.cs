@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public static class GameConstants
+    public static class ClientConstants
     {
         public const float ScrollDeltaPercent = 0.1f;
 

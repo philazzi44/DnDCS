@@ -1,20 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.Input;
 
-namespace DnDCS_Client.GameLogic
+namespace DnDCS_Client.ClientLogic
 {
-    public partial class Game : Microsoft.Xna.Framework.Game
+    public partial class Client : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        private readonly GameState gameState;
+        private readonly ClientState gameState;
 
-        private readonly GraphicsDeviceManager graphics;
-        private SpriteBatch spriteBatch;
         private BasicEffect effect;
 
         private Nullable<int> gridSize;
@@ -23,17 +19,9 @@ namespace DnDCS_Client.GameLogic
         private readonly object fogUpdatesLock = new object();
         private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
-        public Game()
+        public Client() : base(SharedResources.Game)
         {
-            this.gameState = new GameState(this.Window);
-
-            graphics = new GraphicsDeviceManager(this)
-            {
-                PreferredBackBufferWidth = 1024,
-                PreferredBackBufferHeight = 768,
-            };
-            Content.RootDirectory = "Content";
-            this.Window.AllowUserResizing = true;
+            this.gameState = new ClientState();
         }
 
         /// <summary>
@@ -42,11 +30,9 @@ namespace DnDCS_Client.GameLogic
         /// related content.  Calling base.Initialize will enumerate through any components
         /// and initialize them as well.
         /// </summary>
-        protected override void Initialize()
+        public override void Initialize()
         {
-            Logger.FileSuffix = "Client";
-
-            this.Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
+            SharedResources.GameWindow.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
 
             gameState.Connection = new ClientSocketConnection(gameState.Address, gameState.Port);
             gameState.Connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
@@ -71,17 +57,13 @@ namespace DnDCS_Client.GameLogic
         /// </summary>
         protected override void LoadContent()
         {
-            // Create a new SpriteBatch, which can be used to draw textures.
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            ClientConstants.BlackoutImage = SharedResources.ContentManager.Load<Texture2D>("BlackoutImage");
+            ClientConstants.NoMapImage = SharedResources.ContentManager.Load<Texture2D>("NoMapImage");
 
-
-            GameConstants.BlackoutImage = this.Content.Load<Texture2D>("BlackoutImage");
-            GameConstants.NoMapImage = this.Content.Load<Texture2D>("NoMapImage");
-
-            GameConstants.DebugFont = this.Content.Load<SpriteFont>("Debug");
-            GameConstants.GenericMessageFont = this.Content.Load<SpriteFont>("GenericMessage");
-            GameConstants.GridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
-            GameConstants.GridTileImage.SetData<Color>(new[] { Color.White });
+            ClientConstants.DebugFont = SharedResources.ContentManager.Load<SpriteFont>("Debug");
+            ClientConstants.GenericMessageFont = SharedResources.ContentManager.Load<SpriteFont>("GenericMessage");
+            ClientConstants.GridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
+            ClientConstants.GridTileImage.SetData<Color>(new[] { Color.White });
         }
 
         /// <summary>
@@ -92,10 +74,10 @@ namespace DnDCS_Client.GameLogic
         {
             if (this.gameState != null)
                 this.gameState.Dispose();
-            if (GameConstants.BlackoutImage != null)
-                GameConstants.BlackoutImage.Dispose();
-            if (GameConstants.NoMapImage != null)
-                GameConstants.NoMapImage.Dispose();
+            if (ClientConstants.BlackoutImage != null)
+                ClientConstants.BlackoutImage.Dispose();
+            if (ClientConstants.NoMapImage != null)
+                ClientConstants.NoMapImage.Dispose();
         }
 
         private void Window_ClientSizeChanged(object sender, EventArgs e)
