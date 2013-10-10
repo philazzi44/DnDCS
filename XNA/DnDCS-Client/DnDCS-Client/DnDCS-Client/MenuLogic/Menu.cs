@@ -8,17 +8,19 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
-using DnDCS.Libs.PersistenceObjects;
+using DnDCS.Libs.SimpleObjects;
+using DnDCS_Client.Shared;
 
 
 namespace DnDCS_Client.MenuLogic
 {
     public class Menu : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        public event Action<ServerAddress> OnConnect;
+        public event Action<SimpleServerAddress> OnConnect;
         public event Action OnExit;
 
         private MenuConstants.MenuOption selectedMenuOption;
+        private TranslationAnimation menuSelectorTranslation;
 
         public Menu() : base(SharedResources.Game)
         {
@@ -47,21 +49,27 @@ namespace DnDCS_Client.MenuLogic
             MenuConstants.MenuSelectorImage = SharedResources.ContentManager.Load<Texture2D>("MenuSelector");
         }
 
-        /// <summary>
-        /// Allows the game component to update itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         public override void Update(GameTime gameTime)
         {
-            // TODO: Add your update code here
+            Update_Keyboard();
+
+            base.Update(gameTime);
+        }
+
+        private void Update_Keyboard()
+        {
+            // If we're currently translating the menu selector, then ignore any keyboard events.
+            if (menuSelectorTranslation != null)
+                return;
+
             var keyboardState = Keyboard.GetState();
             if (keyboardState.IsKeyDown(Keys.Up))
             {
-                this.selectedMenuOption = (MenuConstants.MenuOption)Math.Max((int)this.selectedMenuOption - 1, 0);
+                SelectUp();
             }
             else if (keyboardState.IsKeyDown(Keys.Down))
             {
-                this.selectedMenuOption = (MenuConstants.MenuOption)Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
+                SelectDown();
             }
             else if (keyboardState.IsKeyDown(Keys.Enter))
             {
@@ -74,7 +82,7 @@ namespace DnDCS_Client.MenuLogic
                             var address = "desktop-win7";
                             var port = 11000;
 
-                            OnConnect(new ServerAddress() { Address = address, Port = port});
+                            OnConnect(new SimpleServerAddress() { Address = address, Port = port });
                         }
                         break;
                     case MenuConstants.MenuOption.Exit:
@@ -86,7 +94,16 @@ namespace DnDCS_Client.MenuLogic
             {
                 TryExit();
             }
-            base.Update(gameTime);
+        }
+
+        private void SelectUp()
+        {
+            this.selectedMenuOption = (MenuConstants.MenuOption)Math.Max((int)this.selectedMenuOption - 1, 0);
+        }
+
+        private void SelectDown()
+        {
+            this.selectedMenuOption = (MenuConstants.MenuOption)Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
         }
 
         private void TryExit()

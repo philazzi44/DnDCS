@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Xml.Serialization;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.Libs.PersistenceObjects;
 
 namespace DnDCS.Libs
@@ -34,7 +35,7 @@ namespace DnDCS.Libs
             }
             return clientData ?? new ClientData()
             {
-                ServerAddressHistory = new ServerAddress[0],
+                ServerAddressHistory = new SimpleServerAddress[0],
             };
         }
 

@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using DnDCS.Libs;
-using DnDCS.Libs.PersistenceObjects;
+using DnDCS.Libs.SimpleObjects;
 using System.Text.RegularExpressions;
 
 namespace DnDCS.Client
@@ -50,7 +50,7 @@ namespace DnDCS.Client
         private void GetConnectIPDialog_Closed(object sender, EventArgs e)
         {
             var clientData = Persistence.LoadClientData();
-            clientData.ServerAddressHistory = lboHistory.Items.OfType<ServerAddress>().ToArray();
+            clientData.ServerAddressHistory = lboHistory.Items.OfType<SimpleServerAddress>().ToArray();
             Persistence.SaveClientData(clientData);
         }
 
@@ -116,7 +116,7 @@ namespace DnDCS.Client
 
         private void btnConnect_Click(object sender, EventArgs e)
         {
-            var newAddress = new ServerAddress()
+            var newAddress = new SimpleServerAddress()
             {
                 Address = Address,
                 Port = this.Port
@@ -138,7 +138,7 @@ namespace DnDCS.Client
             if (lboHistory.SelectedIndex >= 0)
             {
                 btnDelete.Enabled = true;
-                var serverAddress = (ServerAddress)lboHistory.SelectedItem;
+                var serverAddress = (SimpleServerAddress)lboHistory.SelectedItem;
                 if (Utils.IsIPAddress(serverAddress.Address))
                 {
                     rdoIP.Checked = true;

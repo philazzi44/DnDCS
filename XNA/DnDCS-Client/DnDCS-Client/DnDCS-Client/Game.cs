@@ -64,13 +64,13 @@ namespace DnDCS_Client
         private void ShowMenuComponent()
         {
             var menuComponent = new Menu();
-            menuComponent.OnConnect += new System.Action<DnDCS.Libs.PersistenceObjects.ServerAddress>(menu_OnConnect);
+            menuComponent.OnConnect += new System.Action<DnDCS.Libs.SimpleObjects.SimpleServerAddress>(menu_OnConnect);
             menuComponent.OnExit += new System.Action(menuComponent_OnExit);
             this.SwitchGameComponent(menuComponent);
         }
 
 
-        private void ShowClientComponent(DnDCS.Libs.PersistenceObjects.ServerAddress serverAddress)
+        private void ShowClientComponent(DnDCS.Libs.SimpleObjects.SimpleServerAddress serverAddress)
         {
             var clientComponent = new Client(serverAddress.Address, serverAddress.Port);
             clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
@@ -91,7 +91,7 @@ namespace DnDCS_Client
             this.Components.Add(this.activeGameComponent = newGameComponent);
         }
 
-        private void menu_OnConnect(DnDCS.Libs.PersistenceObjects.ServerAddress serverAddress)
+        private void menu_OnConnect(DnDCS.Libs.SimpleObjects.SimpleServerAddress serverAddress)
         {
             ShowClientComponent(serverAddress);
         }

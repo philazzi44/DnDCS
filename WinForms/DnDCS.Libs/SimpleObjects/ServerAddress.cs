@@ -1,10 +1,10 @@
 ﻿using System;
 
-namespace DnDCS.Libs.PersistenceObjects
+namespace DnDCS.Libs.SimpleObjects
 {
-    public class ServerAddress : IEquatable<ServerAddress>
+    public class SimpleServerAddress : IEquatable<SimpleServerAddress>
     {
-        public ServerAddress()
+        public SimpleServerAddress()
         {
         }
 
@@ -13,7 +13,7 @@ namespace DnDCS.Libs.PersistenceObjects
 
         public override bool Equals(object obj)
         {
-            return (obj is ServerAddress && this.Equals((ServerAddress)obj));
+            return (obj is SimpleServerAddress && this.Equals((SimpleServerAddress)obj));
         }
 
         public override int GetHashCode()
@@ -26,7 +26,7 @@ namespace DnDCS.Libs.PersistenceObjects
             return string.Format("{0}:{1}", Address, Port);
         }
 
-        public bool Equals(ServerAddress other)
+        public bool Equals(SimpleServerAddress other)
         {
             return (Address == other.Address && Port == other.Port);
         }
