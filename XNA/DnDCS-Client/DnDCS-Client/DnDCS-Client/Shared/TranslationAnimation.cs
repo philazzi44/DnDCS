@@ -10,17 +10,22 @@ namespace DnDCS_Client.Shared
     {
         public struct Easing
         {
-            public readonly float StartTimePercent;
-            public readonly float EndTimePercent;
-            public readonly float StartTimePerSecondPercent;
-            public readonly float EndTimePerSecondPercent;
+            public readonly float StartPercent;
+            public readonly float EndPercent;
+            public readonly float StartPerSecondPercent;
+            public readonly float EndPerSecondPercent;
 
-            public Easing(float startTimePercent, float endTimePercent, float startTimePerSecondPercent, float endTimePerSecondPercent)
+            public Easing(float startPercent, float endPercent, float startPerSecondPercent, float endPerSecondPercent)
             {
-                StartTimePercent = startTimePercent;
-                EndTimePercent = endTimePercent;
-                StartTimePerSecondPercent = startTimePerSecondPercent;
-                EndTimePerSecondPercent = endTimePerSecondPercent;
+                StartPercent = startPercent;
+                EndPercent = endPercent;
+                StartPerSecondPercent = startPerSecondPercent;
+                EndPerSecondPercent = endPerSecondPercent;
+            }
+
+            public override string ToString()
+            {
+                return string.Format("{0} @ {1} to {2} @ {3}", StartPercent, StartPerSecondPercent, EndPercent, EndPerSecondPercent);
             }
         }
 
@@ -34,85 +39,96 @@ namespace DnDCS_Client.Shared
         private Easing[] xEasings;
         private Easing[] yEasings;
 
+        [Obsolete]
         public float CurrentDuration { get { return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds); } }
 
         private float currentToLastGameTimeDelta;
         public TimeSpan LastGameTime { get; private set; }
         public TimeSpan CurrentGameTime { get; private set; }
         public float CurrentX { get; private set; }
+        public float CurrentXPercent { get { return (CurrentX - StartX) / (EndX - StartX); } }
         public float CurrentY { get; private set; }
-        public float CurrentXDurationPercent { get { return Math.Min(CurrentDuration / ExpectedXDuration, 1.0f); } }
-        public float CurrentYDurationPercent { get { return Math.Min(CurrentDuration / ExpectedYDuration, 1.0f); } }
+        public float CurrentYPercent { get { return (CurrentY - StartY) / (EndY - StartY); } }
 
         public float EndX { get; private set; }
         public float EndY { get; private set; }
-        public float ExpectedXDuration { get; private set; }
-        public float ExpectedYDuration { get; private set; }
 
         public bool IsCompleteX { get; private set; }
         public bool IsCompleteY { get; private set; }
         public bool IsComplete { get { return (IsCompleteX && IsCompleteY); } }
         public Action OnComplete { get; set; }
 
-        public static TranslationAnimation CreateXTranslation(float startX, float startY, float endY, float yPerSecond, GameTime gameTime)
-        {
-            return new TranslationAnimation(startX, startY, startX, endY, 0, yPerSecond, gameTime);
-        }
-
-        public static TranslationAnimation CreateYTranslation(float startX, float startY, float endX, float xPerSecond, GameTime gameTime)
-        {
-            return new TranslationAnimation(startX, startY, startX, startY, xPerSecond, 0, gameTime);
-        }
-
-        /// <summary> Creates an X/Y translation. Static mehtods exist to create individual translations. </summary>
+        /// <summary> Creates an X/Y translation. </summary>
         /// <param name="startX"> The starting X coordinate. </param>
         /// <param name="startY">The starting Y coordinate. </param>
         /// <param name="endX"> The ending X coordinate. If no X translation required, set to same as startX. </param>
         /// <param name="endY"> The ending Y coordinate. If no Y translation required, set to same as startY. </param>
-        /// <param name="xPerSecond"> The X position to move per second. May be set to zero. </param>
-        /// <param name="yPerSecond"> The Y position to move per second. May be set to zero. </param>
+        /// <param name="totalDuration"> The total time (in fractional seconds) it should take for the animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
         /// <param name="gameTime"> The starting Game Time recorded. </param>
-        public TranslationAnimation(float startX, float startY, float endX, float endY, float xPerSecond, float yPerSecond, GameTime gameTime)
+        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalDuration, GameTime gameTime)
+            : this(startX, startY, endX, endY, totalDuration, totalDuration, gameTime)
         {
-            if (xPerSecond == 0 && yPerSecond == 0)
-                throw new InvalidOperationException("X and Y translation per second cannot both be zero.");
+        }
+
+        /// <summary> Creates an X/Y translation. </summary>
+        /// <param name="startX"> The starting X coordinate. </param>
+        /// <param name="startY">The starting Y coordinate. </param>
+        /// <param name="endX"> The ending X coordinate. If no X translation required, set to same as startX. </param>
+        /// <param name="endY"> The ending Y coordinate. If no Y translation required, set to same as startY. </param>
+        /// <param name="totalXDuration"> The total time (in fractional seconds) it should take for the X animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
+        /// <param name="totalYDuration"> The total time (in fractional seconds) it should take for the Y animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
+        /// <param name="gameTime"> The starting Game Time recorded. </param>
+        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalXDuration, float totalYDuration, GameTime gameTime)
+        {
+            if (totalXDuration == 0 && totalYDuration == 0)
+                throw new InvalidOperationException("X and Y translations cannot both be zero, or there's no animation to be done.");
 
             StartX = startX;
             StartY = startY;
             EndX = endX;
             EndY = endY;
-            XPerSecond = xPerSecond;
-            YPerSecond = yPerSecond;
+            XPerSecond = (totalXDuration == 0.0f) ? (endX - startX) : (endX - startX) / totalXDuration;
+            YPerSecond = (totalYDuration == 0.0f) ? (endY - startY) : (endY - startY) / totalYDuration;
             StartGameTime = gameTime.TotalGameTime;
-
-            // From 100 to 500 at 100/s would last 4s.
-            ExpectedXDuration = Math.Abs(Math.Abs(EndX) - Math.Abs(StartX)) / Math.Abs(xPerSecond);
-            ExpectedYDuration = Math.Abs(Math.Abs(EndY) - Math.Abs(StartY)) / Math.Abs(yPerSecond);
 
             CurrentX = StartX;
             CurrentY = StartY;
             CurrentGameTime = gameTime.TotalGameTime;
             LastGameTime = gameTime.TotalGameTime;
-            IsCompleteX = (xPerSecond == 0);
-            IsCompleteY = (yPerSecond == 0);
+            IsCompleteX = (XPerSecond == 0);
+            IsCompleteY = (YPerSecond == 0);
         }
 
-        public void AddXEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
+        private static void AssertEasingPercents(float startDeltaPercent, float endDeltaPercent)
         {
+            if (startDeltaPercent == 0.0f)
+                throw new ArgumentException("Value cannot be zero or the animation will freeze upon hitting this speed percentage.", "startDeltaPercent");
+            if (endDeltaPercent == 0.0f)
+                throw new ArgumentException("Value cannot be zero or the animation will freeze upon hitting this speed percentage.", "endDeltaPercent");
+        }
+
+        /// <summary> Adds horizontal easing. This will delay the total duration of the animation depending on the percentages used. </summary>
+        public void AddHorizontalEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
+        {
+            AssertEasingPercents(startDeltaPercent, endDeltaPercent);
+
             var newEasing = new Easing(startTimePercent, endTimePercent, startDeltaPercent, endDeltaPercent);
             if (xEasings == null)
                 xEasings = new Easing[] { newEasing };
             else
-                xEasings = xEasings.Concat(new Easing[] { newEasing }).OrderBy(x => x.StartTimePercent).ToArray();
+                xEasings = xEasings.Concat(new Easing[] { newEasing }).OrderBy(x => x.StartPercent).ToArray();
         }
 
-        public void AddYEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
+        /// <summary> Adds vertical easing. This will delay the total duration of the animation depending on the percentages used. </summary>
+        public void AddVerticalEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
         {
+            AssertEasingPercents(startDeltaPercent, endDeltaPercent);
+
             var newEasing = new Easing(startTimePercent, endTimePercent, startDeltaPercent, endDeltaPercent);
             if (yEasings == null)
                 yEasings = new Easing[] { newEasing };
             else
-                yEasings = yEasings.Concat(new Easing[] { newEasing }).OrderBy(y => y.StartTimePercent).ToArray();
+                yEasings = yEasings.Concat(new Easing[] { newEasing }).OrderBy(y => y.StartPercent).ToArray();
         }
 
         public void Update(GameTime gameTime)
@@ -137,7 +153,7 @@ namespace DnDCS_Client.Shared
         {
             if (!IsCompleteX && XPerSecond != 0)
             {
-                var xPerSecondPercent = GetPerSecondFactor(gameTime, xEasings, CurrentXDurationPercent);
+                var xPerSecondPercent = GetPerSecondFactor(gameTime, xEasings, CurrentXPercent);
                 var newCurrentX = CurrentX + (float)(currentToLastGameTimeDelta * XPerSecond * xPerSecondPercent);
 
                 Debug.Add("XPerSecondPercent: " + xPerSecondPercent);
@@ -158,7 +174,7 @@ namespace DnDCS_Client.Shared
         {
             if (!IsCompleteY && YPerSecond != 0)
             {
-                var yPerSecondFactor = GetPerSecondFactor(gameTime, yEasings, CurrentYDurationPercent);
+                var yPerSecondFactor = GetPerSecondFactor(gameTime, yEasings, CurrentYPercent);
                 var newCurrentY = CurrentY + (float)(currentToLastGameTimeDelta * YPerSecond * yPerSecondFactor);
 
                 Debug.Add("yPerSecondFactor: " + yPerSecondFactor);
@@ -176,24 +192,26 @@ namespace DnDCS_Client.Shared
         }
 
         /// <summary> Gets a value between 0.0f and 1.0f that we should multiply against the XPerSecond or YPerSecond value to know how many units we should move in this Update frame. </summary>
-        private float GetPerSecondFactor(GameTime gameTime, Easing[] easings, float currentDurationPercent)
+        private float GetPerSecondFactor(GameTime gameTime, Easing[] easings, float currentPercent)
         {
             if (easings == null || !easings.Any())
                 return 1.0f;
 
             Easing? closestEasing = null;
-            if (easings[0].StartTimePercent > currentDurationPercent)
+            if (easings[0].StartPercent > currentPercent)
             {
                 // We're before the first easing we have, so we'll use the first easing's initial speed.
-                return easings[0].StartTimePerSecondPercent;
+                return easings[0].StartPerSecondPercent;
             }
 
             foreach (var easing in easings)
             {
-                if (easing.StartTimePercent <= currentDurationPercent)
+                if (easing.StartPercent <= currentPercent)
                 {
-                    if (easing.EndTimePercent >= currentDurationPercent)
+                    if (easing.EndPercent >= currentPercent)
                     {
+                        //return easing.EndPerSecondPercent;
+
                         // We're somewhere within this Easing, so let's get the specific percent of the PerSecond value we should be using.
                         // (Current - Start) / (End - Start)
                         // Example: 0.0 to 0.5, current at 0.2 -> (0.2 - 0.0) / (0.5 - 0.0) -> 0.2 / 0.5 = 0.4f
@@ -201,7 +219,7 @@ namespace DnDCS_Client.Shared
                         // Taking this value gives us how much of the PerSecond we should be using for this round. However, the full PerSecond
                         // is also eased between the Start and End time slot, so we'll use the formula to determine how much of the full PerSecond
                         // we should be using.
-                        var perSecondPercent = (currentDurationPercent - easing.StartTimePercent) / (easing.EndTimePercent - easing.StartTimePercent);
+                        var perSecondPercent = (currentPercent - easing.StartPercent) / (easing.EndPercent - easing.StartPercent);
 
                         // The below examples work for Acceleration and Deceleration)
                         //  Accel (0.25 to 0.8 at   0% time): 0.0f * (0.8 - 0.25) + 0.25 = 0.0 *  0.55f + 0.25 =  0.0f   + 0.25 = 0.25  = 25.0% of the YPerSecond for this frame.
@@ -214,7 +232,7 @@ namespace DnDCS_Client.Shared
                         //        (0.8 to 0.25 at  50% time): 0.5f * (0.25 - 0.8) + 0.8  = 0.5 * -0.55f + 0.8  = -0.275f + 0.8  = 0.525 = 52.5% of the YPerSecond for this frame.
                         //        (0.8 to 0.25 at  80% time): 0.8f * (0.25 - 0.8) + 0.8  = 0.8 * -0.55f + 0.8  = -0.44f  + 0.8  = 0.36  = 36.0% of the YPerSecond for this frame.
                         //        (0.8 to 0.25 at 100% time): 1.0f * (0.25 - 0.8) + 0.8  = 1.0 * -0.55f + 0.8  = -0.55f  + 0.8  = 0.25  = 25.0% of the YPerSecond for this frame.
-                        return (perSecondPercent * (easing.EndTimePerSecondPercent - easing.StartTimePerSecondPercent)) + easing.StartTimePerSecondPercent;
+                        return (perSecondPercent * (easing.EndPerSecondPercent - easing.StartPerSecondPercent)) + easing.StartPerSecondPercent;
                     }
                     else
                     {
@@ -224,10 +242,10 @@ namespace DnDCS_Client.Shared
                 }
             }
 
-            // This easing is the last one where we passed the End time but didn't fall into another bucket, so we'll go at the max of this easing bracket, if any. Otherwise, max speed.
+            // This easing is the last one where we passed the End but didn't fall into another bucket, so we'll go at the max of this easing bracket, if any. Otherwise, max speed.
             if (closestEasing.HasValue)
             {
-                return closestEasing.Value.EndTimePerSecondPercent;
+                return closestEasing.Value.EndPerSecondPercent;
             }
             return 1.0f;
         }

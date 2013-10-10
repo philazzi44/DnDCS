@@ -24,6 +24,7 @@ namespace DnDCS_Client.MenuLogic
         public static SpriteFont MenuItemFont { get; set; }
         public static Texture2D MenuSelectorImage { get; set; }
 
-        public static readonly float MenuTranslationYPerSecond = 100f;
+        /// <summary> Time, in seconds, for a menu translation to occur. </summary>
+        public static readonly float MenuTranslationTotalDuration = 0.2f;
     }
 }

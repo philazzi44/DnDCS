@@ -112,7 +112,7 @@ namespace DnDCS_Client.MenuLogic
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
             menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
-                                                               -MenuConstants.MenuTranslationYPerSecond, gameTime)
+                                                               MenuConstants.MenuTranslationTotalDuration, gameTime)
                                           {
                                               OnComplete = () =>
                                               {
@@ -121,8 +121,8 @@ namespace DnDCS_Client.MenuLogic
                                               },
                                           };
 
-            menuSelectorTranslation.AddYEasing(0.0f, 0.5f, 0.0f, 1.0f);
-            menuSelectorTranslation.AddYEasing(0.5f, 1.0f, 1.0f, 0.0f);
+            menuSelectorTranslation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
+            menuSelectorTranslation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
         }
 
         private void SelectDown(GameTime gameTime)
@@ -138,7 +138,7 @@ namespace DnDCS_Client.MenuLogic
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
             menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
-                                                               MenuConstants.MenuTranslationYPerSecond, gameTime)
+                                                               MenuConstants.MenuTranslationTotalDuration, gameTime)
                                           {
                                               OnComplete = () =>
                                               {
@@ -147,8 +147,8 @@ namespace DnDCS_Client.MenuLogic
                                               }
                                           };
 
-            menuSelectorTranslation.AddYEasing(0.0f, 0.5f, 0.0f, 1.0f);
-            menuSelectorTranslation.AddYEasing(0.5f, 1.0f, 1.0f, 0.0f);
+            menuSelectorTranslation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
+            menuSelectorTranslation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
         }
 
         private void TryExit()
