@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using DnDCS.Libs;
+using DnDCS_Client.Shared;
 
 namespace DnDCS_Client.ClientLogic
 {
@@ -98,17 +99,17 @@ namespace DnDCS_Client.ClientLogic
 
             lastWheelValue = gameState.CurrentMouseState.ScrollWheelValue;
 
-            gameState.DebugText.Add("Zoom Factor: " + gameState.ZoomFactor);
-            gameState.DebugText.Add("Vertical Scroll Position: " + gameState.VerticalScrollPosition);
-            gameState.DebugText.Add("Horizontal Scroll Position: " + gameState.HorizontalScrollPosition);
+            Debug.Add("Zoom Factor: " + gameState.ZoomFactor);
+            Debug.Add("Vertical Scroll Position: " + gameState.VerticalScrollPosition);
+            Debug.Add("Horizontal Scroll Position: " + gameState.HorizontalScrollPosition);
             if (gameState.Map != null)
             {
-                gameState.DebugText.Add("Map Size: " + gameState.Map.Width + "x" + gameState.Map.Height);
-                gameState.DebugText.Add("Map Bounds: " + gameState.ActualMapWidth + "x" + gameState.ActualMapHeight);
-                gameState.DebugText.Add("Logical Map Bounds: " + gameState.LogicalMapWidth + "x" + gameState.LogicalMapHeight);
+                Debug.Add("Map Size: " + gameState.Map.Width + "x" + gameState.Map.Height);
+                Debug.Add("Map Bounds: " + gameState.ActualMapWidth + "x" + gameState.ActualMapHeight);
+                Debug.Add("Logical Map Bounds: " + gameState.LogicalMapWidth + "x" + gameState.LogicalMapHeight);
             }
-            gameState.DebugText.Add("Client Bounds: " + gameState.ActualClientWidth + "x" + gameState.ActualClientHeight);
-            gameState.DebugText.Add("Logical Client Bounds: " + gameState.LogicalClientWidth + "x" + gameState.LogicalClientHeight);
+            Debug.Add("Client Bounds: " + gameState.ActualClientWidth + "x" + gameState.ActualClientHeight);
+            Debug.Add("Logical Client Bounds: " + gameState.LogicalClientWidth + "x" + gameState.LogicalClientHeight);
             base.Update(gameTime);
         }
 

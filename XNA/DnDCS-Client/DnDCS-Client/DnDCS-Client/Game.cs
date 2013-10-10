@@ -3,6 +3,7 @@ using DnDCS_Client.ClientLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using DnDCS_Client.MenuLogic;
+using DnDCS_Client.Shared;
 
 namespace DnDCS_Client
 {
@@ -49,6 +50,8 @@ namespace DnDCS_Client
         {
             // Create a new SpriteBatch, which can be used to draw textures.
             SharedResources.SpriteBatch = new SpriteBatch(GraphicsDevice);
+
+            Debug.Font = SharedResources.ContentManager.Load<SpriteFont>("Debug");
 
             base.LoadContent();
         }
@@ -104,6 +107,24 @@ namespace DnDCS_Client
         private void clientComponent_OnEscape()
         {
             ShowMenuComponent();
+        }
+
+        protected override void Update(GameTime gameTime)
+        {
+            Debug.Clear();
+
+            // TODO: Add Keyboard state and other global state things to here to be captured.
+
+            base.Update(gameTime);
+        }
+
+        protected override void Draw(GameTime gameTime)
+        {
+            base.Draw(gameTime);
+
+            SharedResources.SpriteBatch.Begin();
+            SharedResources.SpriteBatch.DrawString(Debug.Font, Debug.FullDebugText, Vector2.Zero, Color.Red);
+            SharedResources.SpriteBatch.End();
         }
     }
 }

@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using DnDCS.Libs;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using DnDCS_Client.Shared;
 
 namespace DnDCS_Client.ClientLogic
 {
     public class ClientState : IDisposable
     {
-        public List<string> DebugText { get; set; }
-        public string FullDebugText { get { return string.Join("\n", this.DebugText); } }
-
         public string Address { get; private set; }
         public int Port { get; private set; }
 
@@ -87,7 +85,6 @@ namespace DnDCS_Client.ClientLogic
             this.Address = address;
             this.Port = port;
 
-            DebugText = new List<string>();
             ZoomFactor = 1.0f;
 
             this.CreateEffect = true;
@@ -97,8 +94,6 @@ namespace DnDCS_Client.ClientLogic
         {
             CurrentKeyboardState = Keyboard.GetState();
             CurrentMouseState = Mouse.GetState();
-
-            this.DebugText.Clear();
 
             if (this.nextFrameMap != null)
             {

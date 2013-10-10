@@ -14,7 +14,6 @@ namespace DnDCS_Client.ClientLogic
         public const float ZoomMinimumFactor = 0.2f;
         public const float ZoomMaximumFactor = 5.0f;
 
-        public static SpriteFont DebugFont { get; set; }
         public static SpriteFont GenericMessageFont { get; set; }
         public static Texture2D GridTileImage { get; set; }
         public static Texture2D BlackoutImage { get; set; }

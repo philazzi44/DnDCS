@@ -64,7 +64,6 @@ namespace DnDCS_Client.ClientLogic
             ClientConstants.BlackoutImage = SharedResources.ContentManager.Load<Texture2D>("BlackoutImage");
             ClientConstants.NoMapImage = SharedResources.ContentManager.Load<Texture2D>("NoMapImage");
 
-            ClientConstants.DebugFont = SharedResources.ContentManager.Load<SpriteFont>("Debug");
             ClientConstants.GenericMessageFont = SharedResources.ContentManager.Load<SpriteFont>("GenericMessage");
             ClientConstants.GridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
             ClientConstants.GridTileImage.SetData<Color>(new[] { Color.White });

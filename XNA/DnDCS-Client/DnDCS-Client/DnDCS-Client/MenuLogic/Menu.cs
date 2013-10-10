@@ -111,15 +111,25 @@ namespace DnDCS_Client.MenuLogic
 
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
-            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f, -MenuConstants.MenuTranslationYPerSecond, gameTime, () =>
-                                                                                   {
-                                                                                       this.selectedMenuOption = newMenuItem;
-                                                                                   });
+            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
+                                                               -MenuConstants.MenuTranslationYPerSecond, gameTime)
+                                          {
+                                              OnComplete = () =>
+                                              {
+                                                  this.selectedMenuOption = newMenuItem;
+                                                  this.menuSelectorTranslation = null;
+                                              },
+                                          };
+
+            menuSelectorTranslation.AddYEasing(0.0f, 0.5f, 0.0f, 1.0f);
+            menuSelectorTranslation.AddYEasing(0.5f, 1.0f, 1.0f, 0.0f);
         }
 
         private void SelectDown(GameTime gameTime)
         {
-            var newMenuItem = (MenuConstants.MenuOption)Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
+            var newMenuItem =
+                (MenuConstants.MenuOption)
+                Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
 
             // If the menu isn't going to change, then do nothing.
             if (newMenuItem == this.selectedMenuOption)
@@ -127,10 +137,18 @@ namespace DnDCS_Client.MenuLogic
 
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
-            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f, MenuConstants.MenuTranslationYPerSecond, gameTime, () =>
-            {
-                this.selectedMenuOption = newMenuItem;
-            });
+            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
+                                                               MenuConstants.MenuTranslationYPerSecond, gameTime)
+                                          {
+                                              OnComplete = () =>
+                                              {
+                                                  this.selectedMenuOption = newMenuItem;
+                                                  this.menuSelectorTranslation = null;
+                                              }
+                                          };
+
+            menuSelectorTranslation.AddYEasing(0.0f, 0.5f, 0.0f, 1.0f);
+            menuSelectorTranslation.AddYEasing(0.5f, 1.0f, 1.0f, 0.0f);
         }
 
         private void TryExit()

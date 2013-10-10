@@ -2,6 +2,7 @@
 using System;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using DnDCS_Client.Shared;
 
 namespace DnDCS_Client.ClientLogic
 {
@@ -73,8 +74,6 @@ namespace DnDCS_Client.ClientLogic
 
                     spriteBatch.Draw(gameState.Fog, new Vector2(-gameState.HorizontalScrollPosition, -gameState.VerticalScrollPosition), null, Color.White, 0f, Vector2.Zero, gameState.ZoomFactor, SpriteEffects.None, 0);
                 }
-
-                spriteBatch.DrawString(ClientConstants.DebugFont, gameState.FullDebugText, Vector2.Zero, Color.Red);
             }
             finally
             {
