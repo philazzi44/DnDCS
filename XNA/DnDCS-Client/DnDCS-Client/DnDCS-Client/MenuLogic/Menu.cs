@@ -21,6 +21,8 @@ namespace DnDCS_Client.MenuLogic
 
         private MenuConstants.MenuOption selectedMenuOption;
         private TranslationAnimation menuSelectorTranslation;
+        private int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 6; } }
+        private int MenuStartY { get { return SharedResources.GameWindow.ClientBounds.Height / 6; } }
 
         public Menu() : base(SharedResources.Game)
         {
@@ -51,25 +53,28 @@ namespace DnDCS_Client.MenuLogic
 
         public override void Update(GameTime gameTime)
         {
-            Update_Keyboard();
+            Update_Keyboard(gameTime);
 
             base.Update(gameTime);
         }
 
-        private void Update_Keyboard()
+        private void Update_Keyboard(GameTime gameTime)
         {
             // If we're currently translating the menu selector, then ignore any keyboard events.
-            if (menuSelectorTranslation != null)
+            if (menuSelectorTranslation != null && !menuSelectorTranslation.IsComplete)
+            {
+                menuSelectorTranslation.Update(gameTime);
                 return;
+            }
 
             var keyboardState = Keyboard.GetState();
             if (keyboardState.IsKeyDown(Keys.Up))
             {
-                SelectUp();
+                SelectUp(gameTime);
             }
             else if (keyboardState.IsKeyDown(Keys.Down))
             {
-                SelectDown();
+                SelectDown(gameTime);
             }
             else if (keyboardState.IsKeyDown(Keys.Enter))
             {
@@ -96,14 +101,36 @@ namespace DnDCS_Client.MenuLogic
             }
         }
 
-        private void SelectUp()
+        private void SelectUp(GameTime gameTime)
         {
-            this.selectedMenuOption = (MenuConstants.MenuOption)Math.Max((int)this.selectedMenuOption - 1, 0);
+            var newMenuItem = (MenuConstants.MenuOption)Math.Max((int)this.selectedMenuOption - 1, 0);
+
+            // If the menu isn't going to change, then do nothing.
+            if (newMenuItem == this.selectedMenuOption)
+                return;
+
+            var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
+            var menuEnd = GetMenuSelectorPosition(newMenuItem);
+            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f, -MenuConstants.MenuTranslationYPerSecond, gameTime, () =>
+                                                                                   {
+                                                                                       this.selectedMenuOption = newMenuItem;
+                                                                                   });
         }
 
-        private void SelectDown()
+        private void SelectDown(GameTime gameTime)
         {
-            this.selectedMenuOption = (MenuConstants.MenuOption)Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
+            var newMenuItem = (MenuConstants.MenuOption)Math.Min((int)this.selectedMenuOption + 1, MenuConstants.MenuOptions.Count - 1);
+
+            // If the menu isn't going to change, then do nothing.
+            if (newMenuItem == this.selectedMenuOption)
+                return;
+
+            var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
+            var menuEnd = GetMenuSelectorPosition(newMenuItem);
+            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f, MenuConstants.MenuTranslationYPerSecond, gameTime, () =>
+            {
+                this.selectedMenuOption = newMenuItem;
+            });
         }
 
         private void TryExit()
@@ -113,6 +140,17 @@ namespace DnDCS_Client.MenuLogic
                 OnExit();
         }
 
+        private Vector2 GetMenuTextPosition(MenuConstants.MenuOption menuOption)
+        {
+            return new Vector2(MenuStartX, MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
+        }
+
+        private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption)
+        {
+            var menuTextPosition = GetMenuTextPosition(menuOption);
+            return new Vector2(menuTextPosition.X - MenuConstants.MenuSelectorImage.Width - 15, menuTextPosition.Y);
+        }
+
         public override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.Black);
@@ -120,18 +158,22 @@ namespace DnDCS_Client.MenuLogic
             var spriteBatch = SharedResources.SpriteBatch;
             spriteBatch.Begin();
 
-            var x = SharedResources.GameWindow.ClientBounds.Width / 6;
-            var y = SharedResources.GameWindow.ClientBounds.Height / 6;
-
             // Draw all menu options
-            var drawMenuOptions = (MenuConstants.MenuOption[])Enum.GetValues(typeof(MenuConstants.MenuOption));
-            for (var i = 0; i < drawMenuOptions.Length; i++)
+            foreach (var t in (MenuConstants.MenuOption[])Enum.GetValues(typeof(MenuConstants.MenuOption)))
             {
-                spriteBatch.DrawString(MenuConstants.MenuItemFont, MenuConstants.MenuOptions[drawMenuOptions[i]], new Vector2(x, y + MenuConstants.MenuItemFont.LineSpacing * i), Color.Aqua);
+                spriteBatch.DrawString(MenuConstants.MenuItemFont, MenuConstants.MenuOptions[t], GetMenuTextPosition(t), Color.Aqua);
             }
 
             // Draw the menu selector
-            spriteBatch.Draw(MenuConstants.MenuSelectorImage, new Vector2(x - MenuConstants.MenuSelectorImage.Width, y + MenuConstants.MenuItemFont.LineSpacing * (int)selectedMenuOption), Color.White);
+            if (menuSelectorTranslation == null || menuSelectorTranslation.IsComplete)
+            {
+                var menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
+                spriteBatch.Draw(MenuConstants.MenuSelectorImage, menuSelectorPosition, Color.White);
+            }
+            else
+            {
+                spriteBatch.Draw(MenuConstants.MenuSelectorImage, new Vector2(menuSelectorTranslation.CurrentX, menuSelectorTranslation.CurrentY), Color.White);
+            }
 
             spriteBatch.End();
 

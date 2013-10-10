@@ -8,9 +8,10 @@ namespace DnDCS_Client.MenuLogic
 {
     public static class MenuConstants
     {
+        /// <summary> Position in this enum dictates the position shown on screen. </summary>
         public enum MenuOption
         {
-            Connect,
+            Connect = 0,
             Exit,
         };
 
@@ -22,5 +23,7 @@ namespace DnDCS_Client.MenuLogic
 
         public static SpriteFont MenuItemFont { get; set; }
         public static Texture2D MenuSelectorImage { get; set; }
+
+        public static readonly float MenuTranslationYPerSecond = 100f;
     }
 }

@@ -123,6 +123,7 @@
     <Compile Include="Program.cs" />
     <Compile Include="ClientLogic\Client_InitLogic.cs" />
     <Compile Include="SharedResources.cs" />
+    <Compile Include="Shared\TranslationAnimation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />
