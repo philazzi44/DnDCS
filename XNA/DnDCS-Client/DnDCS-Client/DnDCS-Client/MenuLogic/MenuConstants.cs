@@ -22,7 +22,9 @@ namespace DnDCS_Client.MenuLogic
         };
 
         public static SpriteFont MenuItemFont { get; set; }
-        public static Texture2D[] MenuSelectorImages { get; set; }
+
+        public static Texture2D[] MenuSelectorIntroImages { get; set; }
+        public static Texture2D[] MenuSelectorIdleImages { get; set; }
         public static Texture2D[] MenuSelectorEnterImages { get; set; }
         public static Texture2D[] MenuEnterImages { get; set; }
 
