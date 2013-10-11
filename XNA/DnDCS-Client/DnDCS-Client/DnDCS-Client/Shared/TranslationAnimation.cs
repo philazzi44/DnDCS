@@ -140,8 +140,8 @@ namespace DnDCS_Client.Shared
             CurrentGameTime = gameTime.TotalGameTime;
             this.currentToLastGameTimeDelta = (float)(CurrentGameTime.TotalSeconds - LastGameTime.TotalSeconds);
 
-            Update_X(gameTime);
-            Update_Y(gameTime);
+            Update_X();
+            Update_Y();
             
             if (IsComplete && OnComplete != null)
             {
@@ -149,11 +149,11 @@ namespace DnDCS_Client.Shared
             }
         }
 
-        public void Update_X(GameTime gameTime)
+        public void Update_X()
         {
             if (!IsCompleteX && XPerSecond != 0)
             {
-                var xPerSecondPercent = GetPerSecondFactor(gameTime, xEasings, CurrentXPercent);
+                var xPerSecondPercent = GetPerSecondFactor(xEasings, CurrentXPercent);
                 var newCurrentX = CurrentX + (float)(currentToLastGameTimeDelta * XPerSecond * xPerSecondPercent);
 
                 Debug.Add("XPerSecondPercent: " + xPerSecondPercent);
@@ -170,11 +170,11 @@ namespace DnDCS_Client.Shared
             }
         }
         
-        public void Update_Y(GameTime gameTime)
+        public void Update_Y()
         {
             if (!IsCompleteY && YPerSecond != 0)
             {
-                var yPerSecondFactor = GetPerSecondFactor(gameTime, yEasings, CurrentYPercent);
+                var yPerSecondFactor = GetPerSecondFactor(yEasings, CurrentYPercent);
                 var newCurrentY = CurrentY + (float)(currentToLastGameTimeDelta * YPerSecond * yPerSecondFactor);
 
                 Debug.Add("yPerSecondFactor: " + yPerSecondFactor);
@@ -192,7 +192,7 @@ namespace DnDCS_Client.Shared
         }
 
         /// <summary> Gets a value between 0.0f and 1.0f that we should multiply against the XPerSecond or YPerSecond value to know how many units we should move in this Update frame. </summary>
-        private float GetPerSecondFactor(GameTime gameTime, Easing[] easings, float currentPercent)
+        private float GetPerSecondFactor(Easing[] easings, float currentPercent)
         {
             if (easings == null || !easings.Any())
                 return 1.0f;

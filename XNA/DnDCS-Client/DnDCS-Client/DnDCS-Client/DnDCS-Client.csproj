@@ -124,6 +124,7 @@
     <Compile Include="ClientLogic\Client_InitLogic.cs" />
     <Compile Include="SharedResources.cs" />
     <Compile Include="Shared\Debug.cs" />
+    <Compile Include="Shared\FrameAnimation.cs" />
     <Compile Include="Shared\TranslationAnimation.cs" />
   </ItemGroup>
   <ItemGroup>

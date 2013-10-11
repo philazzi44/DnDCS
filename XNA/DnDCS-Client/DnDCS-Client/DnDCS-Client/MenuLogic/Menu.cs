@@ -21,6 +21,7 @@ namespace DnDCS_Client.MenuLogic
 
         private MenuConstants.MenuOption selectedMenuOption;
         private TranslationAnimation menuSelectorTranslation;
+        private FrameAnimation<Texture2D> menuSelectorAnimation;
         private int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 6; } }
         private int MenuStartY { get { return SharedResources.GameWindow.ClientBounds.Height / 6; } }
 
@@ -48,11 +49,37 @@ namespace DnDCS_Client.MenuLogic
         protected override void LoadContent()
         {
             MenuConstants.MenuItemFont = SharedResources.ContentManager.Load<SpriteFont>("MenuItem");
-            MenuConstants.MenuSelectorImage = SharedResources.ContentManager.Load<Texture2D>("MenuSelector");
+            MenuConstants.MenuSelectorImage = SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon1");
+
+            MenuConstants.MenuSelectorImages = new Texture2D[]
+            {
+                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon1"),
+                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon2"),
+                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon3"),
+            };
+
+            menuSelectorAnimation = new FrameAnimation<Texture2D>(MenuConstants.MenuSelectorImages, new Tuple<float, int>[]
+            {
+                new Tuple<float, int>(0.0f, 0),
+                new Tuple<float, int>(3.0f, 1),
+                new Tuple<float, int>(3.1f, 2),
+                new Tuple<float, int>(3.2f, 0),
+                new Tuple<float, int>(5.5f, 1),
+                new Tuple<float, int>(5.6f, 2),
+                new Tuple<float, int>(5.7f, 0),
+                new Tuple<float, int>(5.9f, 1),
+                new Tuple<float, int>(6.0f, 2),
+            });
+            menuSelectorAnimation.SetRepeat(0.1f);
         }
 
         public override void Update(GameTime gameTime)
         {
+            if (!menuSelectorAnimation.IsStarted)
+                this.menuSelectorAnimation.Start(gameTime);
+            else
+                this.menuSelectorAnimation.Update(gameTime);
+
             Update_Keyboard(gameTime);
 
             base.Update(gameTime);
@@ -166,7 +193,7 @@ namespace DnDCS_Client.MenuLogic
         private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption)
         {
             var menuTextPosition = GetMenuTextPosition(menuOption);
-            return new Vector2(menuTextPosition.X - MenuConstants.MenuSelectorImage.Width - 15, menuTextPosition.Y);
+            return new Vector2(menuTextPosition.X - menuSelectorAnimation.CurrentFrame.Width - 15, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - menuSelectorAnimation.CurrentFrame.Height / 2);
         }
 
         public override void Draw(GameTime gameTime)
@@ -186,13 +213,14 @@ namespace DnDCS_Client.MenuLogic
             if (menuSelectorTranslation == null || menuSelectorTranslation.IsComplete)
             {
                 var menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
-                spriteBatch.Draw(MenuConstants.MenuSelectorImage, menuSelectorPosition, Color.White);
+                spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, menuSelectorPosition, Color.White);
             }
             else
             {
-                spriteBatch.Draw(MenuConstants.MenuSelectorImage, new Vector2(menuSelectorTranslation.CurrentX, menuSelectorTranslation.CurrentY), Color.White);
+                spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, new Vector2(menuSelectorTranslation.CurrentX, menuSelectorTranslation.CurrentY), Color.White);
             }
 
+            spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, Vector2.Zero, null, Color.White, 0, Vector2.Zero, 5.0f, SpriteEffects.None, 0);
             spriteBatch.End();
 
             base.Draw(gameTime);
