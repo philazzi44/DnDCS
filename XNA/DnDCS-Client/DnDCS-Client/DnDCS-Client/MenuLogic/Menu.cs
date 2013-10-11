@@ -84,7 +84,7 @@ namespace DnDCS_Client.MenuLogic
                                                                                      {
                                                                                          new Tuple<float, int>(0.0f, 0),
                                                                                          new Tuple<float, int>(0.05f, 1),
-                                                                                         new Tuple<float, int>(0.3f, 1),
+                                                                                         new Tuple<float, int>(0.8f, 1),
                                                                                      });
             this.menuSelectorEnterFrameAnimation.OnComplete = () =>
             {
@@ -237,13 +237,16 @@ namespace DnDCS_Client.MenuLogic
                                                                           {
                                                                               this.menuEnterTranslationAnimation = null;
                                                                               this.menuEnterFrameAnimation.Stop(true);
-                                                                              onComplete();
+                                                                              //onComplete();
                                                                           }
                                                      };
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.0f, 0.0015f, 0.01f, 0.02f);
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.0015f, 0.01f, 0.02f, 1.0f);
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.01f, 0.1f, 1.0f, 1.5f);
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.1f, 0.15f, 1.5f, 2.0f);
+
+            // Appears to be the same as the 3 breakdown below, but keeping the other one in case it becomes useful one day.
+            menuEnterTranslationAnimation.AddHorizontalEasing(0.0f, 0.1f, 0.0015f, 2.0f);
+                
+            //menuEnterTranslationAnimation.AddHorizontalEasing(0.0f, 0.04f, 0.0015f, 0.9f);
+            //menuEnterTranslationAnimation.AddHorizontalEasing(0.04f, 0.05f, 0.9f, 1.5f);
+            //menuEnterTranslationAnimation.AddHorizontalEasing(0.05f, 0.1f, 1.5f, 2.0f);
         }
 
         private void TryExit()
@@ -259,18 +262,18 @@ namespace DnDCS_Client.MenuLogic
             return new Vector2(MenuStartX, MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
         }
 
-        /// <summary> Returns the top left of the Frame Animation to allow for the center of the image to be vertically centered with the text, but with 15 pixels between the right of the image and the left of the text. </summary>
+        /// <summary> Returns the top left of the Frame Animation to allow for the center of the image to be vertically centered with the text, but with some pixels between the right of the image and the left of the text. </summary>
         private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption)
         {
             var menuTextPosition = GetMenuTextPosition(menuOption);
-            return new Vector2(menuTextPosition.X - this.currentMenuSelectorFrameAnimation.CurrentFrame.Width - 15, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - this.currentMenuSelectorFrameAnimation.CurrentFrame.Height / 2);
+            return new Vector2(menuTextPosition.X - this.currentMenuSelectorFrameAnimation.CurrentFrame.Width - 25, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - this.currentMenuSelectorFrameAnimation.CurrentFrame.Height / 2);
         }
 
         /// <summary> Returns the top left of the Enter Animation to allow for the center of the image to be vertically centered with the Selector's arm cannon, as well as the top left of where it should end. </summary>
         private Vector2[] GetMenuSelectorEnterPositions(MenuConstants.MenuOption menuOption)
         {
             var menuSelectorPosition = GetMenuSelectorPosition(menuOption);
-            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.currentMenuSelectorFrameAnimation.CurrentFrame.Width - 10, menuSelectorPosition.Y);
+            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.currentMenuSelectorFrameAnimation.CurrentFrame.Width - 8, menuSelectorPosition.Y);
             // It ends all the way beyond the screen boundaries
             var menuSelectorEnterPositionEnd = new Vector2(SharedResources.GameWindow.ClientBounds.Width, menuSelectorEnterPositionStart.Y);
 
