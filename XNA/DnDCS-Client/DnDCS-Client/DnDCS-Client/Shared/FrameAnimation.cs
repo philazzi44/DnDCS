@@ -8,10 +8,22 @@ namespace DnDCS_Client.Shared
 {
     public class FrameAnimation<T>
     {
+        public const int REPEAT_FOREVER = -1;
+
         public bool IsStarted { get; private set; }
 
         public TimeSpan StartGameTime { get; private set; }
-        private float ElapsedSinceStart { get { return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds); } }
+        private float ElapsedSinceStart
+        {
+            get
+            {
+                // If we're currently repeating, we'll always offset the time elapsed so we properly skip over all the frames before the repeat point.
+                if (repeating)
+                    return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds) + FrameIntervals[RepeatToIndex].Item1;
+                else
+                    return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds);
+            }
+        }
 
         public T[] Frames { get; private set; }
         public Tuple<float, int>[] FrameIntervals { get; private set; }
@@ -20,7 +32,11 @@ namespace DnDCS_Client.Shared
         public Action OnComplete { get; set; }
 
         public bool Repeat { get; private set; }
+        private bool repeating { get; set; }
         public float RepeatDelay { get; private set; }
+        public int RepeatToIndex { get; private set; }
+        public int RepeatCount { get; private set; }
+        public int CurrentRepeatCount { get; private set; }
 
         public TimeSpan LastGameTime { get; private set; }
         public TimeSpan CurrentGameTime { get; private set; }
@@ -39,10 +55,19 @@ namespace DnDCS_Client.Shared
             FrameIntervals = frameIntervals;
         }
 
-        public void SetRepeat(float repeatDelay)
+        public void SetRepeat(float repeatDelay, int repeatToIndex = 0, int repeatCount = REPEAT_FOREVER)
         {
+            if (IsStarted)
+                throw new InvalidOperationException("Cannot change repeat values for a started animation.");
+            else if (repeatToIndex < 0 || repeatToIndex >= FrameIntervals.Length)
+                throw new ArgumentException("RepeatToIndex must be a valid frame index.", "repeatToIndex");
+            else if (repeatDelay < 0.0f)
+                throw new ArgumentException("RepeatDelay must be greater than 0.", "repeatDelay");
+
             Repeat = true;
             RepeatDelay = repeatDelay;
+            RepeatToIndex = repeatToIndex;
+            RepeatCount = repeatCount;
         }
 
         public void Start(GameTime startTime)
@@ -67,7 +92,7 @@ namespace DnDCS_Client.Shared
             }
         }
 
-        public void Update_Frame()
+        private void Update_Frame()
         {
             var elapsedSinceStart = ElapsedSinceStart;
 
@@ -98,11 +123,23 @@ namespace DnDCS_Client.Shared
                 // Otherwise, we'll just shift to the next frame because the Update cycle may simply be delayed.
                 if (CurrentFrameIntervalIndex == (FrameIntervals.Length - 1))
                 {
-                    // Repeating, so wait until the last interval + the repeat delay before going back to frame 0 and restarting the Start Time again.
+                    // Repeating, so wait until the last interval + the repeat delay before going back to the Repeat Frame (normally 0) and reseting the Start Time.
                     if (elapsedSinceStart > FrameIntervals.Last().Item1 + RepeatDelay)
                     {
-                        CurrentFrameIntervalIndex = 0;
+                        if (RepeatCount != REPEAT_FOREVER)
+                        {
+                            // If we're only repeating a certain number of times and have reached that threshold, then we'll stop altogether.
+                            if (CurrentRepeatCount > RepeatCount)
+                            {
+                                IsComplete = true;
+                                return;
+                            }
+                            CurrentRepeatCount++;
+                        }
+
+                        CurrentFrameIntervalIndex = RepeatToIndex;
                         StartGameTime = CurrentGameTime;
+                        repeating = true;
                         return;
                     }
                 }

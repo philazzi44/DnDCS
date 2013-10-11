@@ -20,8 +20,15 @@ namespace DnDCS_Client.MenuLogic
         public event Action OnExit;
 
         private MenuConstants.MenuOption selectedMenuOption;
-        private TranslationAnimation menuSelectorTranslation;
-        private FrameAnimation<Texture2D> menuSelectorAnimation;
+
+        private TranslationAnimation menuSelectorTranslationAnimation;
+
+        private FrameAnimation<Texture2D> currentMenuSelectorFrameAnimation;
+        private FrameAnimation<Texture2D> menuSelectorIdleFrameAnimation;
+        private FrameAnimation<Texture2D> menuSelectorEnterFrameAnimation;
+
+        private FrameAnimation<Texture2D> menuEnterFrameAnimation;
+
         private int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 6; } }
         private int MenuStartY { get { return SharedResources.GameWindow.ClientBounds.Height / 6; } }
 
@@ -40,7 +47,7 @@ namespace DnDCS_Client.MenuLogic
 
             base.Initialize();
         }
-        
+
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -49,36 +56,49 @@ namespace DnDCS_Client.MenuLogic
         protected override void LoadContent()
         {
             MenuConstants.MenuItemFont = SharedResources.ContentManager.Load<SpriteFont>("MenuItem");
-            MenuConstants.MenuSelectorImage = SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon1");
 
-            MenuConstants.MenuSelectorImages = new Texture2D[]
-            {
-                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon1"),
-                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon2"),
-                SharedResources.ContentManager.Load<Texture2D>(@"Menu Selector\Icon3"),
-            };
+            MenuConstants.MenuSelectorImages = SharedResources.ContentManager.LoadMany<Texture2D>(@"Menu Selector\Icon{0}", 1, 3);
+            MenuConstants.MenuEnterImages = SharedResources.ContentManager.LoadMany<Texture2D>(@"Menu Selector\Enter{0}", 1, 7);
 
-            menuSelectorAnimation = new FrameAnimation<Texture2D>(MenuConstants.MenuSelectorImages, new Tuple<float, int>[]
-            {
-                new Tuple<float, int>(0.0f, 0),
-                new Tuple<float, int>(3.0f, 1),
-                new Tuple<float, int>(3.1f, 2),
-                new Tuple<float, int>(3.2f, 0),
-                new Tuple<float, int>(5.5f, 1),
-                new Tuple<float, int>(5.6f, 2),
-                new Tuple<float, int>(5.7f, 0),
-                new Tuple<float, int>(5.9f, 1),
-                new Tuple<float, int>(6.0f, 2),
-            });
-            menuSelectorAnimation.SetRepeat(0.1f);
+            this.menuSelectorIdleFrameAnimation = new FrameAnimation<Texture2D>(MenuConstants.MenuSelectorImages,
+                                                                  new Tuple<float, int>[]
+                                                                      {
+                                                                          new Tuple<float, int>(0.0f, 0),
+                                                                          new Tuple<float, int>(3.0f, 1),
+                                                                          new Tuple<float, int>(3.1f, 2),
+                                                                          new Tuple<float, int>(3.2f, 0),
+                                                                          new Tuple<float, int>(5.5f, 1),
+                                                                          new Tuple<float, int>(5.6f, 2),
+                                                                          new Tuple<float, int>(5.7f, 0),
+                                                                          new Tuple<float, int>(5.9f, 1),
+                                                                          new Tuple<float, int>(6.0f, 2),
+                                                                      });
+            this.menuSelectorIdleFrameAnimation.SetRepeat(0.1f);
+
+            this.menuEnterFrameAnimation = new FrameAnimation<Texture2D>(MenuConstants.MenuEnterImages, new Tuple<float, int>[]
+                                     {
+                                         new Tuple<float, int>(0.075f, 0),
+                                         new Tuple<float, int>(0.15f, 1),
+                                         new Tuple<float, int>(0.225f, 2),
+                                         new Tuple<float, int>(0.3f, 3),
+                                         new Tuple<float, int>(0.375f, 4),
+                                         new Tuple<float, int>(0.45f, 5),
+                                         new Tuple<float, int>(0.525f, 6),
+                                     });
+            this.menuEnterFrameAnimation.SetRepeat(0.075f, 3, 10);
+
+            // TODO: This animation needs to be the Shoot icon, and only lasts a brief moment and then transitions back to the Idle animation.
+            this.menuSelectorEnterFrameAnimation = menuSelectorIdleFrameAnimation;
+
+            this.currentMenuSelectorFrameAnimation = menuSelectorIdleFrameAnimation;
         }
 
         public override void Update(GameTime gameTime)
         {
-            if (!menuSelectorAnimation.IsStarted)
-                this.menuSelectorAnimation.Start(gameTime);
+            if (!this.currentMenuSelectorFrameAnimation.IsStarted)
+                this.currentMenuSelectorFrameAnimation.Start(gameTime);
             else
-                this.menuSelectorAnimation.Update(gameTime);
+                this.currentMenuSelectorFrameAnimation.Update(gameTime);
 
             Update_Keyboard(gameTime);
 
@@ -88,9 +108,16 @@ namespace DnDCS_Client.MenuLogic
         private void Update_Keyboard(GameTime gameTime)
         {
             // If we're currently translating the menu selector, then ignore any keyboard events.
-            if (menuSelectorTranslation != null && !menuSelectorTranslation.IsComplete)
+            if (menuSelectorTranslationAnimation != null && !menuSelectorTranslationAnimation.IsComplete)
             {
-                menuSelectorTranslation.Update(gameTime);
+                menuSelectorTranslationAnimation.Update(gameTime);
+                return;
+            }
+            
+            // If we're currently doing the Enter Animation, then any further keyboard events are not relevant because after it completes, we'll be transitioning the menu.
+            if (menuEnterFrameAnimation != null && menuEnterFrameAnimation.IsStarted && !menuEnterFrameAnimation.IsComplete)
+            {
+                menuEnterFrameAnimation.Update(gameTime);
                 return;
             }
 
@@ -108,17 +135,20 @@ namespace DnDCS_Client.MenuLogic
                 switch (selectedMenuOption)
                 {
                     case MenuConstants.MenuOption.Connect:
-                        // TODO: Prompt for connection information
-                        if (OnConnect != null)
-                        {
-                            var address = "desktop-win7";
-                            var port = 11000;
+                        DoEnter(gameTime, () =>
+                                              {
+                                                  // TODO: Prompt for connection information
+                                                  if (OnConnect != null)
+                                                  {
+                                                      var address = "desktop-win7";
+                                                      var port = 11000;
 
-                            OnConnect(new SimpleServerAddress() { Address = address, Port = port });
-                        }
+                                                      OnConnect(new SimpleServerAddress() { Address = address, Port = port });
+                                                  }
+                                              });
                         break;
                     case MenuConstants.MenuOption.Exit:
-                        TryExit();
+                        DoEnter(gameTime, TryExit);
                         break;
                 }
             }
@@ -138,18 +168,18 @@ namespace DnDCS_Client.MenuLogic
 
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
-            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
+            menuSelectorTranslationAnimation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
                                                                MenuConstants.MenuTranslationTotalDuration, gameTime)
                                           {
                                               OnComplete = () =>
                                               {
                                                   this.selectedMenuOption = newMenuItem;
-                                                  this.menuSelectorTranslation = null;
+                                                  this.menuSelectorTranslationAnimation = null;
                                               },
                                           };
 
-            menuSelectorTranslation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
-            menuSelectorTranslation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
+            menuSelectorTranslationAnimation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
+            menuSelectorTranslationAnimation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
         }
 
         private void SelectDown(GameTime gameTime)
@@ -164,18 +194,25 @@ namespace DnDCS_Client.MenuLogic
 
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
             var menuEnd = GetMenuSelectorPosition(newMenuItem);
-            menuSelectorTranslation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
+            menuSelectorTranslationAnimation = new TranslationAnimation(menuStart.X, menuStart.Y, menuEnd.X, menuEnd.Y, 0.0f,
                                                                MenuConstants.MenuTranslationTotalDuration, gameTime)
                                           {
                                               OnComplete = () =>
                                               {
                                                   this.selectedMenuOption = newMenuItem;
-                                                  this.menuSelectorTranslation = null;
+                                                  this.menuSelectorTranslationAnimation = null;
                                               }
                                           };
 
-            menuSelectorTranslation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
-            menuSelectorTranslation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
+            menuSelectorTranslationAnimation.AddVerticalEasing(0.0f, 0.5f, 0.1f, 1.0f);
+            menuSelectorTranslationAnimation.AddVerticalEasing(0.5f, 1.0f, 1.0f, 0.1f);
+        }
+
+        private void DoEnter(GameTime gameTime, Action onComplete)
+        {
+            // TODO: Change the Menu Selector Animation to show a shooting man.
+            this.menuEnterFrameAnimation.Start(gameTime);
+            this.menuEnterFrameAnimation.OnComplete = onComplete;
         }
 
         private void TryExit()
@@ -193,7 +230,7 @@ namespace DnDCS_Client.MenuLogic
         private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption)
         {
             var menuTextPosition = GetMenuTextPosition(menuOption);
-            return new Vector2(menuTextPosition.X - menuSelectorAnimation.CurrentFrame.Width - 15, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - menuSelectorAnimation.CurrentFrame.Height / 2);
+            return new Vector2(menuTextPosition.X - this.currentMenuSelectorFrameAnimation.CurrentFrame.Width - 15, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - this.currentMenuSelectorFrameAnimation.CurrentFrame.Height / 2);
         }
 
         public override void Draw(GameTime gameTime)
@@ -210,17 +247,19 @@ namespace DnDCS_Client.MenuLogic
             }
 
             // Draw the menu selector
-            if (menuSelectorTranslation == null || menuSelectorTranslation.IsComplete)
+            if (menuSelectorTranslationAnimation == null || menuSelectorTranslationAnimation.IsComplete)
             {
                 var menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
-                spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, menuSelectorPosition, Color.White);
+                spriteBatch.Draw(this.currentMenuSelectorFrameAnimation.CurrentFrame, menuSelectorPosition, Color.White);
             }
             else
             {
-                spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, new Vector2(menuSelectorTranslation.CurrentX, menuSelectorTranslation.CurrentY), Color.White);
+                spriteBatch.Draw(this.currentMenuSelectorFrameAnimation.CurrentFrame, new Vector2(menuSelectorTranslationAnimation.CurrentX, menuSelectorTranslationAnimation.CurrentY), Color.White);
             }
 
-            spriteBatch.Draw(menuSelectorAnimation.CurrentFrame, Vector2.Zero, null, Color.White, 0, Vector2.Zero, 5.0f, SpriteEffects.None, 0);
+            if (menuEnterFrameAnimation != null && menuEnterFrameAnimation.IsStarted && !menuEnterFrameAnimation.IsComplete)
+                spriteBatch.Draw(menuEnterFrameAnimation.CurrentFrame, Vector2.Zero, null, Color.White, 0, Vector2.Zero, 5.0f, SpriteEffects.None, 0);
+
             spriteBatch.End();
 
             base.Draw(gameTime);
