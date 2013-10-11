@@ -10,7 +10,7 @@ namespace DnDCS_Client.Shared
     {
         public const int REPEAT_FOREVER = -1;
 
-        public bool IsStarted { get; private set; }
+        public bool IsRunning { get; private set; }
 
         public TimeSpan StartGameTime { get; private set; }
         private float ElapsedSinceStart
@@ -18,7 +18,7 @@ namespace DnDCS_Client.Shared
             get
             {
                 // If we're currently repeating, we'll always offset the time elapsed so we properly skip over all the frames before the repeat point.
-                if (repeating)
+                if (isRepeating)
                     return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds) + FrameIntervals[RepeatToIndex].Item1;
                 else
                     return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds);
@@ -32,7 +32,7 @@ namespace DnDCS_Client.Shared
         public Action OnComplete { get; set; }
 
         public bool Repeat { get; private set; }
-        private bool repeating { get; set; }
+        private bool isRepeating;
         public float RepeatDelay { get; private set; }
         public int RepeatToIndex { get; private set; }
         public int RepeatCount { get; private set; }
@@ -57,8 +57,8 @@ namespace DnDCS_Client.Shared
 
         public void SetRepeat(float repeatDelay, int repeatToIndex = 0, int repeatCount = REPEAT_FOREVER)
         {
-            if (IsStarted)
-                throw new InvalidOperationException("Cannot change repeat values for a started animation.");
+            if (IsRunning)
+                throw new InvalidOperationException("Cannot change repeat values for a running animation.");
             else if (repeatToIndex < 0 || repeatToIndex >= FrameIntervals.Length)
                 throw new ArgumentException("RepeatToIndex must be a valid frame index.", "repeatToIndex");
             else if (repeatDelay < 0.0f)
@@ -70,16 +70,50 @@ namespace DnDCS_Client.Shared
             RepeatCount = repeatCount;
         }
 
+        /// <summary> Resets any values that would allow the animation to start again, and starts it. Can only be called when IsRunning is false. </summary>
         public void Start(GameTime startTime)
         {
+            if (IsRunning)
+                throw new InvalidOperationException("Can only start a non-running animation.");
+
+            Reset();
+
+            IsRunning = true;
             StartGameTime = startTime.TotalGameTime;
-            IsStarted = true;
+            CurrentGameTime = startTime.TotalGameTime;
+            LastGameTime = startTime.TotalGameTime;
         }
 
-        public void Update(GameTime gameTime)
+        /// <summary> Resets any values that would allow the animation to start again. Can only be called when IsRunning is false. </summary>
+        public void Reset()
         {
-            if (!IsStarted || IsComplete)
+            if (IsRunning)
+                throw new InvalidOperationException("Can only reset a non-running animation.");
+
+            IsComplete = false;
+            isRepeating = false;
+            CurrentFrameIntervalIndex = 0;
+            CurrentRepeatCount = 0;
+        }
+
+        public void Stop(bool reset = false)
+        {
+            IsRunning = false;
+            if (reset)
+                Reset();
+        }
+
+        public void Update(GameTime gameTime, bool startIfNeeded = false)
+        {
+            if (IsComplete)
                 return;
+            else if (!IsRunning)
+            {
+                if (startIfNeeded)
+                    Start(gameTime);
+                else
+                    return;
+            }
 
             LastGameTime = CurrentGameTime;
             CurrentGameTime = gameTime.TotalGameTime;
@@ -132,6 +166,7 @@ namespace DnDCS_Client.Shared
                             if (CurrentRepeatCount > RepeatCount)
                             {
                                 IsComplete = true;
+                                IsRunning = false;
                                 return;
                             }
                             CurrentRepeatCount++;
@@ -139,7 +174,7 @@ namespace DnDCS_Client.Shared
 
                         CurrentFrameIntervalIndex = RepeatToIndex;
                         StartGameTime = CurrentGameTime;
-                        repeating = true;
+                        isRepeating = true;
                         return;
                     }
                 }
@@ -153,6 +188,7 @@ namespace DnDCS_Client.Shared
                 // No repeat, so always show the last frame forever.
                 CurrentFrameIntervalIndex = (FrameIntervals.Length - 1);
                 IsComplete = true;
+                IsRunning = false;
                 return;
             }
         }

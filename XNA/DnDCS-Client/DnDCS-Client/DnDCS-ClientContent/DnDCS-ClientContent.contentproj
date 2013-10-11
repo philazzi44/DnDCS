@@ -120,18 +120,30 @@
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>
-    <Compile Include="Menu Selector\Icon1.png">
-      <Name>Icon1</Name>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Menu Selector\SelectorEnter1.png">
+      <Name>SelectorEnter1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>
-    <Compile Include="Menu Selector\Icon2.png">
-      <Name>Icon2</Name>
+    <Compile Include="Menu Selector\SelectorEnter2.png">
+      <Name>SelectorEnter2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>
-    <Compile Include="Menu Selector\Icon3.png">
-      <Name>Icon3</Name>
+    <Compile Include="Menu Selector\SelectorIdle1.png">
+      <Name>SelectorIdle1</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Menu Selector\SelectorIdle2.png">
+      <Name>SelectorIdle2</Name>
+      <Importer>TextureImporter</Importer>
+      <Processor>TextureProcessor</Processor>
+    </Compile>
+    <Compile Include="Menu Selector\SelectorIdle3.png">
+      <Name>SelectorIdle3</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
     </Compile>

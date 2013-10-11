@@ -29,6 +29,8 @@ namespace DnDCS_Client.Shared
             }
         }
 
+        public bool IsRunning { get; private set; }
+
         public TimeSpan StartGameTime { get; private set; }
         public float StartX { get; private set; }
         public float StartY { get; private set; }
@@ -39,12 +41,10 @@ namespace DnDCS_Client.Shared
         private Easing[] xEasings;
         private Easing[] yEasings;
 
-        [Obsolete]
-        public float CurrentDuration { get { return (float)(CurrentGameTime.TotalSeconds - StartGameTime.TotalSeconds); } }
-
         private float currentToLastGameTimeDelta;
         public TimeSpan LastGameTime { get; private set; }
         public TimeSpan CurrentGameTime { get; private set; }
+        public Vector2 Current { get { return new Vector2(CurrentX, CurrentY); } }
         public float CurrentX { get; private set; }
         public float CurrentXPercent { get { return (CurrentX - StartX) / (EndX - StartX); } }
         public float CurrentY { get; private set; }
@@ -59,14 +59,22 @@ namespace DnDCS_Client.Shared
         public Action OnComplete { get; set; }
 
         /// <summary> Creates an X/Y translation. </summary>
+        /// <param name="start"> The starting coordinates. </param>
+        /// <param name="end"> The ending coordinates. </param>
+        /// <param name="totalDuration"> The total time (in fractional seconds) it should take for the animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
+        public TranslationAnimation(Vector2 start, Vector2 end, float totalDuration)
+            : this(start.X, start.Y, end.X, end.Y, totalDuration, totalDuration)
+        {
+        }
+
+        /// <summary> Creates an X/Y translation. </summary>
         /// <param name="startX"> The starting X coordinate. </param>
         /// <param name="startY">The starting Y coordinate. </param>
         /// <param name="endX"> The ending X coordinate. If no X translation required, set to same as startX. </param>
         /// <param name="endY"> The ending Y coordinate. If no Y translation required, set to same as startY. </param>
         /// <param name="totalDuration"> The total time (in fractional seconds) it should take for the animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
-        /// <param name="gameTime"> The starting Game Time recorded. </param>
-        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalDuration, GameTime gameTime)
-            : this(startX, startY, endX, endY, totalDuration, totalDuration, gameTime)
+        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalDuration)
+            : this(startX, startY, endX, endY, totalDuration, totalDuration)
         {
         }
 
@@ -77,8 +85,7 @@ namespace DnDCS_Client.Shared
         /// <param name="endY"> The ending Y coordinate. If no Y translation required, set to same as startY. </param>
         /// <param name="totalXDuration"> The total time (in fractional seconds) it should take for the X animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
         /// <param name="totalYDuration"> The total time (in fractional seconds) it should take for the Y animation to complete. Note that any Easing applied will cause this to take longer due to slowing down the animation. </param>
-        /// <param name="gameTime"> The starting Game Time recorded. </param>
-        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalXDuration, float totalYDuration, GameTime gameTime)
+        public TranslationAnimation(float startX, float startY, float endX, float endY, float totalXDuration, float totalYDuration)
         {
             if (totalXDuration == 0 && totalYDuration == 0)
                 throw new InvalidOperationException("X and Y translations cannot both be zero, or there's no animation to be done.");
@@ -89,14 +96,9 @@ namespace DnDCS_Client.Shared
             EndY = endY;
             XPerSecond = (totalXDuration == 0.0f) ? (endX - startX) : (endX - startX) / totalXDuration;
             YPerSecond = (totalYDuration == 0.0f) ? (endY - startY) : (endY - startY) / totalYDuration;
-            StartGameTime = gameTime.TotalGameTime;
 
             CurrentX = StartX;
             CurrentY = StartY;
-            CurrentGameTime = gameTime.TotalGameTime;
-            LastGameTime = gameTime.TotalGameTime;
-            IsCompleteX = (XPerSecond == 0);
-            IsCompleteY = (YPerSecond == 0);
         }
 
         private static void AssertEasingPercents(float startDeltaPercent, float endDeltaPercent)
@@ -108,11 +110,11 @@ namespace DnDCS_Client.Shared
         }
 
         /// <summary> Adds horizontal easing. This will delay the total duration of the animation depending on the percentages used. </summary>
-        public void AddHorizontalEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
+        public void AddHorizontalEasing(float startPercent, float endPercent, float startPerSecondPercent, float endPerSecondPercent)
         {
-            AssertEasingPercents(startDeltaPercent, endDeltaPercent);
+            AssertEasingPercents(startPerSecondPercent, endPerSecondPercent);
 
-            var newEasing = new Easing(startTimePercent, endTimePercent, startDeltaPercent, endDeltaPercent);
+            var newEasing = new Easing(startPercent, endPercent, startPerSecondPercent, endPerSecondPercent);
             if (xEasings == null)
                 xEasings = new Easing[] { newEasing };
             else
@@ -120,21 +122,35 @@ namespace DnDCS_Client.Shared
         }
 
         /// <summary> Adds vertical easing. This will delay the total duration of the animation depending on the percentages used. </summary>
-        public void AddVerticalEasing(float startTimePercent, float endTimePercent, float startDeltaPercent, float endDeltaPercent)
+        public void AddVerticalEasing(float startPercent, float endPercent, float startPerSecondPercent, float endPerSecondPercent)
         {
-            AssertEasingPercents(startDeltaPercent, endDeltaPercent);
+            AssertEasingPercents(startPerSecondPercent, endPerSecondPercent);
 
-            var newEasing = new Easing(startTimePercent, endTimePercent, startDeltaPercent, endDeltaPercent);
+            var newEasing = new Easing(startPercent, endPercent, startPerSecondPercent, endPerSecondPercent);
             if (yEasings == null)
                 yEasings = new Easing[] { newEasing };
             else
                 yEasings = yEasings.Concat(new Easing[] { newEasing }).OrderBy(y => y.StartPercent).ToArray();
         }
 
+        /// <summary> Toggles the animation to start. A subsequent call to Update is required for the first frame to run. </summary>
+        public void Start(GameTime startTime)
+        {
+            StartGameTime = startTime.TotalGameTime;
+            CurrentGameTime = startTime.TotalGameTime;
+            LastGameTime = startTime.TotalGameTime;
+            IsRunning = true;
+            IsCompleteX = (XPerSecond == 0);
+            IsCompleteY = (YPerSecond == 0);
+        }
+
+        /// <summary> Toggles the animation to update. Invokes Start() if the animation isn't running, preventing the need to explicitly call it. </summary>
         public void Update(GameTime gameTime)
         {
             if (IsComplete)
                 return;
+            else if (!IsRunning)
+                Start(gameTime);
 
             LastGameTime = CurrentGameTime;
             CurrentGameTime = gameTime.TotalGameTime;
@@ -145,6 +161,7 @@ namespace DnDCS_Client.Shared
             
             if (IsComplete && OnComplete != null)
             {
+                IsRunning = false;
                 OnComplete();
             }
         }
