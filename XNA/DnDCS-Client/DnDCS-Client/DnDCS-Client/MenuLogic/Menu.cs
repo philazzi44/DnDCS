@@ -78,12 +78,12 @@ namespace DnDCS_Client.MenuLogic
                                                                                     {
                                                                                         new Tuple<float, int>(0.0f, 0),
                                                                                         new Tuple<float, int>(MenuConstants.IntroTeleportDuration, 1),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.1f, 2),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.2f, 3),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.3f, 4),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.4f, 5),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.5f, 6),
-                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.6f, 7),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.05f, 2),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.07f, 3),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.09f, 4),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.11f, 5),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.13f, 6),
+                                                                                        new Tuple<float, int>(MenuConstants.IntroTeleportDuration + 0.15f, 7),
                                                                                     });
             menuSelectorIntroFrameAnimation.OnComplete = () =>
             {
@@ -146,9 +146,10 @@ namespace DnDCS_Client.MenuLogic
         {
             // Teleporting in, translating down to the first menu option (the default selected one). The total duration should match the Frame Animation, which has no easing specified,
             // up to the point of the first image (the teleport image).
-            // TODO: The ending X/Y should be to the point where our standing selector needs to result.
+            // Note that we offset the Y value so that the translation ends where our first Idle image needs to appear. This is done by simply subtracting the difference of the two frames and
+            // centering, where the Intro Image is taller than the Idle Image.
             var menuStart = GetMenuSelectorPosition(this.selectedMenuOption);
-            this.menuSelectorIntroTranslationAnimation = new TranslationAnimation(menuStart.X, -100, menuStart.X, menuStart.Y, MenuConstants.IntroTeleportDuration);
+            this.menuSelectorIntroTranslationAnimation = new TranslationAnimation(menuStart.X, -100, menuStart.X, menuStart.Y - (MenuConstants.MenuSelectorIntroImages[0].Height - MenuConstants.MenuSelectorIdleImages[0].Height) / 2, MenuConstants.IntroTeleportDuration);
         }
         
         public override void Update(GameTime gameTime)

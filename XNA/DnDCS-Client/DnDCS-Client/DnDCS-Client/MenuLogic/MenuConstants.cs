@@ -32,6 +32,6 @@ namespace DnDCS_Client.MenuLogic
         public static readonly float MenuTranslationTotalDuration = 0.2f;
 
         /// <summary> When the Intro animation is occurring, this is the duration of the actual teleporting coming down from the sky. </summary>
-        public const float IntroTeleportDuration = 0.6f;
+        public const float IntroTeleportDuration = 0.5f;
     }
 }
