@@ -10,6 +10,8 @@ namespace DnDCS_Client.Shared
     {
         public const int REPEAT_FOREVER = -1;
 
+        public string LogName { get; set; }
+
         public bool IsRunning { get; protected set; }
         public TimeSpan StartGameTime { get; protected set; }
         public TimeSpan LastGameTime { get; protected set; }
@@ -23,6 +25,11 @@ namespace DnDCS_Client.Shared
 
         public virtual bool IsComplete { get; protected set; }
         public Action OnComplete { get; set; }
+
+        public BaseAnimation()
+        {
+            LogName = "Base Animation";
+        }
 
         public virtual void Start(GameTime startTime)
         {
@@ -82,6 +89,7 @@ namespace DnDCS_Client.Shared
             LastGameTime = CurrentGameTime;
             CurrentGameTime = gameTime.TotalGameTime;
 
+            Debug.Add(LogName);
             Update(gameTime);
 
             if (IsComplete && OnComplete != null)

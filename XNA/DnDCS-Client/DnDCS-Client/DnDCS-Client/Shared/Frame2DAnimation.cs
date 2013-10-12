@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Graphics;
 
 namespace DnDCS_Client.Shared
 {
-    public class FrameAnimation<T> : BaseAnimation
+    public class Frame2DAnimation : BaseAnimation
     {
         private float ElapsedSinceStart
         {
@@ -20,18 +21,18 @@ namespace DnDCS_Client.Shared
             }
         }
 
-        public T[] Frames { get; private set; }
+        public Texture2D[] Frames { get; private set; }
         public Tuple<float, int>[] FrameIntervals { get; private set; }
 
         public int RepeatToIndex { get; private set; }
 
         public int CurrentFrameIntervalIndex { get; private set; }
-        public T CurrentFrame { get { return Frames[FrameIntervals[CurrentFrameIntervalIndex].Item2]; } }
+        public Texture2D CurrentFrame { get { return Frames[FrameIntervals[CurrentFrameIntervalIndex].Item2]; } }
 
         /// <summary> Creates a new Frame Translation. </summary>
         /// <param name="frames"> The frames to show. </param>
         /// <param name="frameIntervals"> The Frame Intervals to show for the frames. </param>
-        public FrameAnimation(T[] frames, Tuple<float, int>[] frameIntervals)
+        public Frame2DAnimation(Texture2D[] frames, Tuple<float, int>[] frameIntervals)
         {
             if (frames.Length == 0 || frameIntervals.Length == 0)
                 throw new InvalidOperationException("Frames and Interval arrays must both have at least 1 element.");
@@ -62,6 +63,9 @@ namespace DnDCS_Client.Shared
         protected override void Update(GameTime gameTime)
         {
             Update_Frame();
+
+            Debug.Add(string.Format("CurrentFrameIntervalIndex: {0}/{1}", CurrentFrameIntervalIndex, (FrameIntervals.Length - 1)));
+            Debug.Add(string.Format("IsRepeating: {0} ({1}/{2})", (isRepeating ? "Yes" : "No"), CurrentRepeatCount, (RepeatCount == REPEAT_FOREVER ? "~" : RepeatCount.ToString())));
         }
 
         private void Update_Frame()
@@ -107,12 +111,12 @@ namespace DnDCS_Client.Shared
                                 IsRunning = false;
                                 return;
                             }
-                            CurrentRepeatCount++;
                         }
 
                         CurrentFrameIntervalIndex = RepeatToIndex;
                         StartGameTime = CurrentGameTime;
                         isRepeating = true;
+                        CurrentRepeatCount++;
                         return;
                     }
                 }
