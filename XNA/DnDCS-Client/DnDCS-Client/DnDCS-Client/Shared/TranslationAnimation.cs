@@ -6,7 +6,7 @@ using Microsoft.Xna.Framework;
 
 namespace DnDCS_Client.Shared
 {
-    public class TranslationAnimation
+    public class TranslationAnimation : BaseAnimation
     {
         public struct Easing
         {
@@ -29,9 +29,6 @@ namespace DnDCS_Client.Shared
             }
         }
 
-        public bool IsRunning { get; private set; }
-
-        public TimeSpan StartGameTime { get; private set; }
         public float StartX { get; private set; }
         public float StartY { get; private set; }
 
@@ -42,8 +39,6 @@ namespace DnDCS_Client.Shared
         private Easing[] yEasings;
 
         private float currentToLastGameTimeDelta;
-        public TimeSpan LastGameTime { get; private set; }
-        public TimeSpan CurrentGameTime { get; private set; }
         public Vector2 Current { get { return new Vector2(CurrentX, CurrentY); } }
         public float CurrentX { get; private set; }
         public float CurrentXPercent { get { return (CurrentX - StartX) / (EndX - StartX); } }
@@ -55,8 +50,7 @@ namespace DnDCS_Client.Shared
 
         public bool IsCompleteX { get; private set; }
         public bool IsCompleteY { get; private set; }
-        public bool IsComplete { get { return (IsCompleteX && IsCompleteY); } }
-        public Action OnComplete { get; set; }
+        public override bool IsComplete { get { return (IsCompleteX && IsCompleteY); } }
 
         /// <summary> Creates an X/Y translation. </summary>
         /// <param name="start"> The starting coordinates. </param>
@@ -134,39 +128,24 @@ namespace DnDCS_Client.Shared
         }
 
         /// <summary> Toggles the animation to start. A subsequent call to Update is required for the first frame to run. </summary>
-        public void Start(GameTime startTime)
+        public override void Start(GameTime startTime)
         {
-            StartGameTime = startTime.TotalGameTime;
-            CurrentGameTime = startTime.TotalGameTime;
-            LastGameTime = startTime.TotalGameTime;
-            IsRunning = true;
+            base.Start(startTime);
+
             IsCompleteX = (XPerSecond == 0);
             IsCompleteY = (YPerSecond == 0);
         }
 
         /// <summary> Toggles the animation to update. Invokes Start() if the animation isn't running, preventing the need to explicitly call it. </summary>
-        public void Update(GameTime gameTime)
+        protected override void Update(GameTime gameTime)
         {
-            if (IsComplete)
-                return;
-            else if (!IsRunning)
-                Start(gameTime);
-
-            LastGameTime = CurrentGameTime;
-            CurrentGameTime = gameTime.TotalGameTime;
             this.currentToLastGameTimeDelta = (float)(CurrentGameTime.TotalSeconds - LastGameTime.TotalSeconds);
 
             Update_X();
             Update_Y();
-            
-            if (IsComplete && OnComplete != null)
-            {
-                IsRunning = false;
-                OnComplete();
-            }
         }
 
-        public void Update_X()
+        private void Update_X()
         {
             if (!IsCompleteX && XPerSecond != 0)
             {
@@ -186,8 +165,8 @@ namespace DnDCS_Client.Shared
                 IsCompleteX = (CurrentX == EndX);
             }
         }
-        
-        public void Update_Y()
+
+        private void Update_Y()
         {
             if (!IsCompleteY && YPerSecond != 0)
             {

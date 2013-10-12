@@ -6,13 +6,8 @@ using Microsoft.Xna.Framework;
 
 namespace DnDCS_Client.Shared
 {
-    public class FrameAnimation<T>
+    public class FrameAnimation<T> : BaseAnimation
     {
-        public const int REPEAT_FOREVER = -1;
-
-        public bool IsRunning { get; private set; }
-
-        public TimeSpan StartGameTime { get; private set; }
         private float ElapsedSinceStart
         {
             get
@@ -28,18 +23,8 @@ namespace DnDCS_Client.Shared
         public T[] Frames { get; private set; }
         public Tuple<float, int>[] FrameIntervals { get; private set; }
 
-        public bool IsComplete { get; private set; }
-        public Action OnComplete { get; set; }
-
-        public bool Repeat { get; private set; }
-        private bool isRepeating;
-        public float RepeatDelay { get; private set; }
         public int RepeatToIndex { get; private set; }
-        public int RepeatCount { get; private set; }
-        public int CurrentRepeatCount { get; private set; }
 
-        public TimeSpan LastGameTime { get; private set; }
-        public TimeSpan CurrentGameTime { get; private set; }
         public int CurrentFrameIntervalIndex { get; private set; }
         public T CurrentFrame { get { return Frames[FrameIntervals[CurrentFrameIntervalIndex].Item2]; } }
 
@@ -55,75 +40,28 @@ namespace DnDCS_Client.Shared
             FrameIntervals = frameIntervals;
         }
 
-        public void SetRepeat(float repeatDelay, int repeatToIndex = 0, int repeatCount = REPEAT_FOREVER)
+        public override void SetRepeat(float repeatDelay, int repeatToIndex = 0, int repeatCount = BaseAnimation.REPEAT_FOREVER)
         {
-            if (IsRunning)
-                throw new InvalidOperationException("Cannot change repeat values for a running animation.");
-            else if (repeatToIndex < 0 || repeatToIndex >= FrameIntervals.Length)
+            if (repeatToIndex < 0 || repeatToIndex >= FrameIntervals.Length)
                 throw new ArgumentException("RepeatToIndex must be a valid frame index.", "repeatToIndex");
             else if (repeatDelay < 0.0f)
                 throw new ArgumentException("RepeatDelay must be greater than 0.", "repeatDelay");
 
-            Repeat = true;
-            RepeatDelay = repeatDelay;
+            base.SetRepeat(repeatDelay, repeatToIndex, repeatCount);
             RepeatToIndex = repeatToIndex;
-            RepeatCount = repeatCount;
         }
-
-        /// <summary> Resets any values that would allow the animation to start again, and starts it. Can only be called when IsRunning is false. </summary>
-        public void Start(GameTime startTime)
-        {
-            if (IsRunning)
-                throw new InvalidOperationException("Can only start a non-running animation.");
-
-            Reset();
-
-            IsRunning = true;
-            StartGameTime = startTime.TotalGameTime;
-            CurrentGameTime = startTime.TotalGameTime;
-            LastGameTime = startTime.TotalGameTime;
-        }
-
+        
         /// <summary> Resets any values that would allow the animation to start again. Can only be called when IsRunning is false. </summary>
-        public void Reset()
+        public override void Reset()
         {
-            if (IsRunning)
-                throw new InvalidOperationException("Can only reset a non-running animation.");
+            base.Reset();
 
-            IsComplete = false;
-            isRepeating = false;
             CurrentFrameIntervalIndex = 0;
-            CurrentRepeatCount = 0;
         }
-
-        public void Stop(bool reset = false)
+        
+        protected override void Update(GameTime gameTime)
         {
-            IsRunning = false;
-            if (reset)
-                Reset();
-        }
-
-        public void Update(GameTime gameTime, bool startIfNeeded = false)
-        {
-            if (IsComplete)
-                return;
-            else if (!IsRunning)
-            {
-                if (startIfNeeded)
-                    Start(gameTime);
-                else
-                    return;
-            }
-
-            LastGameTime = CurrentGameTime;
-            CurrentGameTime = gameTime.TotalGameTime;
-
             Update_Frame();
-
-            if (IsComplete && OnComplete != null)
-            {
-                OnComplete();
-            }
         }
 
         private void Update_Frame()

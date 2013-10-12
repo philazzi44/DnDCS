@@ -155,12 +155,12 @@ namespace DnDCS_Client.MenuLogic
         public override void Update(GameTime gameTime)
         {
             // This frame is either the Intro Frame, Idle Frame, or Enter Frame Animations. In all cases, we want to udpate it.
-            this.currentMenuSelectorFrameAnimation.Update(gameTime, true);
+            this.currentMenuSelectorFrameAnimation.Update(gameTime);
 
             if (this.menuSelectorIntroTranslationAnimation != null && !this.menuSelectorIntroTranslationAnimation.IsComplete)
             {
                 // If we're currently translating the intro menu selector, then ignore any keyboard events.
-                this.menuSelectorIntroTranslationAnimation.Update(gameTime);
+                this.menuSelectorIntroTranslationAnimation.Update(gameTime, true);
             }
             else if (this.menuSelectorIntroFrameAnimation != null)
             {
@@ -175,7 +175,7 @@ namespace DnDCS_Client.MenuLogic
             else if (menuEnterFrameAnimation != null && menuEnterTranslationAnimation != null)
             {
                 // If we're currently doing the Enter Animation, then any further keyboard events are not relevant because after it completes, we'll be transitioning the menu.
-                menuEnterFrameAnimation.Update(gameTime, true);
+                menuEnterFrameAnimation.Update(gameTime);
                 menuEnterTranslationAnimation.Update(gameTime);
             }
             else
