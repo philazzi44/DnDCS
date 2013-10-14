@@ -40,7 +40,11 @@ namespace DnDCS_Client.MenuLogic
         }
         private Frame2DAnimation menuSelectorIdleFrameAnimation;
         private Frame2DAnimation menuSelectorEnterFrameAnimation;
+
+        private Frame2DTranslationAnimation menuEnterAnimation;
+        [Obsolete("See menuEnterAnimation.")]
         private Frame2DAnimation menuEnterFrameAnimation;
+        [Obsolete("See menuEnterAnimation.")]
         private TranslationAnimation menuEnterTranslationAnimation;
 
         private int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 4; } }
