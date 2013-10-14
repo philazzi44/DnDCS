@@ -4,12 +4,43 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace DnDCS_Client.Shared
+namespace DnDCS_Client.Shared.Animations
 {
     public class Frame2DTranslationAnimation
     {
-        public Frame2DAnimation Frame { get; set; }
-        public TranslationAnimation Translation { get; set; }
+        private Frame2DAnimation frame;
+        public Frame2DAnimation Frame
+        {
+            get { return frame; }
+            set
+            {
+                if (updateOrder != null)
+                {
+                    if (updateOrder[0] == frame)
+                        updateOrder[0] = value;
+                    else
+                        updateOrder[1] = value;
+                }
+                frame = value;
+            }
+        }
+
+        private TranslationAnimation translation;
+        public TranslationAnimation Translation
+        {
+            get { return translation; }
+            set
+            {
+                if (updateOrder != null)
+                {
+                    if (updateOrder[0] == translation)
+                        updateOrder[0] = value;
+                    else
+                        updateOrder[1] = value;
+                }
+                translation = value;
+            }
+        }
 
         private BaseAnimation[] updateOrder;
 
@@ -40,7 +71,7 @@ namespace DnDCS_Client.Shared
             if (Translation == null)
                 throw new InvalidOperationException("TranslationAnimation is null.");
 
-            if (updateOrder == null)
+            if (updateOrder == null || updateOrder[0] == null || updateOrder[1] == null)
                 updateOrder = new BaseAnimation[] { Frame, Translation };
         }
 

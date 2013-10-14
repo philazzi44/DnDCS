@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS_Client.Shared
+namespace DnDCS_Client.Shared.Animations
 {
     public class Frame2DAnimation : BaseAnimation
     {

@@ -123,12 +123,13 @@
     <Compile Include="Program.cs" />
     <Compile Include="ClientLogic\Client_InitLogic.cs" />
     <Compile Include="SharedResources.cs" />
-    <Compile Include="Shared\BaseAnimation.cs" />
+    <Compile Include="Shared\Animations\BaseAnimation.cs" />
+    <Compile Include="Shared\Animations\ConditionalAnimation.cs" />
     <Compile Include="Shared\Debug.cs" />
     <Compile Include="Shared\Extensions.cs" />
-    <Compile Include="Shared\Frame2DAnimation.cs" />
-    <Compile Include="Shared\Frame2DTranslationAnimation.cs" />
-    <Compile Include="Shared\TranslationAnimation.cs" />
+    <Compile Include="Shared\Animations\Frame2DAnimation.cs" />
+    <Compile Include="Shared\Animations\Frame2DTranslationAnimation.cs" />
+    <Compile Include="Shared\Animations\TranslationAnimation.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

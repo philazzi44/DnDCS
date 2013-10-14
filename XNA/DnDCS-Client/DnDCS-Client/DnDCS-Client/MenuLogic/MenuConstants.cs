@@ -33,5 +33,8 @@ namespace DnDCS_Client.MenuLogic
 
         /// <summary> When the Intro animation is occurring, this is the duration of the actual teleporting coming down from the sky. </summary>
         public const float IntroTeleportDuration = 0.5f;
+
+        public static int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 4; } }
+        public static int MenuStartY { get { return SharedResources.GameWindow.ClientBounds.Height / 4; } }
     }
 }

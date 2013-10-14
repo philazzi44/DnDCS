@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace DnDCS_Client.Shared
+namespace DnDCS_Client.Shared.Animations
 {
     public abstract class BaseAnimation
     {

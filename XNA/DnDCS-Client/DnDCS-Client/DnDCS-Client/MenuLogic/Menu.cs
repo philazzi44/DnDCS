@@ -10,47 +10,33 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS_Client.Shared;
+using DnDCS_Client.Shared.Animations;
 
 
 namespace DnDCS_Client.MenuLogic
 {
     public class Menu : Microsoft.Xna.Framework.DrawableGameComponent
     {
+        /// <summary> Event raised when Connect is invoked. </summary>
         public event Action<SimpleServerAddress> OnConnect;
+        /// <summary> Event raised when Exit is invoked. </summary>
         public event Action OnExit;
 
         private MenuConstants.MenuOption selectedMenuOption;
 
+        /// <summary> Intro animation for the selector. </summary>
         private Frame2DTranslationAnimation menuSelectorIntroAnimation;
 
+        /// <summary> Translation animation created when Up or Down are pressed. </summary>
         private TranslationAnimation menuSelectorUpDownTranslationAnimation;
+        
+        /// <summary> Frame Animation where 'true' is the Enter Frame and 'false' is the Idle Frame. </summary>
+        private readonly ConditionalAnimation<Frame2DAnimation> menuSelectorFrameAnimation = new ConditionalAnimation<Frame2DAnimation>();
 
-        /// <summary> For image placement purposes, we sometimes need the current Menu Selector's Frame itself, so this will get either the Idle Animation frame or the Enter Animation frame. </summary>
-        private Texture2D CurrentMenuSelectorFrame
-        {
-            get
-            {
-                if (UseSelectorIdleAnimation)
-                    return menuSelectorIdleFrameAnimation.CurrentFrame;
-                if (UseSelectorEnterAnimation)
-                    return menuSelectorEnterFrameAnimation.CurrentFrame;
-                // If we're not sure which one to use, we'll assume that the first Idle image is fine. Bad assumption, but will work for our purposes.
-                return MenuConstants.MenuSelectorEnterImages.Last();
-            }
-        }
-        private Frame2DAnimation menuSelectorIdleFrameAnimation;
-        private Frame2DAnimation menuSelectorEnterFrameAnimation;
+        /// <summary> Animation when Enter is invoked. </summary>
+        private readonly Frame2DTranslationAnimation menuEnterAnimation = new Frame2DTranslationAnimation();
 
-        private Frame2DTranslationAnimation menuEnterAnimation;
-        [Obsolete("See menuEnterAnimation.")]
-        private Frame2DAnimation menuEnterFrameAnimation;
-        [Obsolete("See menuEnterAnimation.")]
-        private TranslationAnimation menuEnterTranslationAnimation;
-
-        private int MenuStartX { get { return SharedResources.GameWindow.ClientBounds.Width / 4; } }
-        private int MenuStartY { get { return SharedResources.GameWindow.ClientBounds.Height / 4; } }
-
-        private bool UseSelectorIdleAnimation { get; set; }
+        /// <summary> If true, we should use the Enter animation for the selector instead of the Idle animation. </summary>
         private bool UseSelectorEnterAnimation { get; set; }
 
         public Menu() : base(SharedResources.Game)
@@ -87,8 +73,8 @@ namespace DnDCS_Client.MenuLogic
         private void CreateAnimations()
         {
             CreateIntroAnimations();
-            CreateIdleAnimations();
-            CreateOnEnterAnimations();
+            CreateMenuSelectorFrameAnimations();
+            CreateEnterFrameAnimation();
         }
 
         private void CreateIntroAnimations()
@@ -108,8 +94,9 @@ namespace DnDCS_Client.MenuLogic
                                                                                     });
             menuSelectorIntroFrameAnimation.OnComplete = () =>
             {
-                UseSelectorIdleAnimation = true;
+                // Go back to the Blinking animation.
                 UseSelectorEnterAnimation = false;
+                this.menuSelectorFrameAnimation.TrueAnimation.Reset();
                 this.menuSelectorIntroAnimation = null;
             };
             menuSelectorIntroFrameAnimation.LogName = "Selector Intro Frame Animation";
@@ -124,10 +111,10 @@ namespace DnDCS_Client.MenuLogic
 
         }
 
-        private void CreateIdleAnimations()
+        private void CreateMenuSelectorFrameAnimations()
         {
             // This is a standing icon that blinks
-            this.menuSelectorIdleFrameAnimation = new Frame2DAnimation(MenuConstants.MenuSelectorIdleImages,
+            this.menuSelectorFrameAnimation.FalseAnimation = new Frame2DAnimation(MenuConstants.MenuSelectorIdleImages,
                                                                                 new Tuple<float, int>[]
                                                                                     {
                                                                                         new Tuple<float, int>(0.0f, 0),
@@ -140,31 +127,33 @@ namespace DnDCS_Client.MenuLogic
                                                                                         new Tuple<float, int>(5.9f, 1),
                                                                                         new Tuple<float, int>(6.0f, 2),
                                                                                     });
-            this.menuSelectorIdleFrameAnimation.SetRepeat(0.1f);
-            this.menuSelectorIdleFrameAnimation.LogName = "Selector Idle Frame Animation";
-        }
+            this.menuSelectorFrameAnimation.FalseAnimation.SetRepeat(0.1f);
+            this.menuSelectorFrameAnimation.FalseAnimation.LogName = "Selector Idle Frame Animation";
 
-        private void CreateOnEnterAnimations()
-        {
             // This is a Shooting animation that the Selector does when Enter is clicked. After it completes, the selector reverts back to the Idle Animation until we transition.
-            this.menuSelectorEnterFrameAnimation = new Frame2DAnimation(MenuConstants.MenuSelectorEnterImages,
+            this.menuSelectorFrameAnimation.TrueAnimation = new Frame2DAnimation(MenuConstants.MenuSelectorEnterImages,
                                                                                  new Tuple<float, int>[]
                                                                                      {
                                                                                          new Tuple<float, int>(0.0f, 0),
                                                                                          new Tuple<float, int>(0.05f, 1),
                                                                                          new Tuple<float, int>(0.8f, 1),
                                                                                      });
-            this.menuSelectorEnterFrameAnimation.OnComplete = () =>
+            this.menuSelectorFrameAnimation.TrueAnimation.OnComplete = () =>
             {
-                UseSelectorIdleAnimation = true;
+                // Go back to the Blinking animation.
                 UseSelectorEnterAnimation = false;
-                this.menuSelectorEnterFrameAnimation.Reset();
+                this.menuSelectorFrameAnimation.TrueAnimation.Reset();
             };
-            this.menuSelectorEnterFrameAnimation.LogName = "Selector Enter Frame Animation";
+            this.menuSelectorFrameAnimation.TrueAnimation.LogName = "Selector Enter Frame Animation";
 
+            this.menuSelectorFrameAnimation.Condition = () => { return this.UseSelectorEnterAnimation && (menuSelectorUpDownTranslationAnimation == null || menuSelectorUpDownTranslationAnimation.IsComplete); };
+        }
+
+        private void CreateEnterFrameAnimation()
+        {
             // This is a bullet animation that both animates in place, with a related translation to have it move over the chosen menu item. The translation
             // is created only when required, as it depends on the location.
-            this.menuEnterFrameAnimation = new Frame2DAnimation(MenuConstants.MenuEnterImages,
+            menuEnterAnimation.Frame = new Frame2DAnimation(MenuConstants.MenuEnterImages,
                                                                          new Tuple<float, int>[]
                                                                              {
                                                                                  new Tuple<float, int>(0.0f, 0),
@@ -175,17 +164,14 @@ namespace DnDCS_Client.MenuLogic
                                                                                  new Tuple<float, int>(0.5f, 5),
                                                                                  new Tuple<float, int>(0.6f, 6),
                                                                              });
-            this.menuEnterFrameAnimation.SetRepeat(0.1f, 3);
-            this.menuEnterFrameAnimation.LogName = "Enter Frame Animation";
+            menuEnterAnimation.Frame.SetRepeat(0.1f, 3);
+            menuEnterAnimation.Frame.LogName = "Enter Frame Animation";
         }
 
         public override void Update(GameTime gameTime)
         {
-            // Regardless of any input-blocking animations happening, one of these two may need to be updated.
-            if (UseSelectorIdleAnimation)
-                menuSelectorIdleFrameAnimation.Update(gameTime);
-            else if (UseSelectorEnterAnimation)
-                menuSelectorEnterFrameAnimation.Update(gameTime);
+            // Regardless of any input-blocking animations happening, this animation needs to be updated.
+            this.menuSelectorFrameAnimation.Animation.Update(gameTime);
 
             if (this.menuSelectorIntroAnimation != null)
             {
@@ -205,11 +191,10 @@ namespace DnDCS_Client.MenuLogic
                 // We're currently translating the menu selector.
                 menuSelectorUpDownTranslationAnimation.Update(gameTime);
             }
-            else if (menuEnterFrameAnimation != null && menuEnterTranslationAnimation != null)
+            else if (menuEnterAnimation.Frame != null && menuEnterAnimation.Translation != null)
             {
                 // We're currently doing the Enter Animation.
-                menuEnterFrameAnimation.Update(gameTime);
-                menuEnterTranslationAnimation.Update(gameTime);
+                menuEnterAnimation.Update(gameTime);
             }
             else
             {
@@ -248,13 +233,13 @@ namespace DnDCS_Client.MenuLogic
                                               });
                         break;
                     case MenuConstants.MenuOption.Exit:
-                        DoEnter(gameTime, TryExit);
+                        DoEnter(gameTime, TryRaiseOnExit);
                         break;
                 }
             }
             else if (keyboardState.IsKeyDown(Keys.Escape))
             {
-                TryExit();
+                TryRaiseOnExit();
             }
         }
 
@@ -312,28 +297,27 @@ namespace DnDCS_Client.MenuLogic
         {
             // No need to start the new Enter Frame Animation as the next Update round will do that. We also don't need to stop the Idle Frame Animation
             // because it's not noticeable enough if it were to have restarted.
-            UseSelectorIdleAnimation = false;
             UseSelectorEnterAnimation = true;
 
             // When the translation is complete, we'll invoke the underlying action that was supposed to run as a result of the Enter key being pressed.
             // Note that the Frame Animation never ends, so there's no action to take when it completes.
             var menuSelectorEnterPositions = GetMenuSelectorEnterPositions(this.selectedMenuOption);
-            this.menuEnterTranslationAnimation = new TranslationAnimation(menuSelectorEnterPositions[0], menuSelectorEnterPositions[1], 2.0f)
+            this.menuEnterAnimation.Translation = new TranslationAnimation(menuSelectorEnterPositions[0], menuSelectorEnterPositions[1], 2.0f)
                                                      {
                                                          OnComplete = () =>
                                                                           {
-                                                                              this.menuEnterTranslationAnimation = null;
-                                                                              this.menuEnterFrameAnimation.Stop(true);
+                                                                              this.menuEnterAnimation.Translation = null;
+                                                                              this.menuEnterAnimation.Frame.Stop(true);
                                                                               //onComplete();
                                                                           }
                                                      };
 
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.0f, 0.03f, 0.0015f, 1.0f);
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.03f, 0.05f, 1.0f, 1.5f);
-            menuEnterTranslationAnimation.AddHorizontalEasing(0.05f, 0.1f, 1.5f, 2.0f);
+            this.menuEnterAnimation.Translation.AddHorizontalEasing(0.0f, 0.03f, 0.0015f, 1.0f);
+            this.menuEnterAnimation.Translation.AddHorizontalEasing(0.03f, 0.05f, 1.0f, 1.5f);
+            this.menuEnterAnimation.Translation.AddHorizontalEasing(0.05f, 0.1f, 1.5f, 2.0f);
         }
-
-        private void TryExit()
+        
+        private void TryRaiseOnExit()
         {
             // TODO: Prompt to exit?
             if (OnExit != null)
@@ -343,7 +327,7 @@ namespace DnDCS_Client.MenuLogic
         /// <summary> Top-Left of the Menu Text Entry. </summary>
         private Vector2 GetMenuTextPosition(MenuConstants.MenuOption menuOption)
         {
-            return new Vector2(MenuStartX, MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
+            return new Vector2(MenuConstants.MenuStartX, MenuConstants.MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
         }
 
         /// <summary>
@@ -352,7 +336,7 @@ namespace DnDCS_Client.MenuLogic
         /// </summary>
         private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption, Frame2DAnimation menuSelectorFrameAnimation = null)
         {
-            var frame = (menuSelectorFrameAnimation == null) ? this.CurrentMenuSelectorFrame : menuSelectorFrameAnimation.CurrentFrame;
+            var frame = (menuSelectorFrameAnimation == null) ? this.menuSelectorFrameAnimation.Animation.CurrentFrame : menuSelectorFrameAnimation.CurrentFrame;
             var menuTextPosition = GetMenuTextPosition(menuOption);
             return new Vector2(menuTextPosition.X - frame.Width - 25, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - frame.Height / 2);
         }
@@ -361,7 +345,7 @@ namespace DnDCS_Client.MenuLogic
         private Vector2[] GetMenuSelectorEnterPositions(MenuConstants.MenuOption menuOption)
         {
             var menuSelectorPosition = GetMenuSelectorPosition(menuOption);
-            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.CurrentMenuSelectorFrame.Width - 8, menuSelectorPosition.Y);
+            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.menuSelectorFrameAnimation.Animation.CurrentFrame.Width - 8, menuSelectorPosition.Y);
             // It ends all the way beyond the screen boundaries
             var menuSelectorEnterPositionEnd = new Vector2(SharedResources.GameWindow.ClientBounds.Width, menuSelectorEnterPositionStart.Y);
 
@@ -388,34 +372,20 @@ namespace DnDCS_Client.MenuLogic
             }
             else
             {
-                // Draw the menu selector
+                // Draw the menu selector, either as a stand-still animation (Idle/Enter animation) or an up/down translation (Idle animation).
+                Vector2 menuSelectorPosition;
                 if (menuSelectorUpDownTranslationAnimation == null || menuSelectorUpDownTranslationAnimation.IsComplete)
-                {
-                    // We're doing a stand-still animation, so we'll either use the Idle Animation or the Enter Animation.
-                    if (UseSelectorIdleAnimation)
-                    {
-                        var menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
-                        spriteBatch.Draw(this.menuSelectorIdleFrameAnimation.CurrentFrame, menuSelectorPosition, Color.White);
-                    }
-                    else if (UseSelectorEnterAnimation)
-                    {
-                        var menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
-                        spriteBatch.Draw(this.menuSelectorEnterFrameAnimation.CurrentFrame, menuSelectorPosition, Color.White);
-                    }
-                }
+                    menuSelectorPosition = GetMenuSelectorPosition(this.selectedMenuOption);
                 else
-                {
-                    // We're doing an up/down translation, which is always with the Idle frames.
-                    spriteBatch.Draw(this.menuSelectorIdleFrameAnimation.CurrentFrame, new Vector2(menuSelectorUpDownTranslationAnimation.CurrentX, menuSelectorUpDownTranslationAnimation.CurrentY), Color.White);
-                }
+                    menuSelectorPosition = new Vector2(menuSelectorUpDownTranslationAnimation.CurrentX, menuSelectorUpDownTranslationAnimation.CurrentY);
 
-                if (menuEnterFrameAnimation != null && menuEnterTranslationAnimation != null && menuEnterTranslationAnimation.IsRunning)
+                spriteBatch.Draw(this.menuSelectorFrameAnimation.Animation.CurrentFrame, menuSelectorPosition, Color.White);
+
+                if (this.menuEnterAnimation.Frame != null && this.menuEnterAnimation.Translation != null && this.menuEnterAnimation.Translation.IsRunning)
                 {
-                    spriteBatch.Draw(menuEnterFrameAnimation.CurrentFrame, menuEnterTranslationAnimation.Current, Color.White);
+                    spriteBatch.Draw(this.menuEnterAnimation.Frame.CurrentFrame, this.menuEnterAnimation.Translation.Current, Color.White);
                 }
             }
-
-            
             
             spriteBatch.End();
 
