@@ -42,6 +42,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ClientControl_Old.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ClientControl_Old.Designer.cs">
+      <DependentUpon>ClientControl_Old.cs</DependentUpon>
+    </Compile>
     <Compile Include="ClientControl.cs">
       <SubType>UserControl</SubType>
     </Compile>
@@ -72,6 +78,9 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="ClientControl_Old.resx">
+      <DependentUpon>ClientControl_Old.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="ClientControl.resx">
       <DependentUpon>ClientControl.cs</DependentUpon>
     </EmbeddedResource>

@@ -12,9 +12,11 @@ using System.Runtime.InteropServices;
 
 namespace DnDCS.Client
 {
-    public partial class ClientControl : UserControl, IDnDCSControl
+    public partial class ClientControl_Old : UserControl, IDnDCSControl
     {
-        private const float ScrollWheelStepPercent = 0.05f;
+        private const float ScrollWheelStepPercent = 0.01f;
+
+        private Point lastScrollPosition = Point.Empty;
 
         private bool isExiting;
 
@@ -47,23 +49,23 @@ namespace DnDCS.Client
 
         private System.Threading.Thread zoomFactorHandlerThread;
         private AutoResetEvent zoomFactorHandlerEvent = new AutoResetEvent(false);
-        private bool isZoomFactorInProgress;
-        private bool isZoomFactorRunning;
+        private bool isScaleFactorInProgress;
+        private bool isScaleFactorRunning;
         private Font zoomFactorFont;
         private const string ZoomInstructionMessage = "Press Enter to commit the zoom factor.";
 
         private MenuItem fullScreenAction;
 
-        private Point scrollPosition = Point.Empty;
         public SimplePoint ScrollPosition
         {
-            get { return new SimplePoint(scrollPosition.X, scrollPosition.Y); }
+            // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
+            get { return new SimplePoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
             set { SetScroll(value.X, value.Y); }
         }
 
         public Action<bool> ToggleFullScreen { get; set; }
 
-        public ClientControl()
+        public ClientControl_Old()
         {
             InitializeComponent();
         }
@@ -83,6 +85,7 @@ namespace DnDCS.Client
             
             initialParentFormText = this.ParentForm.Text;
             this.BackColor = fogColor;
+            pnlMap.BackColor = fogColor;
             pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
             pbxMap.PreviewKeyDown += new PreviewKeyDownEventHandler(pbxMap_PreviewKeyDown);
@@ -226,13 +229,14 @@ namespace DnDCS.Client
                     g.Clear(fogColor);
 
                 this.receivedMap = map;
-                this.assignedMap = new Bitmap(map, (int)(map.Width * assignedScaleFactor), (int)(map.Height * assignedScaleFactor));
+                this.assignedMap = new Bitmap(map, (int)(map.Width * assignedScaleFactor),
+                                              (int)(map.Height * assignedScaleFactor));
                 this.receivedMapWidth = this.receivedMap.Width;
                 this.receivedMapHeight = this.receivedMap.Height;
                 
                 pbxMap.BeginInvoke((new Action(() =>
                                                    {
-                                                       //pbxMap.Image = this.assignedMap;
+                                                       pbxMap.Image = this.assignedMap;
                                                        pbxMap.Refresh();
                                                    })));
             }
@@ -316,7 +320,26 @@ namespace DnDCS.Client
             // TODO: Invalidate or Refresh? Don't know which makes more sense, or if it matters in this case...
             pbxMap.Invalidate();
         }
-        
+
+        private void pnlMap_Scroll(object sender, ScrollEventArgs e)
+        {
+            RefreshMapPictureBox();
+            lastScrollPosition = new Point(pnlMap.HorizontalScroll.Value, pnlMap.VerticalScroll.Value);
+        }
+
+        private void pnlMap_SizeChanged(object sender, EventArgs e)
+        {
+            pbxMap.MinimumSize = pnlMap.Size;
+
+            // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
+            pnlMap.HorizontalScroll.Value = lastScrollPosition.X;
+            pnlMap.HorizontalScroll.Value = lastScrollPosition.X;
+            pnlMap.VerticalScroll.Value = lastScrollPosition.Y;
+            pnlMap.VerticalScroll.Value = lastScrollPosition.Y;
+
+            RefreshMapPictureBox();
+        }
+
         private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.F11 || (e.KeyCode == Keys.Escape && fullScreenAction.Checked))
@@ -334,66 +357,63 @@ namespace DnDCS.Client
                 return;
             }
 
-            if (isZoomFactorInProgress)
+            if (isScaleFactorInProgress)
             {
-                if (e.KeyCode == Keys.Escape)
-                {
-                    // Cancel the zoom action being done.
-                    variableScaleFactor = assignedScaleFactor;
-                    isZoomFactorInProgress = false;
-                    pbxMap.Refresh();
-                    return;
-                }
                 if (e.KeyCode == Keys.Enter)
                 {
                     // Commit the zoom factor at this point by notifing the Zoom Factor event.
-                    isZoomFactorInProgress = false;
-                    isZoomFactorRunning = true;
-                    pbxMap.Refresh();
+                    isScaleFactorInProgress = false;
+                    isScaleFactorRunning = true;
                     zoomFactorHandlerEvent.Set();
+                    pbxMap.Refresh();
                 }
             }
 
-            switch (e.KeyCode)
-            {
-                case Keys.Up:
-                    ScrollUpOrDown(true);
-                    break;
-                case Keys.Down:
-                    ScrollUpOrDown(false);
-                    break;
-            }
-
-            switch (e.KeyCode)
-            {
-                case Keys.Left:
-                    ScrollLeftOrRight(true);
-                    break;
-                case Keys.Right:
-                    ScrollLeftOrRight(false);
-                    break;
-            }
+            // TODO: This doesn't work because Win Forms is being a pain as far as focused controls.
+            // switch (e.KeyCode)
+            // {
+            //     case Keys.Up:
+            //         ScrollUpOrDown(true);
+            //         pbxMap.Refresh();
+            //         break;
+            //     case Keys.Down:
+            //         ScrollUpOrDown(false);
+            //         pbxMap.Refresh();
+            //         break;
+            // }
+               
+            // switch (e.KeyCode)
+            // {
+            //     case Keys.Left:
+            //         ScrollLeftOrRight(true);
+            //         pbxMap.Refresh();
+            //         break;
+            //     case Keys.Right:
+            //         ScrollLeftOrRight(false);
+            //         pbxMap.Refresh();
+            //         break;
+            // }
         }
 
-        private void ScrollLeftOrRight(bool isLeft, int? distance = null)
+        private void ScrollLeftOrRight(bool isLeft)
         {
             // Scroll left/right
             int newValue;
             if (isLeft)
-                newValue = this.scrollPosition.X - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = Math.Max(pnlMap.HorizontalScroll.Value - (int)(pbxMap.Width * ScrollWheelStepPercent), pnlMap.HorizontalScroll.Minimum);
             else
-                newValue = this.scrollPosition.X + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = Math.Min(pnlMap.HorizontalScroll.Value + (int)(pbxMap.Width * ScrollWheelStepPercent), pnlMap.HorizontalScroll.Maximum);
             SetScroll(newValue, null);
         }
 
-        private void ScrollUpOrDown(bool isUp, int? distance = null)
+        private void ScrollUpOrDown(bool isUp)
         {
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.scrollPosition.Y - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = Math.Max(pnlMap.VerticalScroll.Value - (int)(pbxMap.Width * ScrollWheelStepPercent), pnlMap.VerticalScroll.Minimum);
             else
-                newValue = this.scrollPosition.Y + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = Math.Min(pnlMap.VerticalScroll.Value + (int)(pbxMap.Width * ScrollWheelStepPercent), pnlMap.VerticalScroll.Maximum);
             SetScroll(null, newValue);
         }
 
@@ -404,7 +424,7 @@ namespace DnDCS.Client
                 var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
                 var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
 
-                if (isControl || isZoomFactorInProgress)
+                if (isControl)
                 {
                     ZoomInOrOut((e.Delta > 0), isShift);
                     ((HandledMouseEventArgs)e).Handled = true;
@@ -424,36 +444,21 @@ namespace DnDCS.Client
             RefreshMapPictureBox();
         }
 
-        private void SetScroll(int? desiredX, int? desiredY)
+        private void SetScroll(int? x, int? y)
         {
-            if (!desiredX.HasValue)
-                desiredX = this.scrollPosition.X;
-            if (!desiredY.HasValue)
-                desiredY = this.scrollPosition.Y;
-            
-            // Do not allow negative scrolling in any way.
-            if (desiredX.Value < 0)
-                desiredX = 0;
-            if (desiredY.Value < 0)
-                desiredY = 0;
+            // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
+            if (x.HasValue)
+            {
+                pnlMap.HorizontalScroll.Value = x.Value;
+                pnlMap.HorizontalScroll.Value = x.Value;
+            }
+            if (y.HasValue)
+            {
+                pnlMap.VerticalScroll.Value = y.Value;
+                pnlMap.VerticalScroll.Value = y.Value;
+            }
 
-            // TODO: Validate that the scroll position isn't beyond the width/height of the assigned image (taking zoom into account).
-
-            // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
-            // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.assignedMap.Width < this.Width)
-                desiredX = 0;
-            else
-                desiredX = Math.Min(desiredX.Value, this.assignedMap.Width - this.Width);
-
-            if (this.assignedMap.Height < this.Height)
-                desiredY = 0;
-            else
-                desiredY = Math.Min(desiredY.Value, this.assignedMap.Height - this.Height);
-            
-            this.scrollPosition.X = desiredX.Value;
-            this.scrollPosition.Y = desiredY.Value;
-            pbxMap.Invalidate();
+            lastScrollPosition = new Point(x ?? pnlMap.HorizontalScroll.Value, y ?? pnlMap.VerticalScroll.Value);
         }
 
         private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
@@ -463,9 +468,9 @@ namespace DnDCS.Client
             else
                 variableScaleFactor = (float)Math.Round(Math.Max(variableScaleFactor - ((doubleFactor) ? 0.2f : 0.1f), ConfigValues.MinimumGridZoomFactor), 1);
 
-            isZoomFactorInProgress = true;
+            isScaleFactorInProgress = true;
 
-            pbxMap.Invalidate();
+            pbxMap.Refresh();
         }
         
         /// <summary> Threaded method that is used to process the zooming factor. </summary>
@@ -490,11 +495,7 @@ namespace DnDCS.Client
                         break;
 
                     if (assignedScaleFactor == variableScaleFactor)
-                    {
-                        isZoomFactorRunning = false;
-                        RefreshMapPictureBox();
                         continue;
-                    }
 
                     // Create the new scaled bitmap
                     var oldMap = this.assignedMap;
@@ -502,12 +503,9 @@ namespace DnDCS.Client
 
                     pbxMap.Invoke(new Action(() =>
                                                  {
-                                                     this.assignedMap = newMap;
+                                                     pbxMap.Image = this.assignedMap = newMap;
                                                      assignedScaleFactor = variableScaleFactor;
-                                                     isZoomFactorRunning = false;
-
-                                                     // This will validate that the current scroll values aren't too large for the new zoom factor.
-                                                     SetScroll(null, null);
+                                                     isScaleFactorRunning = false;
                                                  }));
                     if (oldMap != null)
                         oldMap.Dispose();
@@ -527,6 +525,7 @@ namespace DnDCS.Client
         }
 
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
+        /// <remarks> TODO: Only need to realistically draw what the user can see. </remarks>
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
             if (this.assignedMap == null)
@@ -534,17 +533,12 @@ namespace DnDCS.Client
 
             var g = e.Graphics;
 
-            // Force clipping to the visible area only. This clipping will be translated as needed in the subsequent calls, but ensures
-            // that we never try to draw beyond the visible area.
-            g.SetClip(new Rectangle(0, 0, this.Width, this.Height));
-
             if (this.isBlackoutOn)
             {
                 PaintBlackout(g);
             }
             else
             {
-                PaintMap(g);
                 PaintGrid(g);
                 PaintFog(g);
             }
@@ -554,28 +548,17 @@ namespace DnDCS.Client
 
         private void PaintBlackout(Graphics g)
         {
-            // Draw the Blackout Image in the center.
-            g.Clear(Color.Black);
-            g.DrawImage(AssetsLoader.BlackoutImage, this.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
-        }
+            // These scrolling offsets tell us the top/left of any image we need to draw.
+            var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+            var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
 
-        private void PaintMap(Graphics g)
-        {
-            if (fog != null)
+            g.TranslateTransform(scrollOffsetX, scrollOffsetY);
             {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
-                {
-                    g.DrawImage(this.assignedMap, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, this.assignedMap.Width, this.assignedMap.Height, GraphicsUnit.Pixel, fogAttributes);
-                    // TODO: This kind of failed during heavy load.
-                    //g.DrawImage(fog, // Draw this
-                    //            new Rectangle(scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height), // Onto this area
-                    //            scrollOffsetX, scrollOffsetY, pnlMap.Width, pnlMap.Height, // From this area
-                    //            GraphicsUnit.Pixel, // In Pixel units
-                    //            fogAttributes); // With Alpha shading
-                }
-                g.ResetTransform();
+                // Draw the Blackout Image in the center of what is visible to the user.
+                g.Clear(Color.Black);
+                g.DrawImage(AssetsLoader.BlackoutImage, pnlMap.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, pnlMap.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
             }
+            g.ResetTransform();
         }
 
         private void PaintGrid(Graphics g)
@@ -584,7 +567,6 @@ namespace DnDCS.Client
             // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
             if (gridSize.HasValue)
             {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
                 g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
                 {
                     for (int x = 0; x < receivedMapWidth; x += gridSize.Value)
@@ -604,7 +586,10 @@ namespace DnDCS.Client
         {
             if (fog != null)
             {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
+                // These scrolling offsets tell us the top/left of any image we need to draw.
+                //var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+                //var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
                 g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
                 {
                     g.DrawImage(fog, new Rectangle(0, 0, receivedMapWidth, receivedMapHeight), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
@@ -621,66 +606,36 @@ namespace DnDCS.Client
 
         private void PaintZoomFactorText(Graphics g)
         {
+            // These scrolling offsets tell us the top/left of any image we need to draw.
+            var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+            var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
             string[] zoomMsgs = null;
-            if (isZoomFactorInProgress)
+            if (isScaleFactorInProgress)
                 zoomMsgs = new[] { string.Format("Zoom: {0}x", variableScaleFactor), ZoomInstructionMessage };
-            else if (isZoomFactorRunning)
+            else if (isScaleFactorRunning)
                 zoomMsgs = new[] { string.Format("Zooming to {0}x...", variableScaleFactor) };
             if (zoomMsgs != null)
             {
-                var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
-                for (var i = 0; i < zoomMsgs.Length; i++)
+                g.TranslateTransform(scrollOffsetX, scrollOffsetY);
                 {
-                    // Draw each line one after the other, separating them by the height of the message, centered on the screen.
-                    var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
+                    var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
+                    for (var i = 0; i < zoomMsgs.Length; i++)
+                    {
+                        // Draw each line one after the other, separating them by the height of the message, centered on the screen.
+                        var msgSize = g.MeasureString(zoomMsgs[i], font);
+                        var x = (pnlMap.Width / 2.0f) - (msgSize.Width / 2.0f);
+                        var y = (pnlMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
 
-                    // If we're also showing the Blackout image, then show the text beneath it.
-                    if (isBlackoutOn)
-                        y += AssetsLoader.BlackoutImage.Height;
+                        // If we're also showing the Blackout image, then show the text beneath it.
+                        if (isBlackoutOn)
+                            y += AssetsLoader.BlackoutImage.Height;
 
-                    g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
+                        g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
+                    }
                 }
+                g.ResetTransform();
             }
-        }
-
-        private Point lastDragPosition;
-
-        private void pbxMap_MouseDown(object sender, MouseEventArgs e)
-        {
-            lastDragPosition = e.Location;
-        }
-
-        private void pbxMap_MouseMove(object sender, MouseEventArgs e)
-        {
-            const int MoveThreshold = 3;
-
-            if (e.Button != MouseButtons.Left)
-                return;
-
-            var newDragPosition = e.Location;
-
-            // TODO: Add threshold
-            var diffY = Math.Abs(newDragPosition.Y - lastDragPosition.Y);
-            if (diffY > MoveThreshold)
-            {
-                if (newDragPosition.Y < lastDragPosition.Y)
-                    ScrollUpOrDown(false, diffY);
-                else if (newDragPosition.Y > lastDragPosition.Y)
-                    ScrollUpOrDown(true, diffY);
-            }
-
-            var diffX = Math.Abs(newDragPosition.X - lastDragPosition.X);
-            if (diffX > MoveThreshold)
-            {
-                if (newDragPosition.X < lastDragPosition.X)
-                    ScrollLeftOrRight(false, diffX);
-                else if (newDragPosition.X > lastDragPosition.X)
-                    ScrollLeftOrRight(true, diffX);
-            }
-
-            lastDragPosition = e.Location;
         }
     }
 }

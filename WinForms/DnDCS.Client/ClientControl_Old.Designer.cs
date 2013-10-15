@@ -1,6 +1,6 @@
 ﻿namespace DnDCS.Client
 {
-    partial class ClientControl
+    partial class ClientControl_Old
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,29 +28,43 @@
         /// </summary>
         private void InitializeComponent()
         {
+            this.pnlMap = new System.Windows.Forms.Panel();
             this.pbxMap = new System.Windows.Forms.PictureBox();
+            this.pnlMap.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             this.SuspendLayout();
             // 
+            // pnlMap
+            // 
+            this.pnlMap.AutoScroll = true;
+            this.pnlMap.Controls.Add(this.pbxMap);
+            this.pnlMap.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlMap.Location = new System.Drawing.Point(0, 0);
+            this.pnlMap.Name = "pnlMap";
+            this.pnlMap.Size = new System.Drawing.Size(640, 480);
+            this.pnlMap.TabIndex = 0;
+            this.pnlMap.Scroll += new System.Windows.Forms.ScrollEventHandler(this.pnlMap_Scroll);
+            this.pnlMap.SizeChanged += new System.EventHandler(this.pnlMap_SizeChanged);
+            // 
             // pbxMap
             // 
-            this.pbxMap.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pbxMap.Location = new System.Drawing.Point(0, 0);
             this.pbxMap.Name = "pbxMap";
             this.pbxMap.Size = new System.Drawing.Size(640, 480);
+            this.pbxMap.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.pbxMap.TabIndex = 1;
             this.pbxMap.TabStop = false;
-            this.pbxMap.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDown);
-            this.pbxMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseMove);
             // 
-            // ClientControl2
+            // ClientControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.pbxMap);
-            this.Name = "ClientControl2";
+            this.Controls.Add(this.pnlMap);
+            this.Name = "ClientControl";
             this.Size = new System.Drawing.Size(640, 480);
             this.Load += new System.EventHandler(this.ClientControl_Load);
+            this.pnlMap.ResumeLayout(false);
+            this.pnlMap.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).EndInit();
             this.ResumeLayout(false);
 
@@ -58,6 +72,7 @@
 
         #endregion
 
+        private System.Windows.Forms.Panel pnlMap;
         private System.Windows.Forms.PictureBox pbxMap;
     }
 }
