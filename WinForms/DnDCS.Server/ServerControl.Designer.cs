@@ -47,6 +47,7 @@
             this.gbxLog = new System.Windows.Forms.GroupBox();
             this.tboLog = new System.Windows.Forms.RichTextBox();
             this.btnClearLog = new System.Windows.Forms.Button();
+            this.btnLoadImage = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
@@ -120,13 +121,14 @@
             this.gbxCommands.Controls.Add(this.btnSyncFog);
             this.gbxCommands.Controls.Add(this.btnSelectTool);
             this.gbxCommands.Controls.Add(this.btnFogTool);
+            this.gbxCommands.Controls.Add(this.btnLoadImage);
             this.gbxCommands.Controls.Add(this.btnRevealAll);
             this.gbxCommands.Controls.Add(this.btnFogAll);
             this.gbxCommands.Controls.Add(this.btnToggleBlackout);
             this.gbxCommands.Enabled = false;
             this.gbxCommands.Location = new System.Drawing.Point(3, 3);
             this.gbxCommands.Name = "gbxCommands";
-            this.gbxCommands.Size = new System.Drawing.Size(115, 206);
+            this.gbxCommands.Size = new System.Drawing.Size(115, 260);
             this.gbxCommands.TabIndex = 1;
             this.gbxCommands.TabStop = false;
             this.gbxCommands.Text = "Commands";
@@ -207,7 +209,7 @@
             this.gbxGridSize.Controls.Add(this.chkShowGrid);
             this.gbxGridSize.Controls.Add(this.lblGridSize);
             this.gbxGridSize.Controls.Add(this.nudGridSize);
-            this.gbxGridSize.Location = new System.Drawing.Point(3, 215);
+            this.gbxGridSize.Location = new System.Drawing.Point(3, 269);
             this.gbxGridSize.Name = "gbxGridSize";
             this.gbxGridSize.Size = new System.Drawing.Size(115, 47);
             this.gbxGridSize.TabIndex = 2;
@@ -260,9 +262,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxLog.Controls.Add(this.tboLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
-            this.gbxLog.Location = new System.Drawing.Point(3, 268);
+            this.gbxLog.Location = new System.Drawing.Point(3, 322);
             this.gbxLog.Name = "gbxLog";
-            this.gbxLog.Size = new System.Drawing.Size(115, 215);
+            this.gbxLog.Size = new System.Drawing.Size(115, 160);
             this.gbxLog.TabIndex = 0;
             this.gbxLog.TabStop = false;
             this.gbxLog.Text = "Log";
@@ -276,7 +278,7 @@
             this.tboLog.Location = new System.Drawing.Point(6, 51);
             this.tboLog.Name = "tboLog";
             this.tboLog.ReadOnly = true;
-            this.tboLog.Size = new System.Drawing.Size(103, 158);
+            this.tboLog.Size = new System.Drawing.Size(103, 103);
             this.tboLog.TabIndex = 1;
             this.tboLog.TabStop = false;
             this.tboLog.Text = "";
@@ -296,6 +298,18 @@
             this.btnClearLog.TabStop = false;
             this.btnClearLog.UseVisualStyleBackColor = true;
             this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
+            // 
+            // btnLoadImage
+            // 
+            this.btnLoadImage.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnLoadImage.BackgroundImage")));
+            this.btnLoadImage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnLoadImage.Location = new System.Drawing.Point(60, 206);
+            this.btnLoadImage.Name = "btnLoadImage";
+            this.btnLoadImage.Size = new System.Drawing.Size(48, 48);
+            this.btnLoadImage.TabIndex = 4;
+            this.btnLoadImage.TabStop = false;
+            this.btnLoadImage.UseVisualStyleBackColor = true;
+            this.btnLoadImage.Click += new System.EventHandler(this.btnLoadImage_Click);
             // 
             // ServerControl
             // 
@@ -342,5 +356,6 @@
         private System.Windows.Forms.NumericUpDown nudGridSize;
         private System.Windows.Forms.CheckBox chkShowGrid;
         private System.Windows.Forms.Button btnRevealAll;
+        private System.Windows.Forms.Button btnLoadImage;
     }
 }

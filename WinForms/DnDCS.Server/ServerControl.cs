@@ -39,6 +39,7 @@ namespace DnDCS.Server
         private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
+        private MenuItem loadImage;
         private MenuItem fitMapToScreenAction;
         private MenuItem undoLastFogAction;
         private MenuItem redoLastFogAction;
@@ -195,7 +196,7 @@ namespace DnDCS.Server
             var fileMenu = new MenuItem("File");
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
-                new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
+                loadImage = new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
                 new MenuItem("-"),
                 //new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
                 //new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
@@ -451,7 +452,12 @@ namespace DnDCS.Server
             // TODO: More efficient to send the list of updates rather than the full fog map.
             connection.WriteFog(fog);
         }
-        
+
+        private void btnLoadImage_Click(object sender, EventArgs e)
+        {
+            this.loadImage.PerformClick();
+        }
+
         private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
         {
             lblGridSize.Enabled = nudGridSize.Enabled = chkShowGrid.Checked;

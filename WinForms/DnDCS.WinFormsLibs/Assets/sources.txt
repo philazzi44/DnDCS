@@ -42,3 +42,6 @@ http://findicons.com/icon/261541/arrow_refresh?id=384778
 
 FogToolSync.png
 Combination of FogTool.png and FogToolSyncArrow.png
+
+LoadImageTool.png
+http://findicons.com/icon/51187/clipping_picture?width=48
