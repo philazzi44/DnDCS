@@ -29,7 +29,7 @@ namespace DnDCS.WinFormsLibs
             return new Point(point.X, point.Y);
         }
 
-        public static SimplePoint ToDnDPoint(this Point point)
+        public static SimplePoint ToSimplePoint(this Point point)
         {
             return new SimplePoint(point.X, point.Y);
         }

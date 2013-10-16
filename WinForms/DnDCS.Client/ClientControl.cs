@@ -55,9 +55,9 @@ namespace DnDCS.Client
         private MenuItem fullScreenAction;
 
         private Point scrollPosition = Point.Empty;
-        public SimplePoint ScrollPosition
+        private Point ScrollPosition
         {
-            get { return new SimplePoint(scrollPosition.X, scrollPosition.Y); }
+            get { return scrollPosition; }
             set { SetScroll(value.X, value.Y); }
         }
 
@@ -178,6 +178,7 @@ namespace DnDCS.Client
             connection.OnConnectionEstablished += new Action(connection_OnConnectionEstablished);
             connection.OnServerNotFound += new Action(connection_OnServerNotFound);
             connection.OnMapReceived += new Action<SimpleImage>(connection_OnMapReceived);
+            connection.OnCenterMapReceived += new Action<SimplePoint>(connection_OnCenterMapReceived);
             connection.OnFogReceived += new Action<SimpleImage>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<FogUpdate>(connection_OnFogUpdateReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
@@ -188,7 +189,7 @@ namespace DnDCS.Client
             this.ParentForm.Text = string.Format("{0} - Connecting to {1}:{2}...", initialParentFormText, address, port);
             connection.Start();
         }
-
+        
         private void connection_OnConnectionEstablished()
         {
             isConnected = true;
@@ -240,6 +241,12 @@ namespace DnDCS.Client
             {
                 Logger.LogError("Map Received Failure", e);
             }
+        }
+
+        private void connection_OnCenterMapReceived(SimplePoint centerMap)
+        {
+            // Take the point that we want to show, and center it on the client's UI.
+            SetScroll(centerMap.X - this.Width / 2, centerMap.Y - this.Height / 2);
         }
 
         private void connection_OnFogReceived(SimpleImage fogImage)
@@ -450,9 +457,8 @@ namespace DnDCS.Client
                 desiredY = 0;
             else
                 desiredY = Math.Min(desiredY.Value, this.assignedMap.Height - this.Height);
-            
-            this.scrollPosition.X = desiredX.Value;
-            this.scrollPosition.Y = desiredY.Value;
+
+            this.scrollPosition = new Point(desiredX.Value, desiredY.Value);
             pbxMap.Invalidate();
         }
 

@@ -17,7 +17,6 @@ namespace DnDCS
         private FormWindowState initialFormWindowState;
         private MainMenu _menu;
 
-        private SimplePoint lastScrollPosition = SimplePoint.Empty;
         private IDnDCSControl control;
 
         public Launcher()
@@ -71,18 +70,6 @@ namespace DnDCS
 
             ((Control)control).Dock = DockStyle.Fill;
             this.Controls.Add((Control)control);
-        }
-        
-        private void Launcher_Activated(object sender, EventArgs e)
-        {
-            if (this.control != null)
-                this.control.ScrollPosition = lastScrollPosition;
-        }
-
-        private void Launcher_Deactivate(object sender, EventArgs e)
-        {
-            if (this.control != null)
-                lastScrollPosition = this.control.ScrollPosition;
         }
 
         private void ToggleFullScreen(bool goFullScreen)

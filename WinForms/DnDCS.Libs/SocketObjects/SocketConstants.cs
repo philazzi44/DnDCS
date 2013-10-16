@@ -13,6 +13,7 @@ namespace DnDCS.Libs.SimpleObjects
             Acknowledge = 44,
             Ping,
             Map,
+            CenterMap,
             Fog,
             FogUpdate,
             GridSize,

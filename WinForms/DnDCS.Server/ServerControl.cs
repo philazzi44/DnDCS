@@ -66,18 +66,6 @@ namespace DnDCS.Server
 
         private ServerSocketConnection connection;
 
-        public SimplePoint ScrollPosition
-        {
-            // Must return the individual values for this to work, as AutoScrollPosition getter appears to be wrong for some reason.
-            get { return new SimplePoint(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value); }
-            set
-            {
-                // Oh WinForms, you make me laugh. I need to set the value twice for it to actually "stick"...
-                this.pnlMap.AutoScrollPosition = value.ToPoint();
-                this.pnlMap.AutoScrollPosition = value.ToPoint();
-            }
-        }
-
         public Action<bool> ToggleFullScreen { get; set; }
 
         public ServerControl()
@@ -508,6 +496,8 @@ namespace DnDCS.Server
                 return;
 
             // Unset the previous tool as needed.
+            if (lastTool == btnSelectTool)
+                UnsetSelectTool();
             if (lastTool == btnFogTool)
                 UnsetFogTool();
 
@@ -532,10 +522,17 @@ namespace DnDCS.Server
             }
             
             // Set the new tool
+            if (btnSelectTool == enabledTool)
+                SetSelectTool();
             if (btnFogTool == enabledTool)
                 SetFogTool();
 
             lastTool = enabledTool;
+        }
+
+        private void SetSelectTool()
+        {
+            pbxMap.MouseDoubleClick += new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
 
         private void SetFogTool()
@@ -547,7 +544,15 @@ namespace DnDCS.Server
         private SimplePoint ConvertPointToStretchedImage(Point pt)
         {
             // If we're stretching the image to fit, then our point is actually somewhere else on the map by the reverse of how much we've stretched.
-            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new SimplePoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToDnDPoint();
+            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new SimplePoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToSimplePoint();
+        }
+
+        private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left && e.Clicks >= 2)
+            {
+                connection.WriteCenterMap(e.Location.ToSimplePoint());
+            }
         }
 
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
@@ -612,6 +617,11 @@ namespace DnDCS.Server
 
                 currentFogUpdate = null;
             }
+        }
+
+        private void UnsetSelectTool()
+        {
+            pbxMap.MouseDoubleClick -= new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
 
         private void UnsetFogTool()

@@ -25,6 +25,7 @@ namespace DnDCS.Libs
         public event Action OnConnectionEstablished;
         public event Action OnServerNotFound;
         public event Action<SimpleImage> OnMapReceived;
+        public event Action<SimplePoint> OnCenterMapReceived;
         public event Action<SimpleImage> OnFogReceived;
         public event Action<FogUpdate> OnFogUpdateReceived;
         public event Action<bool, int> OnGridSizeReceived;
@@ -88,6 +89,12 @@ namespace DnDCS.Libs
                             Logger.LogDebug("Read Map action.");
                             if (OnMapReceived != null)
                                 OnMapReceived(((ImageSocketObject)socketObject).Image);
+                            break;
+
+                        case SocketConstants.SocketAction.CenterMap:
+                            Logger.LogDebug("Read Center Map action.");
+                            if (OnCenterMapReceived != null)
+                                OnCenterMapReceived(((CenterMapSocketObject)socketObject).CenterMap);
                             break;
 
                         case SocketConstants.SocketAction.Fog:

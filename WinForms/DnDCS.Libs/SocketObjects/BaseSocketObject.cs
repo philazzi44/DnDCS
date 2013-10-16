@@ -37,6 +37,8 @@ namespace DnDCS.Libs.SimpleObjects
                     return ImageSocketObject.ImageObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.FogUpdate:
                     return FogUpdateSocketObject.PointArrayObjectFromBytes(bytes);
+                case SocketConstants.SocketAction.CenterMap:
+                    return CenterMapSocketObject.CenterMapObjectFromBytes(bytes);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));

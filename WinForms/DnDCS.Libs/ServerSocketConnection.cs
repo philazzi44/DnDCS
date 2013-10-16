@@ -154,6 +154,11 @@ namespace DnDCS.Libs
                 Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageWidth, mapImageHeight, mapImageBytes));
         }
 
+        public void WriteCenterMap(SimplePoint point)
+        {
+            Write(new CenterMapSocketObject(point));
+        }
+
         public void WriteFog(int fogImageWidth, int fogImageHeight, byte[] fogImageBytes)
         {
             if (fogImageBytes != null && fogImageBytes.Length > 0)

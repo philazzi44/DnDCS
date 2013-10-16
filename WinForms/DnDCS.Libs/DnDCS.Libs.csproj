@@ -49,6 +49,7 @@
     <Compile Include="ServerEvents\SocketEvent.cs" />
     <Compile Include="SimpleObjects\SimpleImage.cs" />
     <Compile Include="SocketObjects\ColorSocketObject.cs" />
+    <Compile Include="SocketObjects\CenterMapSocketObject.cs" />
     <Compile Include="SocketObjects\FogUpdateSocketObject.cs" />
     <Compile Include="SocketObjects\GridSizeSocketObject.cs" />
     <Compile Include="SocketObjects\ImageSocketObject.cs" />
