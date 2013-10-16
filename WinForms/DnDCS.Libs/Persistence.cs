@@ -71,24 +71,74 @@ namespace DnDCS.Libs
             };
         }
 
+        private static string GetFogDataFileName(string imageUrl)
+        {
+            foreach (var c in Path.GetInvalidFileNameChars())
+                imageUrl = imageUrl.Replace(c, '-');
+            return Path.Combine(ConfigValues.ServerFogDataFolder, imageUrl);
+        }
+
+        public static bool PeekServerFogData(string imageUrl)
+        {
+            return File.Exists(GetFogDataFileName(imageUrl));
+        }
+
+        public static ServerFogData LoadServerFogData(string imageUrl)
+        {
+            return LoadData<ServerFogData>(GetFogDataFileName(imageUrl));
+        }
+
+        public static void SaveServerFogData(string imageUrl, ServerFogData fogData)
+        {
+            try
+            {
+                if (fogData == null)
+                {
+                    File.Delete(GetFogDataFileName(imageUrl));
+                }
+                else
+                {
+                    SaveData(GetFogDataFileName(imageUrl), fogData);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Failed to save Fog Data.", e);
+            }
+        }
+
         private static void SaveData(string fileName, object data)
         {
-            var serializer = new XmlSerializer(data.GetType());
-            using (var stream = new StreamWriter(fileName))
+            try
             {
-                serializer.Serialize(stream, data);
+                var serializer = new XmlSerializer(data.GetType());
+                using (var stream = new StreamWriter(fileName))
+                {
+                    serializer.Serialize(stream, data);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(string.Format("Failed to save data to {0}.", fileName), e);
             }
         }
 
         private static T LoadData<T>(string fileName) where T : class
         {
-            if (File.Exists(fileName))
+            try
             {
-                var serializer = new XmlSerializer(typeof(T));
-                using (var stream = new StreamReader(fileName))
+                if (File.Exists(fileName))
                 {
-                    return serializer.Deserialize(stream) as T;
+                    var serializer = new XmlSerializer(typeof(T));
+                    using (var stream = new StreamReader(fileName))
+                    {
+                        return serializer.Deserialize(stream) as T;
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError(string.Format("Failed to load data from {0}.", fileName), e);
             }
             return null;
         }

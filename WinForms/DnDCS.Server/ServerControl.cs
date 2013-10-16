@@ -236,6 +236,26 @@ namespace DnDCS.Server
                     Logger.LogInfo(log);
                     AppendToUILog(log);
                     SetMapImage(loadImage.LoadedImage);
+
+                    var hasFogData = Persistence.PeekServerFogData(loadImage.LoadedImageUrl);
+                    if (hasFogData != null)
+                    {
+                        var useMapData = MessageBox.Show(this, "Map has been loaded before. Would you like to reload the latest fog used?", "Load Map Data?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+                        if (useMapData)
+                        {
+                            var fogData = Persistence.LoadServerFogData(loadImage.LoadedImageUrl);
+                            // TODO: Load it.
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            var purgeMapData = MessageBox.Show(this, "Would you like to purge the previously stored fog?", "Purge Map Data?", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
+                            if (purgeMapData)
+                            {
+                                Persistence.SaveServerFogData(loadImage.LoadedImageUrl, null);
+                            }
+                        }
+                    }
                 }
             }
         }

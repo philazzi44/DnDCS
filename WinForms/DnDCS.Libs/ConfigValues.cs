@@ -13,6 +13,7 @@ namespace DnDCS.Libs
         public static readonly int PingInterval;
         public static readonly string ClientDataFile;
         public static readonly string ServerDataFile;
+        public static readonly string ServerFogDataFolder;
         public static readonly int MinimumGridSize;
         public static readonly int MaximumGridSize;
         public static readonly float MaximumGridZoomFactor;
@@ -32,6 +33,7 @@ namespace DnDCS.Libs
 
             ClientDataFile = ConfigurationManager.AppSettings["ClientDataFile"] ?? "ClientData.xml";
             ServerDataFile = ConfigurationManager.AppSettings["ServerDataFile"] ?? "ServerData.xml";
+            ServerFogDataFolder = ConfigurationManager.AppSettings["ServerFogDataFolder"] ?? "FogData";
 
             int pingInterval;
             PingInterval = int.TryParse(ConfigurationManager.AppSettings["PingInterval"], out pingInterval) ? pingInterval : 5000;

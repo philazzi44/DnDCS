@@ -45,6 +45,7 @@
     <Compile Include="Persistence.cs" />
     <Compile Include="PersistenceObjects\ClientData.cs" />
     <Compile Include="PersistenceObjects\ServerData.cs" />
+    <Compile Include="PersistenceObjects\ServerFogData.cs" />
     <Compile Include="SimpleObjects\ServerAddress.cs" />
     <Compile Include="ServerEvents\SocketEvent.cs" />
     <Compile Include="SimpleObjects\SimpleImage.cs" />
