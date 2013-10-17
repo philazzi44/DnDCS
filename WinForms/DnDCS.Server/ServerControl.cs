@@ -1,19 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Drawing;
-using System.Data;
+using System.Drawing.Imaging;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using DnDCS.Libs;
-using System.Drawing.Imaging;
-using System.Drawing.Drawing2D;
-
 using DnDCS.Libs.PersistenceObjects;
-using DnDCS.Libs.SimpleObjects;
 using DnDCS.Libs.ServerEvents;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.WinFormsLibs;
+using DnDCS.WinFormsLibs.Assets;
 
 namespace DnDCS.Server
 {
@@ -54,7 +50,8 @@ namespace DnDCS.Server
 
         private bool? isRemovingFog;
 
-        private float assignedScaleFactor = 1.0f;
+        private float assignedZoomFactor = 1.0f;
+        private float variableZoomFactor;
 
         private readonly Brush newFogClearBrush = Brushes.Red;
 
@@ -71,6 +68,22 @@ namespace DnDCS.Server
 
         public Action<bool> ToggleFullScreen { get; set; }
 
+        /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
+        private DateTime? centerMapImageAnimationStartTime;
+        private Point? lastCenterMapPoint;
+        private Timer centerMapPointDrawTimer;
+        /// <summary> The duration of the Center Map Image icon being shown. </summary>
+        private readonly TimeSpan centerMapImageAnimationDuration = TimeSpan.FromSeconds(1);
+        private Image centerMapImage;
+        
+        private System.Threading.Thread zoomFactorHandlerThread;
+        private System.Threading.AutoResetEvent zoomFactorHandlerEvent = new System.Threading.AutoResetEvent(false);
+        private bool isZoomFactorInProgress;
+        private bool isZoomFactorRunning;
+        private Font zoomFactorFont;
+        private const string ZoomInstructionMessage = "Press Enter or Left Click to commit the zoom factor, and Escape or Right Click to cancel.";
+
+
         private Point scrollPosition = Point.Empty;
         private Point ScrollPosition
         {
@@ -85,6 +98,11 @@ namespace DnDCS.Server
         
         private void ServerControl_Load(object sender, EventArgs e)
         {
+            centerMapImage = AssetsLoader.CenterMapOverlayIcon;
+            centerMapPointDrawTimer = new Timer();
+            centerMapPointDrawTimer.Tick += new EventHandler(centerMapPointDrawTimer_Tick);
+            this.centerMapPointDrawTimer.Interval = 1000;
+
             initialSelectToolColor = btnSelectTool.BackColor;
             initialFogRemoveToolColor = btnFogRemoveTool.BackColor;
             initialFogAddToolColor = btnFogAddTool.BackColor;
@@ -94,6 +112,17 @@ namespace DnDCS.Server
             this.ParentForm.Text = initialParentFormText + " (0 clients connected)";
 
             this.Disposed += new EventHandler(ServerControl_Disposed);
+
+            // Do a deep wiring of Mouse Wheel to intercept it regardless of the control that is selected.
+            var controls = new Queue<Control>();
+            controls.Enqueue(this);
+            while (controls.Count > 0)
+            {
+                var control = controls.Dequeue();
+                foreach (var child in control.Controls.OfType<Control>())
+                    controls.Enqueue(child);
+                control.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
+            }
 
             connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
             connection.OnClientConnected += connection_OnClientConnected;
@@ -598,6 +627,28 @@ namespace DnDCS.Server
             isRemovingFog = false;
         }
 
+        private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta != 0)
+            {
+                var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
+                var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
+
+                if (isShift)
+                {
+                    ScrollLeftOrRight((e.Delta > 0));
+                    ((HandledMouseEventArgs)e).Handled = true;
+                }
+                else
+                {
+                    ScrollUpOrDown((e.Delta > 0));
+                    ((HandledMouseEventArgs)e).Handled = true;
+                }
+            }
+
+            this.pbxMap.Invalidate();
+        }
+
         private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (this.loadedMap == null)
@@ -605,7 +656,12 @@ namespace DnDCS.Server
 
             if (e.Button == MouseButtons.Left && e.Clicks >= 2)
             {
-                connection.WriteCenterMap(e.Location.ToSimplePoint());
+                // Get the coordinates in real map coordinates by unwinding the Scroll and Zoom factor.
+                lastCenterMapPoint = e.Location.Translate((int)(this.scrollPosition.X * assignedZoomFactor), (int)(this.scrollPosition.Y * assignedZoomFactor));
+                connection.WriteCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
+                this.centerMapImageAnimationStartTime = DateTime.Now;
+                centerMapPointDrawTimer.Enabled = true;
+                this.pbxMap.Refresh();
             }
         }
 
@@ -616,8 +672,12 @@ namespace DnDCS.Server
             if (this.loadedMap == null)
                 return;
 
+            var doMouseDrag = false;
+
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
+                doMouseDrag = (this.currentTool == this.btnSelectTool);
+                
                 if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
                 {
                     newFog = new Bitmap(fog.Width, fog.Height);
@@ -628,10 +688,12 @@ namespace DnDCS.Server
             }
             else if (e.Button == System.Windows.Forms.MouseButtons.Right)
             {
-                if (this.currentTool == this.btnSelectTool || this.currentTool == this.btnFogRemoveTool)
-                {
-                    lastDragPosition = e.Location;
-                }
+                doMouseDrag = (this.currentTool == this.btnSelectTool || ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue));
+            }
+
+            if (doMouseDrag)
+            {
+                lastDragPosition = e.Location;
             }
         }
 
@@ -640,8 +702,12 @@ namespace DnDCS.Server
             if (this.loadedMap == null)
                 return;
 
+            var doMouseDrag = false;
+
             if (e.Button == MouseButtons.Left)
             {
+                doMouseDrag = (this.currentTool == this.btnSelectTool);
+
                 if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
                 {
                     // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
@@ -658,6 +724,11 @@ namespace DnDCS.Server
                 }
             }
             else if (e.Button == MouseButtons.Right)
+            {
+                doMouseDrag = true;
+            }
+
+            if (doMouseDrag)
             {
                 const int MoveThreshold = 3;
 
@@ -746,7 +817,7 @@ namespace DnDCS.Server
             var oldMap = loadedMap;
 
             loadedMap = mapImage;
-            assignedMap = loadedMap;
+            assignedMap = new Bitmap(loadedMap, (int)(loadedMap.Width * assignedZoomFactor), (int)(loadedMap.Height * assignedZoomFactor));
 
             CreateFogImage();
 
@@ -892,6 +963,7 @@ namespace DnDCS.Server
             PaintMap(g);
             PaintGrid(g);
             PaintFog(g);
+            PaintCenterMapOverlayIcon(g);
             PaintZoomFactorText(g);
         }
 
@@ -900,10 +972,10 @@ namespace DnDCS.Server
             if (this.loadedMap != null)
             {
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
                     // TODO: Scaling goes here
-                    g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                    g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                     g.DrawImage(this.loadedMap, new Rectangle(0, 0, this.loadedMap.Width, this.loadedMap.Height), 0, 0, this.assignedMap.Width, this.assignedMap.Height, GraphicsUnit.Pixel);
                 }
                 g.ResetTransform();
@@ -917,7 +989,7 @@ namespace DnDCS.Server
             if (chkShowGrid.Checked)
             {
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
                     for (int x = 0; x < this.loadedMap.Width; x += (int)nudGridSize.Value)
                     {
@@ -937,7 +1009,7 @@ namespace DnDCS.Server
             if (fog != null)
             {
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
                     g.DrawImage(fog, new Rectangle(0, 0, this.fog.Width, this.fog.Height), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
                     if (newFog != null)
@@ -947,20 +1019,37 @@ namespace DnDCS.Server
             }
         }
 
-        private bool isZoomFactorInProgress;
-        private bool isZoomFactorRunning;
-        private Font zoomFactorFont;
-        private float variableScaleFactor;
-        private const string ZoomInstructionMessage = "";
+        private void PaintCenterMapOverlayIcon(Graphics g)
+        {
+            if (centerMapImage != null && lastCenterMapPoint.HasValue)
+            {
+                // Draw it at the location, so that the bottom/center is at the centered point.
+                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
+                g.DrawImage(centerMapImage, lastCenterMapPoint.Value.Translate(-(centerMapImage.Width / 2), -centerMapImage.Height));
+            }
+        }
+
+        private void centerMapPointDrawTimer_Tick(object sender, EventArgs e)
+        {
+            if (centerMapImage == null || !centerMapImageAnimationStartTime.HasValue || !lastCenterMapPoint.HasValue
+                   || (centerMapImageAnimationStartTime.Value + centerMapImageAnimationDuration < DateTime.Now))
+            {
+                centerMapImageAnimationStartTime = null;
+                lastCenterMapPoint = null;
+                centerMapPointDrawTimer.Enabled = false;
+            }
+            this.pbxMap.Invalidate();
+        }
+
         private void PaintZoomFactorText(Graphics g)
         {
             return;
 
             string[] zoomMsgs = null;
             if (isZoomFactorInProgress)
-                zoomMsgs = new[] { string.Format("Zoom: {0}x", variableScaleFactor), ZoomInstructionMessage };
+                zoomMsgs = new[] { string.Format("Zoom: {0}x", variableZoomFactor), ZoomInstructionMessage };
             else if (isZoomFactorRunning)
-                zoomMsgs = new[] { string.Format("Zooming to {0}x...", variableScaleFactor) };
+                zoomMsgs = new[] { string.Format("Zooming to {0}x...", variableZoomFactor) };
             if (zoomMsgs != null)
             {
                 var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
@@ -968,8 +1057,8 @@ namespace DnDCS.Server
                 {
                     // Draw each line one after the other, separating them by the height of the message, centered on the screen.
                     var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
+                    var x = (this.pbxMap.Width / 2.0f) - (msgSize.Width / 2.0f);
+                    var y = (this.pbxMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
                     
                     g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
                 }

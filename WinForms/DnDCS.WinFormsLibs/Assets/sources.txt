@@ -51,3 +51,6 @@ http://findicons.com/icon/251371/button_plus_green?id=382189
 
 FogToolRemoveIcon.png
 http://findicons.com/icon/98929/button_minus_red?id=372398
+
+CenterMapOverlayIcon.png
+http://findicons.com/icon/28541/bulbgrey

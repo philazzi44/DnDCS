@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
+using System;
 
 namespace DnDCS.WinFormsLibs.Assets
 {
@@ -9,65 +10,38 @@ namespace DnDCS.WinFormsLibs.Assets
 
         public static Icon LauncherIcon
         {
-            get
-            {
-                const string name = "Assets/LauncherIcon.ico";
-                lock (assets)
-                {
-                    if (assets.ContainsKey(name))
-                        return (Icon)assets[name];
-                    var icon = Icon.ExtractAssociatedIcon(name);
-                    assets.Add(name, icon);
-                    return icon;
-                }
-            }
+            get { return GetResource("Assets/LauncherIcon.ico", Icon.ExtractAssociatedIcon); }
         }
 
         public static Icon ClientIcon
         {
-            get
-            {
-                const string name = "Assets/ClientIcon.ico";
-                lock (assets)
-                {
-                    if (assets.ContainsKey(name))
-                        return (Icon)assets[name];
-                    var icon = Icon.ExtractAssociatedIcon(name);
-                    assets.Add(name, icon);
-                    return icon;
-                }
-            }
+            get { return GetResource("Assets/ClientIcon.ico", Icon.ExtractAssociatedIcon); }
         }
 
         public static Icon ServerIcon
         {
-            get
-            {
-                const string name = "Assets/ServerIcon.ico";
-                lock (assets)
-                {
-                    if (assets.ContainsKey(name))
-                        return (Icon)assets[name];
-                    var icon = Icon.ExtractAssociatedIcon(name);
-                    assets.Add(name, icon);
-                    return icon;
-                }
-            }
+            get { return GetResource("Assets/ServerIcon.ico", Icon.ExtractAssociatedIcon); }
         }
 
         public static Image BlackoutImage
         {
-            get
+            get { return GetResource("Assets/BlackoutImage.png", Image.FromFile); }
+        }
+
+        public static Image CenterMapOverlayIcon
+        {
+            get { return GetResource("Assets/CenterMapOverlayIcon.png", Image.FromFile); }
+        }
+
+        private static T GetResource<T>(string name, Func<string, T> fromNameConverter)
+        {
+            lock (assets)
             {
-                const string name = "Assets/BlackoutImage.png";
-                lock (assets)
-                {
-                    if (assets.ContainsKey(name))
-                        return (Image)assets[name];
-                    var image = Image.FromFile(name);
-                    assets.Add(name, image);
-                    return image;
-                }
+                if (assets.ContainsKey(name))
+                    return (T)assets[name];
+                var resource = fromNameConverter(name);
+                assets.Add(name, resource);
+                return resource;
             }
         }
     }
