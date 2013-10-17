@@ -1,8 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using DnDCS.Libs.SimpleObjects;
 
-namespace DnDCS.Libs
+namespace DnDCS.Libs.SimpleObjects
 {
     public class FogUpdate
     {

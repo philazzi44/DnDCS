@@ -1,7 +1,10 @@
 ﻿using System.Drawing;
+using System.Linq;
 using System.IO;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS.Libs;
+using DnDCS.Libs.PersistenceObjects;
+using System.Collections.Generic;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -29,9 +32,24 @@ namespace DnDCS.WinFormsLibs
             return new Point(point.X, point.Y);
         }
 
+        public static Point Translate(this Point point, int x, int y)
+        {
+            return new Point(point.X + x, point.Y + y);
+        }
+
+        public static Point Translate(this Point point, Point translate)
+        {
+            return new Point(point.X + translate.X, point.Y + translate.Y);
+        }
+
         public static SimplePoint ToSimplePoint(this Point point)
         {
             return new SimplePoint(point.X, point.Y);
+        }
+
+        public static SimplePoint Translate(this SimplePoint point, int x, int y)
+        {
+            return new SimplePoint(point.X + x, point.Y + y);
         }
 
         public static Color ToColor(this SimpleColor color)
@@ -42,6 +60,30 @@ namespace DnDCS.WinFormsLibs
         public static SimpleColor ToSocketColor(this Color color)
         {
             return new SimpleColor(color.A, color.R, color.G, color.B);
+        }
+
+        public static FogUpdate ToFogUpdate(this FogData fogData)
+        {
+            return new FogUpdate(fogData.Points, fogData.IsClearing);
+        }
+
+        public static FogUpdate[] ToFogUpdate(this FogData[] fogDatas)
+        {
+            return fogDatas.Select(ToFogUpdate).ToArray();
+        }
+
+        public static FogData ToFogData(this FogUpdate fogUpdate)
+        {
+            return new FogData()
+            {
+                Points = fogUpdate.Points.ToArray(),
+                IsClearing = fogUpdate.IsClearing
+            };
+        }
+
+        public static FogData[] ToFogData(this IEnumerable<FogUpdate> fogUpdates)
+        {
+            return fogUpdates.Select(ToFogData).ToArray();
         }
 
         public static void WriteMap(this ServerSocketConnection connection, Image map)

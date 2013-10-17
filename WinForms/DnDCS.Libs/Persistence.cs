@@ -75,7 +75,7 @@ namespace DnDCS.Libs
         {
             foreach (var c in Path.GetInvalidFileNameChars())
                 imageUrl = imageUrl.Replace(c, '-');
-            return Path.Combine(ConfigValues.ServerFogDataFolder, imageUrl);
+            return Path.ChangeExtension(Path.Combine(ConfigValues.ServerFogDataFolder, imageUrl), "txt");
         }
 
         public static bool PeekServerFogData(string imageUrl)
@@ -111,6 +111,11 @@ namespace DnDCS.Libs
         {
             try
             {
+                // Ensure the full directory structure exists for the path.
+                var dirName = Path.GetDirectoryName(fileName);
+                if (!string.IsNullOrWhiteSpace(dirName))
+                    Directory.CreateDirectory(dirName);
+
                 var serializer = new XmlSerializer(data.GetType());
                 using (var stream = new StreamWriter(fileName))
                 {

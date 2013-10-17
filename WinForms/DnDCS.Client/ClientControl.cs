@@ -567,7 +567,7 @@ namespace DnDCS.Client
 
         private void PaintMap(Graphics g)
         {
-            if (fog != null)
+            if (this.assignedMap != null)
             {
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
                 g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
@@ -667,7 +667,6 @@ namespace DnDCS.Client
 
             var newDragPosition = e.Location;
 
-            // TODO: Add threshold
             var diffY = Math.Abs(newDragPosition.Y - lastDragPosition.Y);
             if (diffY > MoveThreshold)
             {

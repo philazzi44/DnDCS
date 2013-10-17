@@ -17,10 +17,8 @@ using DnDCS.WinFormsLibs;
 
 namespace DnDCS.Server
 {
-    public partial class ServerControl : UserControl, IDnDCSControl
+    public partial class ServerControl_Old : UserControl, IDnDCSControl
     {
-        private const float ScrollWheelStepPercent = 0.05f;
-
         private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
 
         private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(25d);
@@ -30,18 +28,15 @@ namespace DnDCS.Server
         private bool realTimeFogUpdates;
 
         private Color initialSelectToolColor;
-        private Color initialFogRemoveToolColor;
-        private Color initialFogAddToolColor;
+        private Color initialFogToolColor;
         private Color initialBlackoutColor;
-        private Image loadedMap;
-        // TODO: When zooming is ready, change this var to always hold the zoomed map.
-        private Image assignedMap;
+        private Image map;
         private string mapUrl;
         private List<FogUpdate> allFogUpdates = new List<FogUpdate>();
 
         private Bitmap fog;
         private Bitmap newFog;
-        private Button currentTool;
+        private Button lastTool;
         private bool isBlackOutSet;
 
         private FogUpdate currentFogUpdate;
@@ -49,18 +44,25 @@ namespace DnDCS.Server
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
         private MenuItem loadImage;
+        private MenuItem fitMapToScreenAction;
         private MenuItem undoLastFogAction;
         private MenuItem redoLastFogAction;
-
-        private bool? isRemovingFog;
-
-        private float assignedScaleFactor = 1.0f;
 
         private readonly Brush newFogClearBrush = Brushes.Red;
 
         private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
 
-        /// <summary> This is the brush that is used to draw on the Fog bitmap. </summary>
+        private Color _fogBrushColor { get; set; }
+        private Color FogBrushColor
+        {
+            get { return _fogBrushColor; }
+            set
+            {
+                _fogBrushColor = value;
+                SetFogAttributesColorMatrix(_fogBrushColor.A);
+            }
+        }
+
         private static readonly Brush FOG_BRUSH = Brushes.Black;
         private readonly Brush newFogBrush = Brushes.Gray;
         private readonly ImageAttributes fogAttributes = new ImageAttributes();
@@ -71,14 +73,7 @@ namespace DnDCS.Server
 
         public Action<bool> ToggleFullScreen { get; set; }
 
-        private Point scrollPosition = Point.Empty;
-        private Point ScrollPosition
-        {
-            get { return scrollPosition; }
-            set { SetScroll(value.X, value.Y); }
-        }
-
-        public ServerControl()
+        public ServerControl_Old()
         {
             InitializeComponent();
         }
@@ -86,13 +81,13 @@ namespace DnDCS.Server
         private void ServerControl_Load(object sender, EventArgs e)
         {
             initialSelectToolColor = btnSelectTool.BackColor;
-            initialFogRemoveToolColor = btnFogRemoveTool.BackColor;
-            initialFogAddToolColor = btnFogAddTool.BackColor;
+            initialFogToolColor = btnFogTool.BackColor;
             initialBlackoutColor = btnToggleBlackout.BackColor;
 
             initialParentFormText = this.ParentForm.Text;
             this.ParentForm.Text = initialParentFormText + " (0 clients connected)";
 
+            pbxMap.Paint += new PaintEventHandler(pbxMap_Paint);
             this.Disposed += new EventHandler(ServerControl_Disposed);
 
             connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
@@ -104,6 +99,7 @@ namespace DnDCS.Server
             realTimeFogUpdates = serverData.RealTimeFogUpdates;
             btnSyncFog.Visible = !realTimeFogUpdates;
             gbxLog.Visible = serverData.ShowLog;
+            pbxMap.SizeMode = serverData.FitMapToScreen ? PictureBoxSizeMode.StretchImage : PictureBoxSizeMode.AutoSize;
             gbxGridSize.Visible = serverData.ShowGridValues;
             chkShowGrid.Checked = serverData.ShowGrid;
             nudGridSize.Minimum = ConfigValues.MinimumGridSize;
@@ -112,7 +108,7 @@ namespace DnDCS.Server
 
             gridPen = (serverData.IsGridColorSet) ? new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB)) : new Pen(Color.Aqua);
 
-            SetFogAttributesColorMatrix(DEFAULT_FOG_BRUSH_ALPHA);
+            FogBrushColor = Color.FromArgb(DEFAULT_FOG_BRUSH_ALPHA, Color.Black);
         }
 
         private void connection_OnClientConnected()
@@ -135,8 +131,8 @@ namespace DnDCS.Server
             else
                 connection.WriteBlackout(true);
 
-            if (loadedMap != null)
-                connection.WriteMap(loadedMap);
+            if (map != null)
+                connection.WriteMap(map);
             if (fog != null)
                 connection.WriteFog(fog);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
@@ -186,8 +182,8 @@ namespace DnDCS.Server
 
         private void ServerControl_Disposed(object sender, EventArgs e)
         {
-            if (loadedMap != null)
-                loadedMap.Dispose();
+            if (map != null)
+                map.Dispose();
             if (fog != null)
                 fog.Dispose();
             if (connection != null)
@@ -222,6 +218,8 @@ namespace DnDCS.Server
                 new MenuItem("-"),
                 new MenuItem("Show Grid Values", OnShowGridValues_Click) { Checked = serverData.ShowGridValues },
                 new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog },
+                // This works, but performance with large images is so bad that I had to turn it off...
+                fitMapToScreenAction = new MenuItem("Fit Map to Screen (Server Only)", OnFitMapToScreen_Click) {Checked = serverData.FitMapToScreen },
                 new MenuItem("-"),
                 new MenuItem("Set Color Options", OnSetColorOptions_Click),
             });
@@ -369,7 +367,26 @@ namespace DnDCS.Server
             serverData.ShowLog = this.gbxLog.Visible;
             Persistence.SaveServerData(serverData);
         }
-        
+
+        private void OnFitMapToScreen_Click(object sender, EventArgs e)
+        {
+            // Wipe any history, because the coordinates won't translate correctly anymore.
+            undoFogUpdates.Clear();
+            redoFogUpdates.Clear();
+            undoLastFogAction.Enabled = redoLastFogAction.Enabled = false;
+
+            var menuItem = sender as MenuItem;
+            var fitMapToScreen = (menuItem.Checked = !menuItem.Checked);
+            this.pnlMap.HorizontalScroll.Value = 0;
+            this.pnlMap.VerticalScroll.Value = 0;
+            this.pbxMap.SizeMode = (fitMapToScreen) ? PictureBoxSizeMode.StretchImage : PictureBoxSizeMode.AutoSize;
+            this.pbxMap.Location = Point.Empty;
+
+            var serverData = Persistence.LoadServerData();
+            serverData.FitMapToScreen = (this.pbxMap.SizeMode == PictureBoxSizeMode.StretchImage);
+            Persistence.SaveServerData(serverData);
+        }
+
         private void OnSetColorOptions_Click(object sender, EventArgs e)
         {
             using (var colorOptions = new ColorOptionsDialog())
@@ -405,20 +422,14 @@ namespace DnDCS.Server
 
         private void btnSelectTool_Click(object sender, EventArgs e)
         {
-            if (currentTool != btnSelectTool)
+            if (lastTool != btnSelectTool)
                 ToggleTools(btnSelectTool);
         }
 
-        private void btnFogAddTool_Click(object sender, EventArgs e)
+        private void btnFogTool_Click(object sender, EventArgs e)
         {
-            if (currentTool != btnFogAddTool)
-                ToggleTools(btnFogAddTool);
-        }
-        
-        private void btnFogRemoveTool_Click(object sender, EventArgs e)
-        {
-            if (currentTool != btnFogRemoveTool)
-                ToggleTools(btnFogRemoveTool);
+            if (lastTool != btnFogTool)
+                ToggleTools(btnFogTool);
         }
 
         private void btnToggleBlackout_Click(object sender, EventArgs e)
@@ -528,228 +539,165 @@ namespace DnDCS.Server
                 return;
 
             // Unset the previous tool as needed.
-            if (currentTool == btnSelectTool)
+            if (lastTool == btnSelectTool)
                 UnsetSelectTool();
-            if (currentTool == btnFogRemoveTool)
-                UnsetFogClearTool();
-            if (currentTool == btnFogAddTool)
-                UnsetFogAddTool();
+            if (lastTool == btnFogTool)
+                UnsetFogTool();
 
             // Change the enabledness & colors as needed.
             if (btnSelectTool == enabledTool)
             {
                 btnSelectTool.Enabled = false;
                 btnSelectTool.BackColor = Color.White;
-
-                btnFogRemoveTool.Enabled = true;
-                btnFogRemoveTool.BackColor = initialFogRemoveToolColor;
-                btnFogAddTool.Enabled = true;
-                btnFogAddTool.BackColor = initialFogAddToolColor;
+                btnFogTool.BackColor = initialFogToolColor;
+                btnFogTool.Enabled = true;
             }
-            else if (btnFogRemoveTool == enabledTool)
+            else if (btnFogTool == enabledTool)
             {
-                btnFogRemoveTool.Enabled = false;
-                btnFogRemoveTool.BackColor = Color.White;
-
                 btnSelectTool.Enabled = true;
                 btnSelectTool.BackColor = initialSelectToolColor;
-                btnFogAddTool.Enabled = true;
-                btnFogAddTool.BackColor = initialFogAddToolColor;
-            }
-            else if (btnFogAddTool == enabledTool)
-            {
-                btnFogAddTool.Enabled = false;
-                btnFogAddTool.BackColor = Color.White;
-
-                btnSelectTool.Enabled = true;
-                btnSelectTool.BackColor = initialSelectToolColor;
-                btnFogRemoveTool.Enabled = true;
-                btnFogRemoveTool.BackColor = initialFogRemoveToolColor;
+                btnFogTool.BackColor = Color.White;
+                btnFogTool.Enabled = false;
             }
             else
             {
                 throw new NotImplementedException();
             }
-
+            
             // Set the new tool
             if (btnSelectTool == enabledTool)
                 SetSelectTool();
-            if (btnFogRemoveTool == enabledTool)
-                SetFogRemoveTool();
-            if (btnFogAddTool == enabledTool)
-                SetFogAddTool();
+            if (btnFogTool == enabledTool)
+                SetFogTool();
 
-            currentTool = enabledTool;
+            lastTool = enabledTool;
         }
 
         private void SetSelectTool()
         {
+            pbxMap.MouseDoubleClick += new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
 
-        private void SetFogRemoveTool()
+        private void SetFogTool()
         {
             pbxMap.Cursor = Cursors.Cross;
-            isRemovingFog = true;
+            pbxMap.MouseDown += new MouseEventHandler(pbxMap_MouseDown);
         }
 
-        private void SetFogAddTool()
+        private SimplePoint ConvertPointToStretchedImage(Point pt)
         {
-            pbxMap.Cursor = Cursors.Cross;
-            isRemovingFog = false;
+            // If we're stretching the image to fit, then our point is actually somewhere else on the map by the reverse of how much we've stretched.
+            return (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage) ? new SimplePoint((int)(pt.X * ((float)map.Width / (float)pbxMap.Width)), (int)(pt.Y * ((float)map.Height / (float)pbxMap.Height))) : pt.ToSimplePoint();
         }
 
         private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
         {
-            if (this.loadedMap == null)
-                return;
-
             if (e.Button == MouseButtons.Left && e.Clicks >= 2)
             {
                 connection.WriteCenterMap(e.Location.ToSimplePoint());
             }
         }
 
-        private Point lastDragPosition;
-
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
         {
-            if (this.loadedMap == null)
+            if (e.Button != System.Windows.Forms.MouseButtons.Left && e.Button != System.Windows.Forms.MouseButtons.Right)
                 return;
 
-            if (e.Button == System.Windows.Forms.MouseButtons.Left)
-            {
-                if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
-                {
-                    newFog = new Bitmap(fog.Width, fog.Height);
+            pbxMap.MouseMove += new MouseEventHandler(pbxMap_MouseMove);
+            pbxMap.MouseUp += new MouseEventHandler(pbxMap_MouseUp);
 
-                    currentFogUpdate = new FogUpdate(this.isRemovingFog.Value);
-                    currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-                }
-            }
-            else if (e.Button == System.Windows.Forms.MouseButtons.Right)
-            {
-                if (this.currentTool == this.btnSelectTool || this.currentTool == this.btnFogRemoveTool)
-                {
-                    lastDragPosition = e.Location;
-                }
-            }
+            newFog = new Bitmap(fog.Width, fog.Height);
+
+            currentFogUpdate = new FogUpdate((e.Button == System.Windows.Forms.MouseButtons.Left));
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
         }
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
-            if (this.loadedMap == null)
+            // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
+            if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
                 return;
+            lastMouseMoveTime = DateTime.Now;
 
-            if (e.Button == MouseButtons.Left)
-            {
-                if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
-                {
-                    // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
-                    if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
-                        return;
-                    lastMouseMoveTime = DateTime.Now;
+            // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
 
-                    // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-                    currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
+            UpdateNewFogImage(currentFogUpdate);
 
-                    UpdateNewFogImage(currentFogUpdate);
-
-                    pbxMap.Invalidate();
-                }
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                const int MoveThreshold = 3;
-
-                var newDragPosition = e.Location;
-
-                var diffY = Math.Abs(newDragPosition.Y - lastDragPosition.Y);
-                if (diffY > MoveThreshold)
-                {
-                    if (newDragPosition.Y < lastDragPosition.Y)
-                        ScrollUpOrDown(false, diffY);
-                    else if (newDragPosition.Y > lastDragPosition.Y)
-                        ScrollUpOrDown(true, diffY);
-                }
-
-                var diffX = Math.Abs(newDragPosition.X - lastDragPosition.X);
-                if (diffX > MoveThreshold)
-                {
-                    if (newDragPosition.X < lastDragPosition.X)
-                        ScrollLeftOrRight(false, diffX);
-                    else if (newDragPosition.X > lastDragPosition.X)
-                        ScrollLeftOrRight(true, diffX);
-                }
-
-                lastDragPosition = e.Location;
-            }
+            // Invalidate only the region that we can see.
+            pbxMap.Invalidate(new Rectangle(this.pnlMap.HorizontalScroll.Value, this.pnlMap.VerticalScroll.Value, pnlMap.Width, pnlMap.Height));
         }
         
         private void pbxMap_MouseUp(object sender, MouseEventArgs e)
         {
-            if (this.loadedMap == null)
+            if (e.Button != System.Windows.Forms.MouseButtons.Left && e.Button != System.Windows.Forms.MouseButtons.Right)
                 return;
 
-            if (e.Button != System.Windows.Forms.MouseButtons.Left)
-                return;
+            pbxMap.MouseMove -= new MouseEventHandler(pbxMap_MouseMove);
+            pbxMap.MouseUp -= new MouseEventHandler(pbxMap_MouseUp);
+            
+            var toBeDisposedFog = newFog;
+            newFog = null;
+            if (toBeDisposedFog != null)
+                toBeDisposedFog.Dispose();
 
-            if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
+            // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
+            // at least 3 points, then we don't have a shape that can be used.
+
+            currentFogUpdate.Add(ConvertPointToStretchedImage(e.Location));
+            if (currentFogUpdate.Length >= 3)
             {
-                var toBeDisposedFog = newFog;
-                newFog = null;
-                if (toBeDisposedFog != null)
-                    toBeDisposedFog.Dispose();
+                UpdateFogImage(currentFogUpdate);
+                undoFogUpdates.AddLast(currentFogUpdate);
+                undoLastFogAction.Enabled = true;
+                redoFogUpdates.Clear();
+                redoLastFogAction.Enabled = false;
 
-                // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
-                // at least 3 points, then we don't have a shape that can be used.
+                pbxMap.Refresh();
 
-                currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-                if (currentFogUpdate.Length >= 3)
-                {
-                    UpdateFogImage(currentFogUpdate);
-                    undoFogUpdates.AddLast(currentFogUpdate);
-                    undoLastFogAction.Enabled = true;
-                    redoFogUpdates.Clear();
-                    redoLastFogAction.Enabled = false;
+                if (realTimeFogUpdates)
+                    connection.WriteFogUpdate(currentFogUpdate);
 
-                    pbxMap.Refresh();
-
-                    if (realTimeFogUpdates)
-                        connection.WriteFogUpdate(currentFogUpdate);
-
-                    currentFogUpdate = null;
-                }
+                currentFogUpdate = null;
             }
         }
 
         private void UnsetSelectTool()
         {
+            pbxMap.MouseDoubleClick -= new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
 
-        private void UnsetFogClearTool()
+        private void UnsetFogTool()
         {
             pbxMap.Cursor = Cursors.Arrow;
-            this.isRemovingFog = null;
-        }
-
-        private void UnsetFogAddTool()
-        {
-            pbxMap.Cursor = Cursors.Arrow;
-            this.isRemovingFog = null;
+            pbxMap.MouseDown -= new MouseEventHandler(pbxMap_MouseDown);
+            pbxMap.MouseUp -= new MouseEventHandler(pbxMap_MouseUp);
         }
 
         private void SetMapImage(string imageUrl, Image mapImage)
         {
             if (mapImage == null)
                 return;
-            
-            var oldMap = loadedMap;
 
-            loadedMap = mapImage;
-            assignedMap = loadedMap;
+            // Arbitrary maximum enforced for allowing Fit Map functionality, because higher than this ends up with awful performance.
+            if (mapImage.Width > 1536 || mapImage.Height > 1152)
+            {
+                if (fitMapToScreenAction.Checked)
+                    fitMapToScreenAction.PerformClick();
+                fitMapToScreenAction.Enabled = false;
+            }
+            else
+            {
+                fitMapToScreenAction.Enabled = true;
+            }
+
+            var oldMap = map;
+
+            map = mapImage;
 
             CreateFogImage();
 
+            pbxMap.Image = map;
             pbxMap.Refresh();
 
             gbxCommands.Enabled = true;
@@ -769,7 +717,7 @@ namespace DnDCS.Server
         {
             var oldFog = fog;
 
-            fog = new Bitmap(loadedMap.Width, loadedMap.Height);
+            fog = new Bitmap(map.Width, map.Height);
             using (var g = Graphics.FromImage(fog))
             {
                 g.FillRectangle(FOG_BRUSH, 0, 0, fog.Width, fog.Height);
@@ -822,157 +770,75 @@ namespace DnDCS.Server
                 Persistence.SaveServerFogData(this.mapUrl, new ServerFogData() { Data = allFogUpdates.ToFogData() });
             }
         }
-
-        private void ScrollLeftOrRight(bool isLeft, int? distance = null)
+        
+        private void pnlMap_SizeChanged(object sender, EventArgs e)
         {
-            // Scroll left/right
-            int newValue;
-            if (isLeft)
-                newValue = this.scrollPosition.X - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
-            else
-                newValue = this.scrollPosition.X + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
-            SetScroll(newValue, null);
-        }
-
-        private void ScrollUpOrDown(bool isUp, int? distance = null)
-        {
-            // Scroll up/down
-            int newValue;
-            if (isUp)
-                newValue = this.scrollPosition.Y - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
-            else
-                newValue = this.scrollPosition.Y + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
-            SetScroll(null, newValue);
-        }
-
-        private void SetScroll(int? desiredX, int? desiredY)
-        {
-            if (!desiredX.HasValue)
-                desiredX = this.scrollPosition.X;
-            if (!desiredY.HasValue)
-                desiredY = this.scrollPosition.Y;
-
-            // Do not allow negative scrolling in any way.
-            if (desiredX.Value < 0)
-                desiredX = 0;
-            if (desiredY.Value < 0)
-                desiredY = 0;
-
-            // TODO: Validate that the scroll position isn't beyond the width/height of the assigned image (taking zoom into account).
-
-            // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
-            // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.loadedMap.Width < this.Width)
-                desiredX = 0;
-            else
-                desiredX = Math.Min(desiredX.Value, this.loadedMap.Width - this.Width);
-
-            if (this.loadedMap.Height < this.Height)
-                desiredY = 0;
-            else
-                desiredY = Math.Min(desiredY.Value, this.loadedMap.Height - this.Height);
-
-            this.scrollPosition = new Point(desiredX.Value, desiredY.Value);
-            pbxMap.Invalidate();
+            // If we're stretching the Map as per the settings, then we'll enforce that the Picture Box is always the same size as the Panel.
+            if (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage)
+            {
+                pbxMap.Size = pnlMap.Size;
+                pbxMap.Refresh();
+            }
         }
 
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         /// <remarks> Only need to realistically draw what the user can see. </remarks>
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
-            if (loadedMap == null || fog == null)
+            if (map == null || fog == null)
                 return;
 
-            var g = e.Graphics;
-
-            // Force clipping to the visible area only. This clipping will be translated as needed in the subsequent calls, but ensures
-            // that we never try to draw beyond the visible area.
-            g.SetClip(new Rectangle(0, 0, this.Width, this.Height));
-
-            PaintMap(g);
-            PaintGrid(g);
-            PaintFog(g);
-            PaintZoomFactorText(g);
-        }
-
-        private void PaintMap(Graphics g)
-        {
-            if (this.loadedMap != null)
             {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                var g = e.Graphics;
+
+                // Note that if we're stretching the map to fit the space, then we need to scale accordingly.
+                if (pbxMap.SizeMode == PictureBoxSizeMode.StretchImage)
                 {
-                    // TODO: Scaling goes here
-                    g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
-                    g.DrawImage(this.loadedMap, new Rectangle(0, 0, this.loadedMap.Width, this.loadedMap.Height), 0, 0, this.assignedMap.Width, this.assignedMap.Height, GraphicsUnit.Pixel);
+                    g.ScaleTransform((float)pbxMap.Width / (float)map.Width, (float)pbxMap.Height / (float)map.Height);
                 }
-                g.ResetTransform();
-            }
-        }
 
-        private void PaintGrid(Graphics g)
-        {
-            // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
-            // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
-            if (chkShowGrid.Checked)
-            {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                // We can draw only the area that is visible when newFog is set, because that means the user isn't scrolling the page at all.
+                if (newFog != null)
                 {
-                    for (int x = 0; x < this.loadedMap.Width; x += (int)nudGridSize.Value)
-                    {
-                        g.DrawLine(gridPen, x, 0, x, this.loadedMap.Height);
-                    }
-                    for (int y = 0; y < this.loadedMap.Height; y += (int)nudGridSize.Value)
-                    {
-                        g.DrawLine(gridPen, 0, y, this.loadedMap.Width, y);
-                    }
+                    // These scrolling offsets tell us the top/left of any image we need to draw.
+                    var scrollOffsetX = this.pnlMap.HorizontalScroll.Value;
+                    var scrollOffsetY = this.pnlMap.VerticalScroll.Value;
+
+                    g.DrawImage(fog, // Draw this
+                                new Rectangle(scrollOffsetX, scrollOffsetY, map.Width, map.Height), // Onto this area
+                                scrollOffsetX, scrollOffsetY, map.Width, map.Height, // From this area
+                                GraphicsUnit.Pixel, // In Pixel units
+                                fogAttributes); // With Alpha shading
+
+                    g.DrawImage(newFog, // Draw this
+                                new Rectangle(scrollOffsetX, scrollOffsetY, map.Width, map.Height), // Onto this area
+                                scrollOffsetX, scrollOffsetY, map.Width, map.Height, // From this area
+                                GraphicsUnit.Pixel, // In Pixel units
+                                fogAttributes); // With Alpha shading
                 }
-                g.ResetTransform();
-            }
-        }
-
-        private void PaintFog(Graphics g)
-        {
-            if (fog != null)
-            {
-                g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
-                g.ScaleTransform(assignedScaleFactor, assignedScaleFactor);
+                else
                 {
-                    g.DrawImage(fog, new Rectangle(0, 0, this.fog.Width, this.fog.Height), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
+                    // To prevent clipping while scrolling, we'll simply draw the full fog.
+                    g.DrawImage(fog, new Rectangle(Point.Empty, map.Size), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
                     if (newFog != null)
-                        g.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, fogAttributes);
+                        g.DrawImage(newFog, new Rectangle(Point.Empty, map.Size), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, fogAttributes);
                 }
-                g.ResetTransform();
-            }
-        }
 
-        private bool isZoomFactorInProgress;
-        private bool isZoomFactorRunning;
-        private Font zoomFactorFont;
-        private float variableScaleFactor;
-        private const string ZoomInstructionMessage = "";
-        private void PaintZoomFactorText(Graphics g)
-        {
-            return;
-
-            string[] zoomMsgs = null;
-            if (isZoomFactorInProgress)
-                zoomMsgs = new[] { string.Format("Zoom: {0}x", variableScaleFactor), ZoomInstructionMessage };
-            else if (isZoomFactorRunning)
-                zoomMsgs = new[] { string.Format("Zooming to {0}x...", variableScaleFactor) };
-            if (zoomMsgs != null)
-            {
-                var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
-                for (var i = 0; i < zoomMsgs.Length; i++)
+                // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
+                // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
+                if (chkShowGrid.Checked)
                 {
-                    // Draw each line one after the other, separating them by the height of the message, centered on the screen.
-                    var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
-                    
-                    g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
+                    for (int x = (int)nudGridSize.Value; x < map.Width; x += (int)nudGridSize.Value)
+                    {
+                        g.DrawLine(gridPen, x, 0, x, map.Height);
+                    }
+                    for (int y = (int)nudGridSize.Value; y < map.Height; y += (int)nudGridSize.Value)
+                    {
+                        g.DrawLine(gridPen, 0, y, map.Width, y);
+                    }
                 }
+
+                return;
             }
         }
     }

@@ -54,6 +54,12 @@
     <Compile Include="ColorOptionsDialog.Designer.cs">
       <DependentUpon>ColorOptionsDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="ServerControl.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="ServerControl.Designer.cs">
+      <DependentUpon>ServerControl.cs</DependentUpon>
+    </Compile>
     <Compile Include="GetImageUrlDialog.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -66,12 +72,6 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="ServerControl.cs">
-      <SubType>UserControl</SubType>
-    </Compile>
-    <Compile Include="ServerControl.Designer.cs">
-      <DependentUpon>ServerControl.cs</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="ColorOptionsControl.resx">
@@ -80,15 +80,15 @@
     <EmbeddedResource Include="ColorOptionsDialog.resx">
       <DependentUpon>ColorOptionsDialog.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="ServerControl.resx">
+      <DependentUpon>ServerControl.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="GetImageUrlDialog.resx">
       <DependentUpon>GetImageUrlDialog.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
-    <EmbeddedResource Include="ServerControl.resx">
-      <DependentUpon>ServerControl.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>

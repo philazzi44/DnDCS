@@ -45,3 +45,9 @@ Combination of FogTool.png and FogToolSyncArrow.png
 
 LoadImageTool.png
 http://findicons.com/icon/51187/clipping_picture?width=48
+
+FogToolAddIcon.png
+http://findicons.com/icon/251371/button_plus_green?id=382189
+
+FogToolRemoveIcon.png
+http://findicons.com/icon/98929/button_minus_red?id=372398

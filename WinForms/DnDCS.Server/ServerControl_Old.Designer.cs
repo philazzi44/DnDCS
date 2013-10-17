@@ -1,6 +1,6 @@
 ﻿namespace DnDCS.Server
 {
-    partial class ServerControl
+    partial class ServerControl_Old
     {
         /// <summary> 
         /// Required designer variable.
@@ -28,16 +28,15 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerControl));
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerControl_Old));
             this.pbxMap = new System.Windows.Forms.PictureBox();
             this.spltServer = new System.Windows.Forms.SplitContainer();
+            this.pnlMap = new System.Windows.Forms.Panel();
             this.flpControls = new System.Windows.Forms.FlowLayoutPanel();
             this.gbxCommands = new System.Windows.Forms.GroupBox();
-            this.btnFogAddTool = new System.Windows.Forms.Button();
             this.btnSyncFog = new System.Windows.Forms.Button();
             this.btnSelectTool = new System.Windows.Forms.Button();
-            this.btnFogRemoveTool = new System.Windows.Forms.Button();
-            this.btnLoadImage = new System.Windows.Forms.Button();
+            this.btnFogTool = new System.Windows.Forms.Button();
             this.btnRevealAll = new System.Windows.Forms.Button();
             this.btnFogAll = new System.Windows.Forms.Button();
             this.btnToggleBlackout = new System.Windows.Forms.Button();
@@ -48,11 +47,13 @@
             this.gbxLog = new System.Windows.Forms.GroupBox();
             this.tboLog = new System.Windows.Forms.RichTextBox();
             this.btnClearLog = new System.Windows.Forms.Button();
+            this.btnLoadImage = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
             this.spltServer.Panel2.SuspendLayout();
             this.spltServer.SuspendLayout();
+            this.pnlMap.SuspendLayout();
             this.flpControls.SuspendLayout();
             this.gbxCommands.SuspendLayout();
             this.gbxGridSize.SuspendLayout();
@@ -62,18 +63,12 @@
             // 
             // pbxMap
             // 
-            this.pbxMap.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pbxMap.Location = new System.Drawing.Point(0, 0);
             this.pbxMap.Name = "pbxMap";
-            this.pbxMap.Size = new System.Drawing.Size(671, 485);
+            this.pbxMap.Size = new System.Drawing.Size(320, 240);
             this.pbxMap.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.pbxMap.TabIndex = 0;
             this.pbxMap.TabStop = false;
-            this.pbxMap.Paint += new System.Windows.Forms.PaintEventHandler(this.pbxMap_Paint);
-            this.pbxMap.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDoubleClick);
-            this.pbxMap.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDown);
-            this.pbxMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseMove);
-            this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
             // 
             // spltServer
             // 
@@ -85,7 +80,7 @@
             // 
             // spltServer.Panel1
             // 
-            this.spltServer.Panel1.Controls.Add(this.pbxMap);
+            this.spltServer.Panel1.Controls.Add(this.pnlMap);
             this.spltServer.Panel1MinSize = 400;
             // 
             // spltServer.Panel2
@@ -95,6 +90,17 @@
             this.spltServer.Size = new System.Drawing.Size(804, 489);
             this.spltServer.SplitterDistance = 675;
             this.spltServer.TabIndex = 1;
+            // 
+            // pnlMap
+            // 
+            this.pnlMap.AutoScroll = true;
+            this.pnlMap.Controls.Add(this.pbxMap);
+            this.pnlMap.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.pnlMap.Location = new System.Drawing.Point(0, 0);
+            this.pnlMap.Name = "pnlMap";
+            this.pnlMap.Size = new System.Drawing.Size(671, 485);
+            this.pnlMap.TabIndex = 0;
+            this.pnlMap.SizeChanged += new System.EventHandler(this.pnlMap_SizeChanged);
             // 
             // flpControls
             // 
@@ -112,10 +118,9 @@
             // 
             // gbxCommands
             // 
-            this.gbxCommands.Controls.Add(this.btnFogAddTool);
             this.gbxCommands.Controls.Add(this.btnSyncFog);
             this.gbxCommands.Controls.Add(this.btnSelectTool);
-            this.gbxCommands.Controls.Add(this.btnFogRemoveTool);
+            this.gbxCommands.Controls.Add(this.btnFogTool);
             this.gbxCommands.Controls.Add(this.btnLoadImage);
             this.gbxCommands.Controls.Add(this.btnRevealAll);
             this.gbxCommands.Controls.Add(this.btnFogAll);
@@ -128,22 +133,11 @@
             this.gbxCommands.TabStop = false;
             this.gbxCommands.Text = "Commands";
             // 
-            // btnFogAddTool
-            // 
-            this.btnFogAddTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogAddTool.BackgroundImage")));
-            this.btnFogAddTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogAddTool.Location = new System.Drawing.Point(6, 152);
-            this.btnFogAddTool.Name = "btnFogAddTool";
-            this.btnFogAddTool.Size = new System.Drawing.Size(48, 48);
-            this.btnFogAddTool.TabIndex = 5;
-            this.btnFogAddTool.UseVisualStyleBackColor = true;
-            this.btnFogAddTool.Click += new System.EventHandler(this.btnFogAddTool_Click);
-            // 
             // btnSyncFog
             // 
             this.btnSyncFog.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnSyncFog.BackgroundImage")));
             this.btnSyncFog.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnSyncFog.Location = new System.Drawing.Point(60, 206);
+            this.btnSyncFog.Location = new System.Drawing.Point(61, 98);
             this.btnSyncFog.Name = "btnSyncFog";
             this.btnSyncFog.Size = new System.Drawing.Size(48, 48);
             this.btnSyncFog.TabIndex = 2;
@@ -161,34 +155,22 @@
             this.btnSelectTool.UseVisualStyleBackColor = true;
             this.btnSelectTool.Click += new System.EventHandler(this.btnSelectTool_Click);
             // 
-            // btnFogRemoveTool
+            // btnFogTool
             // 
-            this.btnFogRemoveTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogRemoveTool.BackgroundImage")));
-            this.btnFogRemoveTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogRemoveTool.Location = new System.Drawing.Point(6, 98);
-            this.btnFogRemoveTool.Name = "btnFogRemoveTool";
-            this.btnFogRemoveTool.Size = new System.Drawing.Size(48, 48);
-            this.btnFogRemoveTool.TabIndex = 1;
-            this.btnFogRemoveTool.UseVisualStyleBackColor = true;
-            this.btnFogRemoveTool.Click += new System.EventHandler(this.btnFogRemoveTool_Click);
-            // 
-            // btnLoadImage
-            // 
-            this.btnLoadImage.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnLoadImage.BackgroundImage")));
-            this.btnLoadImage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnLoadImage.Location = new System.Drawing.Point(6, 206);
-            this.btnLoadImage.Name = "btnLoadImage";
-            this.btnLoadImage.Size = new System.Drawing.Size(48, 48);
-            this.btnLoadImage.TabIndex = 4;
-            this.btnLoadImage.TabStop = false;
-            this.btnLoadImage.UseVisualStyleBackColor = true;
-            this.btnLoadImage.Click += new System.EventHandler(this.btnLoadImage_Click);
+            this.btnFogTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogTool.BackgroundImage")));
+            this.btnFogTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnFogTool.Location = new System.Drawing.Point(6, 98);
+            this.btnFogTool.Name = "btnFogTool";
+            this.btnFogTool.Size = new System.Drawing.Size(48, 48);
+            this.btnFogTool.TabIndex = 1;
+            this.btnFogTool.UseVisualStyleBackColor = true;
+            this.btnFogTool.Click += new System.EventHandler(this.btnFogTool_Click);
             // 
             // btnRevealAll
             // 
             this.btnRevealAll.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnRevealAll.BackgroundImage")));
             this.btnRevealAll.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnRevealAll.Location = new System.Drawing.Point(61, 98);
+            this.btnRevealAll.Location = new System.Drawing.Point(60, 152);
             this.btnRevealAll.Name = "btnRevealAll";
             this.btnRevealAll.Size = new System.Drawing.Size(48, 48);
             this.btnRevealAll.TabIndex = 4;
@@ -200,7 +182,7 @@
             // 
             this.btnFogAll.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogAll.BackgroundImage")));
             this.btnFogAll.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogAll.Location = new System.Drawing.Point(60, 152);
+            this.btnFogAll.Location = new System.Drawing.Point(6, 152);
             this.btnFogAll.Name = "btnFogAll";
             this.btnFogAll.Size = new System.Drawing.Size(48, 48);
             this.btnFogAll.TabIndex = 3;
@@ -317,6 +299,18 @@
             this.btnClearLog.UseVisualStyleBackColor = true;
             this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
             // 
+            // btnLoadImage
+            // 
+            this.btnLoadImage.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnLoadImage.BackgroundImage")));
+            this.btnLoadImage.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnLoadImage.Location = new System.Drawing.Point(60, 206);
+            this.btnLoadImage.Name = "btnLoadImage";
+            this.btnLoadImage.Size = new System.Drawing.Size(48, 48);
+            this.btnLoadImage.TabIndex = 4;
+            this.btnLoadImage.TabStop = false;
+            this.btnLoadImage.UseVisualStyleBackColor = true;
+            this.btnLoadImage.Click += new System.EventHandler(this.btnLoadImage_Click);
+            // 
             // ServerControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -327,10 +321,11 @@
             this.Load += new System.EventHandler(this.ServerControl_Load);
             ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).EndInit();
             this.spltServer.Panel1.ResumeLayout(false);
-            this.spltServer.Panel1.PerformLayout();
             this.spltServer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).EndInit();
             this.spltServer.ResumeLayout(false);
+            this.pnlMap.ResumeLayout(false);
+            this.pnlMap.PerformLayout();
             this.flpControls.ResumeLayout(false);
             this.gbxCommands.ResumeLayout(false);
             this.gbxGridSize.ResumeLayout(false);
@@ -347,8 +342,9 @@
         private System.Windows.Forms.SplitContainer spltServer;
         private System.Windows.Forms.GroupBox gbxCommands;
         private System.Windows.Forms.Button btnSelectTool;
-        private System.Windows.Forms.Button btnFogRemoveTool;
+        private System.Windows.Forms.Button btnFogTool;
         private System.Windows.Forms.Button btnToggleBlackout;
+        private System.Windows.Forms.Panel pnlMap;
         private System.Windows.Forms.Button btnFogAll;
         private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.RichTextBox tboLog;
@@ -361,6 +357,5 @@
         private System.Windows.Forms.CheckBox chkShowGrid;
         private System.Windows.Forms.Button btnRevealAll;
         private System.Windows.Forms.Button btnLoadImage;
-        private System.Windows.Forms.Button btnFogAddTool;
     }
 }
