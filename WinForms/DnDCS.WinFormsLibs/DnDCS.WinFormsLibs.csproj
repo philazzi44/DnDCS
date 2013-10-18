@@ -43,6 +43,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Assets\AssetsLoader.cs" />
+    <Compile Include="DnDPictureBox.Designer.cs">
+      <DependentUpon>DnDPictureBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DnDServerPictureBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DnDClientPictureBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DnDPictureBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
     <Compile Include="IDnDCSControl.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FormsUtils.cs" />
@@ -69,6 +81,11 @@
       <Project>{EAB1B144-0E8B-4BA2-958A-42B1E70B32AB}</Project>
       <Name>DnDCS.Libs</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="DnDPictureBox.resx">
+      <DependentUpon>DnDPictureBox.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

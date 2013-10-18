@@ -9,5 +9,6 @@ namespace DnDCS.Libs
     {
         public const float ZoomStep = 0.1f;
         public const float ZoomLargeStep = 0.2f;
+        public const float ScrollWheelStepScrollPercent = 0.05f;
     }
 }
