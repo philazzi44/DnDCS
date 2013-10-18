@@ -657,6 +657,9 @@ namespace DnDCS.Server
 
         private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
         {
+            // TODO: Disabled for the time being because it's kind of fluxed up.
+            return;
+
             if (zoomIn)
                 variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
             else
