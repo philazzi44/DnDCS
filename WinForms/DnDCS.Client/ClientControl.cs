@@ -526,8 +526,6 @@ namespace DnDCS.Client
             if (desiredY.Value < 0)
                 desiredY = 0;
 
-            // TODO: Validate that the scroll position isn't beyond the width/height of the assigned image (taking zoom into account).
-
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
             if (this.LogicalMapWidth < this.Width)
@@ -588,7 +586,7 @@ namespace DnDCS.Client
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
                 g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
-                    g.DrawImage(this.receivedMap, new Rectangle(0, 0, this.receivedMap.Width, this.receivedMap.Height), 0, 0, this.receivedMap.Width, this.receivedMap.Height, GraphicsUnit.Pixel, fogAttributes);
+                    g.DrawImage(this.receivedMap, Point.Empty);
                 }
                 g.ResetTransform();
             }
