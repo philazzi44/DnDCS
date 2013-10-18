@@ -11,7 +11,7 @@ namespace DnDCS.WinFormsLibs
 {
     public partial class DnDPictureBox : UserControl
     {
-        protected Image LoadedMap { get; set; }
+        public Image LoadedMap { get; protected set; }
         protected Size LoadedMapSize { get; set; }
         private int LogicalMapWidth { get { return (int)(LoadedMapSize.Width * AssignedZoomFactor); } }
         private int LogicalMapHeight { get { return (int)(LoadedMapSize.Height * AssignedZoomFactor); } }
@@ -22,7 +22,7 @@ namespace DnDCS.WinFormsLibs
         private float assignedZoomFactor = 1.0f;
         protected float AssignedZoomFactor { get { return this.assignedZoomFactor; } private set { this.assignedZoomFactor = value; } }
         private float variableZoomFactor = 1.0f;
-        private bool isZoomFactorInProgress;
+        protected bool IsZoomFactorInProgress { get; private set; }
         private Font zoomFactorFont;
         private static readonly string[] ZoomInstructionMessages = new[] {
                                                                             "Press Enter or Left Click to commit the zoom factor.",
@@ -35,6 +35,8 @@ namespace DnDCS.WinFormsLibs
         protected virtual int ZoomFactorTextYOffset { get { return 0; } }
 
         public event Action<Keys> TryToggleFullScreen;
+
+        public bool AllowZoom { get; set; }
 
         public DnDPictureBox()
         {
@@ -55,8 +57,15 @@ namespace DnDCS.WinFormsLibs
 
             // Force focus the Picture Box in all cases, so it can properly respond to events.
             this.pbxMap.Focus();
+
             this.pbxMap.LostFocus += new EventHandler(pbxMap_LostFocus);
+            this.pbxMap.Paint += new System.Windows.Forms.PaintEventHandler(this.pbxMap_Paint);
+            this.pbxMap.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseClick);
+            this.pbxMap.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDown);
+            this.pbxMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseMove);
+            this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
             this.pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
+            this.pbxMap.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.pbxMap_PreviewKeyDown);
         }
 
         private void pbxMap_LostFocus(object sender, EventArgs e)
@@ -131,7 +140,7 @@ namespace DnDCS.WinFormsLibs
                 return;
             }
 
-            if (isZoomFactorInProgress)
+            if (IsZoomFactorInProgress)
             {
                 if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Escape)
                     CommitOrRollBackZoom((e.KeyCode == Keys.Enter));
@@ -175,7 +184,7 @@ namespace DnDCS.WinFormsLibs
                 var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
                 var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
 
-                if (isControl || isZoomFactorInProgress)
+                if (isControl || IsZoomFactorInProgress)
                 {
                     ZoomInOrOut((e.Delta > 0), isShift);
                     ((HandledMouseEventArgs)e).Handled = true;
@@ -197,7 +206,7 @@ namespace DnDCS.WinFormsLibs
 
         private void pbxMap_MouseClick(object sender, MouseEventArgs e)
         {
-            if (isZoomFactorInProgress && (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right))
+            if (IsZoomFactorInProgress && (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right))
             {
                 CommitOrRollBackZoom((e.Button == MouseButtons.Left));
             }
@@ -205,19 +214,43 @@ namespace DnDCS.WinFormsLibs
 
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
         {
-            if (isZoomFactorInProgress)
+            HandleMouseDown(e);
+        }
+
+        protected virtual void HandleMouseDown(MouseEventArgs e)
+        {
+            if (this.LoadedMap == null)
+                return;
+            if (IsZoomFactorInProgress)
                 return;
 
+            HandleMouseDown_DragMap(e);
+        }
+
+        protected void HandleMouseDown_DragMap(MouseEventArgs e)
+        {
             lastScrollDragPosition = e.Location;
             this.pbxMap.Cursor = Cursors.Hand;
         }
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
         {
-            const int MoveThreshold = 3;
+            HandleMouseMove(e);
+        }
 
-            if (isZoomFactorInProgress)
+        protected virtual void HandleMouseMove(MouseEventArgs e)
+        {
+            if (this.LoadedMap == null)
                 return;
+            if (IsZoomFactorInProgress)
+                return;
+
+            HandleMouseMove_DragMap(e);
+        }
+
+        protected void HandleMouseMove_DragMap(MouseEventArgs e)
+        {
+            const int MoveThreshold = 3;
 
             if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Right)
                 return;
@@ -248,9 +281,19 @@ namespace DnDCS.WinFormsLibs
 
         private void pbxMap_MouseUp(object sender, MouseEventArgs e)
         {
-            if (isZoomFactorInProgress)
+            HandleMouseUp(e);
+        }
+
+        protected virtual void HandleMouseUp(MouseEventArgs e)
+        {
+            if (IsZoomFactorInProgress)
                 return;
 
+            HandleMouseUp_Drag(e);
+        }
+
+        protected void HandleMouseUp_Drag(MouseEventArgs e)
+        {
             this.pbxMap.Cursor = Cursors.Default;
         }
 
@@ -260,12 +303,15 @@ namespace DnDCS.WinFormsLibs
 
         private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
         {
+            if (!AllowZoom)
+                return;
+
             if (zoomIn)
                 variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
             else
                 variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
 
-            isZoomFactorInProgress = true;
+            IsZoomFactorInProgress = true;
 
             RefreshMapPictureBox();
         }
@@ -273,7 +319,7 @@ namespace DnDCS.WinFormsLibs
         private void CommitOrRollBackZoom(bool commit)
         {
             // Commit or rollback the zoom factor.
-            isZoomFactorInProgress = false;
+            IsZoomFactorInProgress = false;
             if (commit)
             {
                 AssignedZoomFactor = variableZoomFactor;
@@ -394,7 +440,7 @@ namespace DnDCS.WinFormsLibs
 
         protected void PaintZoomFactorText(Graphics g)
         {
-            if (isZoomFactorInProgress)
+            if (IsZoomFactorInProgress)
             {
                 var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
 

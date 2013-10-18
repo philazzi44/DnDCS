@@ -15,11 +15,8 @@ namespace DnDCS.Server
 {
     public partial class ServerControl : UserControl, IDnDCSControl
     {
-        private const float ScrollWheelStepPercent = 0.05f;
         private MenuItem fullScreenMenuItem;
-
-        private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
-
+        
         private static readonly TimeSpan MouseMoveInterval = TimeSpan.FromMilliseconds(25d);
         private DateTime lastMouseMoveTime = DateTime.MinValue;
 
@@ -30,66 +27,18 @@ namespace DnDCS.Server
         private Color initialFogRemoveToolColor;
         private Color initialFogAddToolColor;
         private Color initialBlackoutColor;
-        private Image loadedMap;
-        // TODO: When zooming is ready, change this var to always hold the zoomed map.
-        private Image assignedMap;
         private string mapUrl;
-        private List<FogUpdate> allFogUpdates = new List<FogUpdate>();
 
-        private Bitmap fog;
-        private Bitmap newFog;
         private Button currentTool;
         private bool isBlackOutSet;
-
-        private FogUpdate currentFogUpdate;
-        private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
-        private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
         private MenuItem loadImage;
         private MenuItem undoLastFogAction;
         private MenuItem redoLastFogAction;
 
-        private bool? isRemovingFog;
-        
-        private readonly Brush newFogClearBrush = Brushes.Red;
-
-        private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
-
-        /// <summary> This is the brush that is used to draw on the Fog bitmap. </summary>
-        private static readonly Brush FOG_BRUSH = Brushes.Black;
-        private readonly Brush newFogBrush = Brushes.Gray;
-        private readonly ImageAttributes fogAttributes = new ImageAttributes();
-
-        private Pen gridPen;
-
         private ServerSocketConnection connection;
 
         public Action<bool> ToggleFullScreen { get; set; }
-
-        /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
-        private DateTime? centerMapImageAnimationStartTime;
-        private Point? lastCenterMapPoint;
-        private Timer centerMapPointDrawTimer;
-        /// <summary> The duration of the Center Map Image icon being shown. </summary>
-        private readonly TimeSpan centerMapImageAnimationDuration = TimeSpan.FromSeconds(1);
-        private Image centerMapImage;
-
-        private float assignedZoomFactor = 1.0f;
-        private float variableZoomFactor = 1.0f;
-        private bool isZoomFactorInProgress;
-        private Font zoomFactorFont;
-        private static readonly string[] ZoomInstructionMessages = new[] {
-                                                                            "Press Enter or Left Click to commit the zoom factor.",
-                                                                            "Press Escape or Right Click to cancel."
-                                                                         };
-
-
-        private Point scrollPosition = Point.Empty;
-        private Point ScrollPosition
-        {
-            get { return scrollPosition; }
-            set { SetScroll(value.X, value.Y); }
-        }
 
         public ServerControl()
         {
@@ -98,11 +47,6 @@ namespace DnDCS.Server
         
         private void ServerControl_Load(object sender, EventArgs e)
         {
-            centerMapImage = AssetsLoader.CenterMapOverlayIcon;
-            centerMapPointDrawTimer = new Timer();
-            centerMapPointDrawTimer.Tick += new EventHandler(centerMapPointDrawTimer_Tick);
-            this.centerMapPointDrawTimer.Interval = 1000;
-
             initialSelectToolColor = btnSelectTool.BackColor;
             initialFogRemoveToolColor = btnFogRemoveTool.BackColor;
             initialFogAddToolColor = btnFogAddTool.BackColor;
@@ -114,6 +58,7 @@ namespace DnDCS.Server
             this.Disposed += new EventHandler(ServerControl_Disposed);
 
             // Do a deep wiring of Mouse Wheel to intercept it regardless of the control that is selected.
+            // TODO: If we can force-focus the Map in all cases, we'd be ok.
             var controls = new Queue<Control>();
             controls.Enqueue(this);
             while (controls.Count > 0)
@@ -139,9 +84,13 @@ namespace DnDCS.Server
             nudGridSize.Maximum = ConfigValues.MaximumGridSize;
             nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
 
-            gridPen = (serverData.IsGridColorSet) ? new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB)) : new Pen(Color.Aqua);
+            this.ctlDnDMap.GridPen = (serverData.IsGridColorSet) ? new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB)) : new Pen(Color.Aqua);
+            this.ctlDnDMap.AllowZoom = false;
+            this.ctlDnDMap.PerformCenterMap += new Action<SimplePoint>(ctlDnDMap_PerformCenterMap);
+            this.ctlDnDMap.OnFogUpdateAdded += new Action<FogUpdate>(ctlDnDMap_OnFogUpdateAdded);
+            this.ctlDnDMap.Init();
 
-            SetFogAttributesColorMatrix(DEFAULT_FOG_BRUSH_ALPHA);
+            SetFogAttributesColorMatrix(Constants.DEFAULT_FOG_BRUSH_ALPHA);
         }
 
         private void connection_OnClientConnected()
@@ -164,12 +113,12 @@ namespace DnDCS.Server
             else
                 connection.WriteBlackout(true);
 
-            if (loadedMap != null)
-                connection.WriteMap(loadedMap);
-            if (fog != null)
-                connection.WriteFog(fog);
+            if (this.ctlDnDMap.LoadedMap != null)
+                connection.WriteMap(this.ctlDnDMap.LoadedMap);
+            if (this.ctlDnDMap.Fog != null)
+                connection.WriteFog(this.ctlDnDMap.Fog);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
-            connection.WriteGridColor(gridPen.Color.ToSocketColor());
+            connection.WriteGridColor(this.ctlDnDMap.GridPen.Color.ToSocketColor());
         }
 
         private void connection_OnClientCountChanged(int count)
@@ -215,14 +164,8 @@ namespace DnDCS.Server
 
         private void ServerControl_Disposed(object sender, EventArgs e)
         {
-            if (loadedMap != null)
-                loadedMap.Dispose();
-            if (fog != null)
-                fog.Dispose();
             if (connection != null)
                 connection.Stop();
-            if (gridPen != null)
-                gridPen.Dispose();
         }
 
         private void OnFullScreen_Click(object sender, EventArgs e)
@@ -300,8 +243,8 @@ namespace DnDCS.Server
                             {
                                 var fogUpdates = fogData.Data.ToFogUpdate();
                                 this.UpdateFogImage(fogUpdates, false);
-                                connection.WriteFog(fog);
-                                this.pbxMap.Refresh();
+                                connection.WriteFog(this.ctlDnDMap.Fog);
+                                this.ctlDnDMap.RefreshMapPictureBox();
                             }
                         }
                         else
@@ -343,40 +286,22 @@ namespace DnDCS.Server
 
         private void OnUndoLastFogAction_Click(object sender, EventArgs e)
         {
-            if (undoFogUpdates.Any())
-            {
-                var lastFogUpdate = undoFogUpdates.Last();
-                lastFogUpdate.IsClearing = !lastFogUpdate.IsClearing;
-                UpdateFogImage(lastFogUpdate);
-                redoFogUpdates.AddLast(lastFogUpdate);
-                undoFogUpdates.RemoveLast();
-                pbxMap.Refresh();
+            this.ctlDnDMap.TryUndoLastFogAction();
+            undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
+            redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-                undoLastFogAction.Enabled = undoFogUpdates.Any();
-                redoLastFogAction.Enabled = true;
-
-                if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
-            }
+            if (realTimeFogUpdates)
+                connection.WriteFog(this.ctlDnDMap.Fog);
         }
         
         private void OnRedoLastFogAction_Click(object sender, EventArgs e)
         {
-            if (redoFogUpdates.Any())
-            {
-                var lastFogUpdate = redoFogUpdates.Last();
-                lastFogUpdate.IsClearing = !lastFogUpdate.IsClearing;
-                UpdateFogImage(lastFogUpdate);
-                undoFogUpdates.AddLast(lastFogUpdate);
-                redoFogUpdates.RemoveLast();
-                pbxMap.Refresh();
+            this.ctlDnDMap.TryRedoLastFogAction();
+            undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
+            redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-                undoLastFogAction.Enabled = true;
-                redoLastFogAction.Enabled = redoFogUpdates.Any();
-
-                if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
-            }
+            if (realTimeFogUpdates)
+                connection.WriteFog(this.ctlDnDMap.Fog);
         }
 
         private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)
@@ -419,12 +344,11 @@ namespace DnDCS.Server
             {
                 var serverData = Persistence.LoadServerData();
 
-                colorOptions.GridLineColor = gridPen.Color;
+                colorOptions.GridLineColor = this.ctlDnDMap.GridPen.Color;
                 if (colorOptions.ShowDialog(this) == DialogResult.OK)
                 {
-                    gridPen.Dispose();
                     var newColor = colorOptions.GridLineColor;
-                    gridPen = new Pen(newColor);
+                    this.ctlDnDMap.GridPen = new Pen(newColor);
 
                     serverData.GridColorA = newColor.A;
                     serverData.GridColorR = newColor.R;
@@ -436,7 +360,7 @@ namespace DnDCS.Server
 
                     connection.WriteGridColor(colorOptions.GridLineColor.ToSocketColor());
 
-                    pbxMap.Refresh();
+                    this.ctlDnDMap.RefreshMapPictureBox();
                 }
             }
         }
@@ -499,27 +423,19 @@ namespace DnDCS.Server
             var title = (revealAll) ? "Reveal Entire Map?" : "Fog Entire Map?";
             if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
-                var fogAllFogUpdate = new FogUpdate(revealAll);
-                fogAllFogUpdate.Add(new SimplePoint(0, 0));
-                fogAllFogUpdate.Add(new SimplePoint(fog.Width, 0));
-                fogAllFogUpdate.Add(new SimplePoint(fog.Width, fog.Height));
-                fogAllFogUpdate.Add(new SimplePoint(0, fog.Height));
+                this.ctlDnDMap.FogOrRevealAll(revealAll);
 
-                UpdateFogImage(fogAllFogUpdate);
-                undoFogUpdates.Clear();
-                redoFogUpdates.Clear();
-                undoLastFogAction.Enabled = redoLastFogAction.Enabled = false;
-                pbxMap.Refresh();
+                undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
+                redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                    connection.WriteFog(this.ctlDnDMap.Fog);
             }
         }
 
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
-            // TODO: More efficient to send the list of updates rather than the full fog map.
-            connection.WriteFog(fog);
+            connection.WriteFog(this.ctlDnDMap.Fog);
         }
 
         private void btnLoadImage_Click(object sender, EventArgs e)
@@ -537,14 +453,14 @@ namespace DnDCS.Server
 
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            pbxMap.Refresh();
+            this.ctlDnDMap.RefreshMapPictureBox();
         }
 
         private void nudGridSize_ValueChanged(object sender, EventArgs e)
         {
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            pbxMap.Refresh();
+            this.ctlDnDMap.RefreshMapPictureBox();
         }
 
         private void nudGridSize_Leave(object sender, EventArgs e)
@@ -631,309 +547,43 @@ namespace DnDCS.Server
 
         private void SetFogRemoveTool()
         {
-            pbxMap.Cursor = Cursors.Cross;
-            isRemovingFog = true;
+            this.ctlDnDMap.Cursor = Cursors.Cross;
+            this.ctlDnDMap.IsRemovingFog = true;
         }
 
         private void SetFogAddTool()
         {
-            pbxMap.Cursor = Cursors.Cross;
-            isRemovingFog = false;
+            this.ctlDnDMap.Cursor = Cursors.Cross;
+            this.ctlDnDMap.IsRemovingFog = false;
         }
 
-        private void RefreshMapPictureBox(bool immediateRefresh = false)
+        private void ctlDnDMap_PerformCenterMap(SimplePoint centerMap)
         {
-            if (pbxMap.InvokeRequired)
-            {
-                pbxMap.BeginInvoke(new Action(() => { RefreshMapPictureBox(immediateRefresh); }));
-                return;
-            }
-
-            if (immediateRefresh)
-                pbxMap.Refresh();
-            else
-                pbxMap.Invalidate();
-        }
-
-        private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
-        {
-            // TODO: Disabled for the time being because it's kind of fluxed up.
-            return;
-
-            if (zoomIn)
-                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
-            else
-                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
-
-            isZoomFactorInProgress = true;
-
-            RefreshMapPictureBox();
-        }
-
-        private void CommitOrRollBackZoom(bool commit)
-        {
-            // Commit or rollback the zoom factor.
-            isZoomFactorInProgress = false;
-            if (commit)
-            {
-                assignedZoomFactor = variableZoomFactor;
-                // This will validate that the current scroll values aren't too large for the new zoom factor.
-                SetScroll(null, null);
-            }
-            else
-            {
-                variableZoomFactor = assignedZoomFactor;
-            }
-            this.pbxMap.Invalidate();
-        }
-
-        private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
-        {
-            if (e.Delta != 0)
-            {
-                var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
-                var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
-
-                if (isControl || isZoomFactorInProgress)
-                {
-                    ZoomInOrOut((e.Delta > 0), isShift);
-                    ((HandledMouseEventArgs)e).Handled = true;
-                }
-                else if (isShift)
-                {
-                    ScrollLeftOrRight((e.Delta > 0));
-                    ((HandledMouseEventArgs)e).Handled = true;
-                }
-                else
-                {
-                    ScrollUpOrDown((e.Delta > 0));
-                    ((HandledMouseEventArgs)e).Handled = true;
-                }
-            }
-
-            this.pbxMap.Invalidate();
-        }
-
-        private void pbxMap_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (isZoomFactorInProgress && (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right))
-            {
-                CommitOrRollBackZoom((e.Button == MouseButtons.Left));
-            }
-        }
-
-        private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
-        {
-            if (this.loadedMap == null)
-                return;
-
-            if (e.Button == MouseButtons.Left && e.Clicks >= 2)
-            {
-                // Get the coordinates in real map coordinates by unwinding the Scroll and Zoom factor.
-                lastCenterMapPoint = e.Location.Translate(this.scrollPosition);
-                connection.WriteCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
-                this.centerMapImageAnimationStartTime = DateTime.Now;
-                centerMapPointDrawTimer.Enabled = true;
-                this.pbxMap.Refresh();
-            }
-        }
-
-        private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
-        {
-            if (e.KeyCode == Keys.F11 || (e.KeyCode == Keys.Escape && fullScreenMenuItem.Checked))
-            {
-                fullScreenMenuItem.PerformClick();
-                return;
-            }
-
-            if (e.Control)
-            {
-                if ((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up) || (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.Down))
-                    ZoomInOrOut((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up), e.Shift);
-                return;
-            }
-
-            if (isZoomFactorInProgress)
-            {
-                if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Escape)
-                    CommitOrRollBackZoom((e.KeyCode == Keys.Enter));
-                else if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down)
-                    ZoomInOrOut((e.KeyCode == Keys.Up), e.Shift);
-                return;
-            }
-            else
-            {
-                switch (e.KeyCode)
-                {
-                    case Keys.Up:
-                        ScrollUpOrDown(true);
-                        break;
-                    case Keys.Down:
-                        ScrollUpOrDown(false);
-                        break;
-                }
-
-                switch (e.KeyCode)
-                {
-                    case Keys.Left:
-                        ScrollLeftOrRight(true);
-                        break;
-                    case Keys.Right:
-                        ScrollLeftOrRight(false);
-                        break;
-                }
-            }
-        }
-
-        private Point lastDragPosition;
-
-        private void pbxMap_MouseDown(object sender, MouseEventArgs e)
-        {
-            if (this.loadedMap == null)
-                return;
-            if (isZoomFactorInProgress)
-                return;
-
-            var doMouseDrag = false;
-
-            if (e.Button == System.Windows.Forms.MouseButtons.Left)
-            {
-                doMouseDrag = (this.currentTool == this.btnSelectTool);
-                
-                if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
-                {
-                    newFog = new Bitmap(fog.Width, fog.Height);
-
-                    currentFogUpdate = new FogUpdate(this.isRemovingFog.Value);
-                    currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-                }
-            }
-            else if (e.Button == System.Windows.Forms.MouseButtons.Right)
-            {
-                doMouseDrag = (this.currentTool == this.btnSelectTool || ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue));
-            }
-
-            if (doMouseDrag)
-            {
-                lastDragPosition = e.Location;
-            }
-        }
-
-        private void pbxMap_MouseMove(object sender, MouseEventArgs e)
-        {
-            if (this.loadedMap == null)
-                return;
-            if (isZoomFactorInProgress)
-                return;
-
-            var doMouseDrag = false;
-
-            if (e.Button == MouseButtons.Left)
-            {
-                doMouseDrag = (this.currentTool == this.btnSelectTool);
-
-                if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
-                {
-                    if (currentFogUpdate == null)
-                        return;
-
-                    // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
-                    if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
-                        return;
-                    lastMouseMoveTime = DateTime.Now;
-
-                    // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-                    Console.WriteLine(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-                    currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-
-                    UpdateNewFogImage(currentFogUpdate);
-
-                    pbxMap.Invalidate();
-                }
-            }
-            else if (e.Button == MouseButtons.Right)
-            {
-                doMouseDrag = true;
-            }
-
-            if (doMouseDrag)
-            {
-                const int MoveThreshold = 3;
-
-                var newDragPosition = e.Location;
-
-                var diffY = Math.Abs(newDragPosition.Y - lastDragPosition.Y);
-                if (diffY > MoveThreshold)
-                {
-                    if (newDragPosition.Y < lastDragPosition.Y)
-                        ScrollUpOrDown(false, diffY);
-                    else if (newDragPosition.Y > lastDragPosition.Y)
-                        ScrollUpOrDown(true, diffY);
-                }
-
-                var diffX = Math.Abs(newDragPosition.X - lastDragPosition.X);
-                if (diffX > MoveThreshold)
-                {
-                    if (newDragPosition.X < lastDragPosition.X)
-                        ScrollLeftOrRight(false, diffX);
-                    else if (newDragPosition.X > lastDragPosition.X)
-                        ScrollLeftOrRight(true, diffX);
-                }
-
-                lastDragPosition = e.Location;
-            }
+            connection.WriteCenterMap(centerMap);
         }
         
-        private void pbxMap_MouseUp(object sender, MouseEventArgs e)
+        void ctlDnDMap_OnFogUpdateAdded(FogUpdate fogUpdate)
         {
-            if (this.loadedMap == null)
-                return;
-            if (isZoomFactorInProgress)
-                return;
-            if (currentFogUpdate == null)
-                return;
-            if (e.Button != System.Windows.Forms.MouseButtons.Left)
-                return;
+            undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
+            redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
-            {
-                var toBeDisposedFog = newFog;
-                newFog = null;
-                if (toBeDisposedFog != null)
-                    toBeDisposedFog.Dispose();
-
-                // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
-                // at least 3 points, then we don't have a shape that can be used.
-
-                currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
-                if (currentFogUpdate.Length >= 3)
-                {
-                    UpdateFogImage(currentFogUpdate);
-                    undoFogUpdates.AddLast(currentFogUpdate);
-                    undoLastFogAction.Enabled = true;
-                    redoFogUpdates.Clear();
-                    redoLastFogAction.Enabled = false;
-
-                    pbxMap.Refresh();
-
-                    if (realTimeFogUpdates)
-                        connection.WriteFogUpdate(currentFogUpdate);
-
-                    currentFogUpdate = null;
-                }
-            }
+            if (realTimeFogUpdates)
+                connection.WriteFogUpdate(fogUpdate);
         }
 
+        [Obsolete]
         private void UnsetSelectTool()
         {
         }
 
+        [Obsolete]
         private void UnsetFogClearTool()
         {
             pbxMap.Cursor = Cursors.Arrow;
             this.isRemovingFog = null;
         }
 
+        [Obsolete]
         private void UnsetFogAddTool()
         {
             pbxMap.Cursor = Cursors.Arrow;
@@ -945,10 +595,9 @@ namespace DnDCS.Server
             if (mapImage == null)
                 return;
             
-            var oldMap = loadedMap;
+            var oldMap = LoadedMap;
 
-            loadedMap = mapImage;
-            assignedMap = new Bitmap(loadedMap, (int)(loadedMap.Width * assignedZoomFactor), (int)(loadedMap.Height * assignedZoomFactor));
+            LoadedMap = mapImage;
 
             CreateFogImage();
 
@@ -971,7 +620,7 @@ namespace DnDCS.Server
         {
             var oldFog = fog;
 
-            fog = new Bitmap(loadedMap.Width, loadedMap.Height);
+            fog = new Bitmap(LoadedMap.Width, LoadedMap.Height);
             using (var g = Graphics.FromImage(fog))
             {
                 g.FillRectangle(FOG_BRUSH, 0, 0, fog.Width, fog.Height);
@@ -981,7 +630,7 @@ namespace DnDCS.Server
                 oldFog.Dispose();
         }
 
-        private void SetFogAttributesColorMatrix(byte a = DEFAULT_FOG_BRUSH_ALPHA)
+        private void SetFogAttributesColorMatrix(byte a = Constants.DEFAULT_FOG_BRUSH_ALPHA)
         {
             // All colors are alpha blended by the alpha specified
             float[][] fogMatrixItems = { new float[] {1, 0, 0, 0, 0},
@@ -1030,9 +679,9 @@ namespace DnDCS.Server
             // Scroll left/right
             int newValue;
             if (isLeft)
-                newValue = this.scrollPosition.X - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = this.scrollPosition.X - (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
             else
-                newValue = this.scrollPosition.X + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = this.scrollPosition.X + (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
             SetScroll(newValue, null);
         }
 
@@ -1041,9 +690,9 @@ namespace DnDCS.Server
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.scrollPosition.Y - (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = this.scrollPosition.Y - (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
             else
-                newValue = this.scrollPosition.Y + (distance ?? (int)(pbxMap.Width * ScrollWheelStepPercent));
+                newValue = this.scrollPosition.Y + (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
             SetScroll(null, newValue);
         }
 
@@ -1064,15 +713,15 @@ namespace DnDCS.Server
 
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.loadedMap.Width < this.pbxMap.Width)
+            if (this.LoadedMap.Width < this.pbxMap.Width)
                 desiredX = 0;
             else
-                desiredX = Math.Min(desiredX.Value, this.loadedMap.Width - this.pbxMap.Width);
+                desiredX = Math.Min(desiredX.Value, this.LoadedMap.Width - this.pbxMap.Width);
 
-            if (this.loadedMap.Height < this.pbxMap.Height)
+            if (this.LoadedMap.Height < this.pbxMap.Height)
                 desiredY = 0;
             else
-                desiredY = Math.Min(desiredY.Value, this.loadedMap.Height - this.pbxMap.Height);
+                desiredY = Math.Min(desiredY.Value, this.LoadedMap.Height - this.pbxMap.Height);
 
             this.scrollPosition = new Point(desiredX.Value, desiredY.Value);
             pbxMap.Invalidate();
@@ -1082,7 +731,7 @@ namespace DnDCS.Server
         /// <remarks> Only need to realistically draw what the user can see. </remarks>
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
-            if (loadedMap == null || fog == null)
+            if (LoadedMap == null || fog == null)
                 return;
 
             var g = e.Graphics;
@@ -1098,14 +747,14 @@ namespace DnDCS.Server
 
         private void PaintMap(Graphics g)
         {
-            if (this.loadedMap != null)
+            if (this.LoadedMap != null)
             {
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
                 g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
                     // TODO: Scaling goes here
                     g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
-                    g.DrawImage(this.loadedMap, new Rectangle(0, 0, this.loadedMap.Width, this.loadedMap.Height), 0, 0, this.assignedMap.Width, this.assignedMap.Height, GraphicsUnit.Pixel);
+                    g.DrawImage(this.LoadedMap, new Rectangle(0, 0, this.LoadedMap.Width, this.LoadedMap.Height), 0, 0, this.LoadedMap.Width, this.LoadedMap.Height, GraphicsUnit.Pixel);
                 }
                 g.ResetTransform();
             }
@@ -1120,13 +769,13 @@ namespace DnDCS.Server
                 g.TranslateTransform(-this.scrollPosition.X, -this.scrollPosition.Y);
                 g.ScaleTransform(assignedZoomFactor, assignedZoomFactor);
                 {
-                    for (int x = 0; x < this.loadedMap.Width; x += (int)nudGridSize.Value)
+                    for (int x = 0; x < this.LoadedMap.Width; x += (int)nudGridSize.Value)
                     {
-                        g.DrawLine(gridPen, x, 0, x, this.loadedMap.Height);
+                        g.DrawLine(gridPen, x, 0, x, this.LoadedMap.Height);
                     }
-                    for (int y = 0; y < this.loadedMap.Height; y += (int)nudGridSize.Value)
+                    for (int y = 0; y < this.LoadedMap.Height; y += (int)nudGridSize.Value)
                     {
-                        g.DrawLine(gridPen, 0, y, this.loadedMap.Width, y);
+                        g.DrawLine(gridPen, 0, y, this.LoadedMap.Width, y);
                     }
                 }
                 g.ResetTransform();

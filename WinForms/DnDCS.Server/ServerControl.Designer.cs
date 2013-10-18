@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(ServerControl));
-            this.pbxMap = new System.Windows.Forms.PictureBox();
             this.spltServer = new System.Windows.Forms.SplitContainer();
             this.flpControls = new System.Windows.Forms.FlowLayoutPanel();
             this.gbxCommands = new System.Windows.Forms.GroupBox();
@@ -48,7 +47,7 @@
             this.gbxLog = new System.Windows.Forms.GroupBox();
             this.tboLog = new System.Windows.Forms.RichTextBox();
             this.btnClearLog = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).BeginInit();
+            this.ctlDnDMap = new DnDCS.WinFormsLibs.DnDServerPictureBox();
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).BeginInit();
             this.spltServer.Panel1.SuspendLayout();
             this.spltServer.Panel2.SuspendLayout();
@@ -60,23 +59,6 @@
             this.gbxLog.SuspendLayout();
             this.SuspendLayout();
             // 
-            // pbxMap
-            // 
-            this.pbxMap.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pbxMap.Location = new System.Drawing.Point(0, 0);
-            this.pbxMap.Name = "pbxMap";
-            this.pbxMap.Size = new System.Drawing.Size(671, 485);
-            this.pbxMap.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
-            this.pbxMap.TabIndex = 0;
-            this.pbxMap.TabStop = false;
-            this.pbxMap.Paint += new System.Windows.Forms.PaintEventHandler(this.pbxMap_Paint);
-            this.pbxMap.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseClick);
-            this.pbxMap.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDoubleClick);
-            this.pbxMap.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDown);
-            this.pbxMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseMove);
-            this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
-            this.pbxMap.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.pbxMap_PreviewKeyDown);
-            // 
             // spltServer
             // 
             this.spltServer.BorderStyle = System.Windows.Forms.BorderStyle.Fixed3D;
@@ -87,7 +69,7 @@
             // 
             // spltServer.Panel1
             // 
-            this.spltServer.Panel1.Controls.Add(this.pbxMap);
+            this.spltServer.Panel1.Controls.Add(this.ctlDnDMap);
             this.spltServer.Panel1MinSize = 400;
             // 
             // spltServer.Panel2
@@ -319,6 +301,14 @@
             this.btnClearLog.UseVisualStyleBackColor = true;
             this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
             // 
+            // ctlDnDMap
+            // 
+            this.ctlDnDMap.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ctlDnDMap.Location = new System.Drawing.Point(0, 0);
+            this.ctlDnDMap.Name = "ctlDnDMap";
+            this.ctlDnDMap.Size = new System.Drawing.Size(671, 485);
+            this.ctlDnDMap.TabIndex = 0;
+            // 
             // ServerControl
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -327,9 +317,7 @@
             this.Name = "ServerControl";
             this.Size = new System.Drawing.Size(804, 489);
             this.Load += new System.EventHandler(this.ServerControl_Load);
-            ((System.ComponentModel.ISupportInitialize)(this.pbxMap)).EndInit();
             this.spltServer.Panel1.ResumeLayout(false);
-            this.spltServer.Panel1.PerformLayout();
             this.spltServer.Panel2.ResumeLayout(false);
             ((System.ComponentModel.ISupportInitialize)(this.spltServer)).EndInit();
             this.spltServer.ResumeLayout(false);
@@ -345,7 +333,6 @@
 
         #endregion
 
-        private System.Windows.Forms.PictureBox pbxMap;
         private System.Windows.Forms.SplitContainer spltServer;
         private System.Windows.Forms.GroupBox gbxCommands;
         private System.Windows.Forms.Button btnSelectTool;
@@ -364,5 +351,6 @@
         private System.Windows.Forms.Button btnRevealAll;
         private System.Windows.Forms.Button btnLoadImage;
         private System.Windows.Forms.Button btnFogAddTool;
+        private WinFormsLibs.DnDServerPictureBox ctlDnDMap;
     }
 }
