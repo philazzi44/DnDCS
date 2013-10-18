@@ -32,14 +32,14 @@ namespace DnDCS.WinFormsLibs
             return new Point(point.X, point.Y);
         }
 
-        public static Point Translate(this Point point, int x, int y)
+        public static Point Translate(this Point point, int x, int y, float factor = 1.0f)
         {
-            return new Point(point.X + x, point.Y + y);
+            return new Point((int)((point.X + x) * factor), (int)((point.Y + y)* factor));
         }
 
-        public static Point Translate(this Point point, Point translate)
+        public static Point Translate(this Point point, Point translate, float factor = 1.0f)
         {
-            return new Point(point.X + translate.X, point.Y + translate.Y);
+            return point.Translate(translate.X, translate.Y, factor);
         }
 
         public static SimplePoint ToSimplePoint(this Point point)

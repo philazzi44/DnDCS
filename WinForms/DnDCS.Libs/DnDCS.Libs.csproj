@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="ClientSocketConnection.cs" />
     <Compile Include="ConfigValues.cs" />
+    <Compile Include="Constants.cs" />
     <Compile Include="Persistence.cs" />
     <Compile Include="PersistenceObjects\ClientData.cs" />
     <Compile Include="PersistenceObjects\FogData.cs" />

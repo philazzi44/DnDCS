@@ -234,7 +234,7 @@ namespace DnDCS.Client
             this.BeginInvoke(new Action(() =>
             {
                 // The point that came in is raw on the map, so we need to account for the client's zoom factor.
-                SetScroll((int)(centerMap.X * assignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * assignedZoomFactor) - this.Height / 2);
+                SetScroll((int)(centerMap.X * assignedZoomFactor) - this.pbxMap.Width / 2, (int)(centerMap.Y * assignedZoomFactor) - this.pbxMap.Height / 2);
             }));
         }
 
@@ -453,7 +453,6 @@ namespace DnDCS.Client
             this.pbxMap.Cursor = Cursors.Default;
         }
 
-
         #endregion Map Events
 
         #region Zoom Logic
@@ -461,9 +460,9 @@ namespace DnDCS.Client
         private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
         {
             if (zoomIn)
-                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? 0.2f : 0.1f), ConfigValues.MaximumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
             else
-                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? 0.2f : 0.1f), ConfigValues.MinimumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
 
             isZoomFactorInProgress = true;
 
@@ -529,15 +528,15 @@ namespace DnDCS.Client
 
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.LogicalMapWidth < this.Width)
+            if (this.LogicalMapWidth < this.pbxMap.Width)
                 desiredX = 0;
             else
-                desiredX = Math.Min(desiredX.Value, this.LogicalMapWidth - this.Width);
+                desiredX = Math.Min(desiredX.Value, this.LogicalMapWidth - this.pbxMap.Width);
 
-            if (this.LogicalMapHeight < this.Height)
+            if (this.LogicalMapHeight < this.pbxMap.Height)
                 desiredY = 0;
             else
-                desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.Height);
+                desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.pbxMap.Height);
 
             this.scrollPosition = new Point(desiredX.Value, desiredY.Value);
             RefreshMapPictureBox();
@@ -555,7 +554,6 @@ namespace DnDCS.Client
 
             // Note that there's no reason to set clipping now because the Picture Box that we are drawing on is set to Fill and never grows beyond that.
             var g = e.Graphics;
-            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
 
             if (this.isBlackoutOn)
             {
@@ -575,7 +573,7 @@ namespace DnDCS.Client
         {
             // Draw the Blackout Image in the center.
             g.Clear(Color.Black);
-            g.DrawImage(AssetsLoader.BlackoutImage, this.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
+            g.DrawImage(AssetsLoader.BlackoutImage, this.pbxMap.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.pbxMap.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
         }
 
         private void PaintMap(Graphics g)
@@ -637,8 +635,8 @@ namespace DnDCS.Client
                 {
                     // Draw each line one after the other, separating them by the height of the message, centered on the screen.
                     var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
+                    var x = (this.pbxMap.Width / 2.0f) - (msgSize.Width / 2.0f);
+                    var y = (this.pbxMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
 
                     // If we're also showing the Blackout image, then show the text beneath it.
                     if (isBlackoutOn)

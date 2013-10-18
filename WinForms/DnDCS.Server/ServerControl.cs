@@ -16,6 +16,7 @@ namespace DnDCS.Server
     public partial class ServerControl : UserControl, IDnDCSControl
     {
         private const float ScrollWheelStepPercent = 0.05f;
+        private MenuItem fullScreenMenuItem;
 
         private const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
 
@@ -49,10 +50,7 @@ namespace DnDCS.Server
         private MenuItem redoLastFogAction;
 
         private bool? isRemovingFog;
-
-        private float assignedZoomFactor = 1.0f;
-        private float variableZoomFactor;
-
+        
         private readonly Brush newFogClearBrush = Brushes.Red;
 
         private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
@@ -75,13 +73,15 @@ namespace DnDCS.Server
         /// <summary> The duration of the Center Map Image icon being shown. </summary>
         private readonly TimeSpan centerMapImageAnimationDuration = TimeSpan.FromSeconds(1);
         private Image centerMapImage;
-        
-        private System.Threading.Thread zoomFactorHandlerThread;
-        private System.Threading.AutoResetEvent zoomFactorHandlerEvent = new System.Threading.AutoResetEvent(false);
+
+        private float assignedZoomFactor = 1.0f;
+        private float variableZoomFactor = 1.0f;
         private bool isZoomFactorInProgress;
-        private bool isZoomFactorRunning;
         private Font zoomFactorFont;
-        private const string ZoomInstructionMessage = "Press Enter or Left Click to commit the zoom factor, and Escape or Right Click to cancel.";
+        private static readonly string[] ZoomInstructionMessages = new[] {
+                                                                            "Press Enter or Left Click to commit the zoom factor.",
+                                                                            "Press Escape or Right Click to cancel."
+                                                                         };
 
 
         private Point scrollPosition = Point.Empty;
@@ -224,7 +224,18 @@ namespace DnDCS.Server
             if (gridPen != null)
                 gridPen.Dispose();
         }
-        
+
+        private void OnFullScreen_Click(object sender, EventArgs e)
+        {
+            if (ToggleFullScreen == null)
+                return;
+
+            var menuItem = sender as MenuItem;
+
+            var goFullScreen = (menuItem.Checked = !menuItem.Checked);
+            ToggleFullScreen(goFullScreen);
+        }
+
         public MainMenu GetMainMenu()
         {
             var serverData = Persistence.LoadServerData();
@@ -234,6 +245,8 @@ namespace DnDCS.Server
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
                 loadImage = new MenuItem("Load Image", OnLoadImage_Click, Shortcut.CtrlShiftO),
+                new MenuItem("-"),
+                fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false },
                 new MenuItem("-"),
                 //new MenuItem("Save State", OnSaveState_Click, Shortcut.CtrlS),
                 //new MenuItem("Load State", OnLoadState_Click, Shortcut.CtrlO),
@@ -628,6 +641,49 @@ namespace DnDCS.Server
             isRemovingFog = false;
         }
 
+        private void RefreshMapPictureBox(bool immediateRefresh = false)
+        {
+            if (pbxMap.InvokeRequired)
+            {
+                pbxMap.BeginInvoke(new Action(() => { RefreshMapPictureBox(immediateRefresh); }));
+                return;
+            }
+
+            if (immediateRefresh)
+                pbxMap.Refresh();
+            else
+                pbxMap.Invalidate();
+        }
+
+        private void ZoomInOrOut(bool zoomIn, bool doubleFactor)
+        {
+            if (zoomIn)
+                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
+            else
+                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
+
+            isZoomFactorInProgress = true;
+
+            RefreshMapPictureBox();
+        }
+
+        private void CommitOrRollBackZoom(bool commit)
+        {
+            // Commit or rollback the zoom factor.
+            isZoomFactorInProgress = false;
+            if (commit)
+            {
+                assignedZoomFactor = variableZoomFactor;
+                // This will validate that the current scroll values aren't too large for the new zoom factor.
+                SetScroll(null, null);
+            }
+            else
+            {
+                variableZoomFactor = assignedZoomFactor;
+            }
+            this.pbxMap.Invalidate();
+        }
+
         private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
         {
             if (e.Delta != 0)
@@ -635,7 +691,12 @@ namespace DnDCS.Server
                 var isControl = Control.ModifierKeys.HasFlag(Keys.Control);
                 var isShift = Control.ModifierKeys.HasFlag(Keys.Shift);
 
-                if (isShift)
+                if (isControl || isZoomFactorInProgress)
+                {
+                    ZoomInOrOut((e.Delta > 0), isShift);
+                    ((HandledMouseEventArgs)e).Handled = true;
+                }
+                else if (isShift)
                 {
                     ScrollLeftOrRight((e.Delta > 0));
                     ((HandledMouseEventArgs)e).Handled = true;
@@ -650,6 +711,14 @@ namespace DnDCS.Server
             this.pbxMap.Invalidate();
         }
 
+        private void pbxMap_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (isZoomFactorInProgress && (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right))
+            {
+                CommitOrRollBackZoom((e.Button == MouseButtons.Left));
+            }
+        }
+
         private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (this.loadedMap == null)
@@ -658,11 +727,58 @@ namespace DnDCS.Server
             if (e.Button == MouseButtons.Left && e.Clicks >= 2)
             {
                 // Get the coordinates in real map coordinates by unwinding the Scroll and Zoom factor.
-                lastCenterMapPoint = e.Location.Translate((int)(this.scrollPosition.X * assignedZoomFactor), (int)(this.scrollPosition.Y * assignedZoomFactor));
+                lastCenterMapPoint = e.Location.Translate(this.scrollPosition);
                 connection.WriteCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
                 this.centerMapImageAnimationStartTime = DateTime.Now;
                 centerMapPointDrawTimer.Enabled = true;
                 this.pbxMap.Refresh();
+            }
+        }
+
+        private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        {
+            if (e.KeyCode == Keys.F11 || (e.KeyCode == Keys.Escape && fullScreenMenuItem.Checked))
+            {
+                fullScreenMenuItem.PerformClick();
+                return;
+            }
+
+            if (e.Control)
+            {
+                if ((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up) || (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.Down))
+                    ZoomInOrOut((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up), e.Shift);
+                return;
+            }
+
+            if (isZoomFactorInProgress)
+            {
+                if (e.KeyCode == Keys.Enter || e.KeyCode == Keys.Escape)
+                    CommitOrRollBackZoom((e.KeyCode == Keys.Enter));
+                else if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down)
+                    ZoomInOrOut((e.KeyCode == Keys.Up), e.Shift);
+                return;
+            }
+            else
+            {
+                switch (e.KeyCode)
+                {
+                    case Keys.Up:
+                        ScrollUpOrDown(true);
+                        break;
+                    case Keys.Down:
+                        ScrollUpOrDown(false);
+                        break;
+                }
+
+                switch (e.KeyCode)
+                {
+                    case Keys.Left:
+                        ScrollLeftOrRight(true);
+                        break;
+                    case Keys.Right:
+                        ScrollLeftOrRight(false);
+                        break;
+                }
             }
         }
 
@@ -671,6 +787,8 @@ namespace DnDCS.Server
         private void pbxMap_MouseDown(object sender, MouseEventArgs e)
         {
             if (this.loadedMap == null)
+                return;
+            if (isZoomFactorInProgress)
                 return;
 
             var doMouseDrag = false;
@@ -702,6 +820,8 @@ namespace DnDCS.Server
         {
             if (this.loadedMap == null)
                 return;
+            if (isZoomFactorInProgress)
+                return;
 
             var doMouseDrag = false;
 
@@ -711,12 +831,16 @@ namespace DnDCS.Server
 
                 if ((this.currentTool == this.btnFogAddTool || this.currentTool == this.btnFogRemoveTool) && isRemovingFog.HasValue)
                 {
+                    if (currentFogUpdate == null)
+                        return;
+
                     // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
                     if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
                         return;
                     lastMouseMoveTime = DateTime.Now;
 
                     // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
+                    Console.WriteLine(e.Location.Translate(this.scrollPosition).ToSimplePoint());
                     currentFogUpdate.Add(e.Location.Translate(this.scrollPosition).ToSimplePoint());
 
                     UpdateNewFogImage(currentFogUpdate);
@@ -761,7 +885,10 @@ namespace DnDCS.Server
         {
             if (this.loadedMap == null)
                 return;
-
+            if (isZoomFactorInProgress)
+                return;
+            if (currentFogUpdate == null)
+                return;
             if (e.Button != System.Windows.Forms.MouseButtons.Left)
                 return;
 
@@ -934,15 +1061,15 @@ namespace DnDCS.Server
 
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.loadedMap.Width < this.Width)
+            if (this.loadedMap.Width < this.pbxMap.Width)
                 desiredX = 0;
             else
-                desiredX = Math.Min(desiredX.Value, this.loadedMap.Width - this.Width);
+                desiredX = Math.Min(desiredX.Value, this.loadedMap.Width - this.pbxMap.Width);
 
-            if (this.loadedMap.Height < this.Height)
+            if (this.loadedMap.Height < this.pbxMap.Height)
                 desiredY = 0;
             else
-                desiredY = Math.Min(desiredY.Value, this.loadedMap.Height - this.Height);
+                desiredY = Math.Min(desiredY.Value, this.loadedMap.Height - this.pbxMap.Height);
 
             this.scrollPosition = new Point(desiredX.Value, desiredY.Value);
             pbxMap.Invalidate();
@@ -957,9 +1084,7 @@ namespace DnDCS.Server
 
             var g = e.Graphics;
 
-            // Force clipping to the visible area only. This clipping will be translated as needed in the subsequent calls, but ensures
-            // that we never try to draw beyond the visible area.
-            g.SetClip(new Rectangle(0, 0, this.Width, this.Height));
+            // Note that there's no reason to set clipping now because the Picture Box that we are drawing on is set to Fill and never grows beyond that.
 
             PaintMap(g);
             PaintGrid(g);
@@ -1044,23 +1169,18 @@ namespace DnDCS.Server
 
         private void PaintZoomFactorText(Graphics g)
         {
-            return;
-
-            string[] zoomMsgs = null;
             if (isZoomFactorInProgress)
-                zoomMsgs = new[] { string.Format("Zoom: {0}x", variableZoomFactor), ZoomInstructionMessage };
-            else if (isZoomFactorRunning)
-                zoomMsgs = new[] { string.Format("Zooming to {0}x...", variableZoomFactor) };
-            if (zoomMsgs != null)
             {
                 var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
+
+                var zoomMsgs = new[] { string.Format("Zoom: {0}x", variableZoomFactor) }.Concat(ZoomInstructionMessages).ToArray();
                 for (var i = 0; i < zoomMsgs.Length; i++)
                 {
                     // Draw each line one after the other, separating them by the height of the message, centered on the screen.
                     var msgSize = g.MeasureString(zoomMsgs[i], font);
                     var x = (this.pbxMap.Width / 2.0f) - (msgSize.Width / 2.0f);
                     var y = (this.pbxMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
-                    
+
                     g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
                 }
             }
