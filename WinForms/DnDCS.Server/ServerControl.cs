@@ -287,6 +287,7 @@ namespace DnDCS.Server
                             {
                                 var fogUpdates = fogData.Data.ToFogUpdate();
                                 this.UpdateFogImage(fogUpdates, false);
+                                connection.WriteFog(fog);
                                 this.pbxMap.Refresh();
                             }
                         }
