@@ -233,7 +233,8 @@ namespace DnDCS.Client
             // Take the point that we want to show, and center it on the client's UI.
             this.BeginInvoke(new Action(() =>
             {
-                SetScroll(centerMap.X - this.Width / 2, centerMap.Y - this.Height / 2);
+                // The point that came in is raw on the map, so we need to account for the client's zoom factor.
+                SetScroll((int)(centerMap.X * assignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * assignedZoomFactor) - this.Height / 2);
             }));
         }
 
@@ -552,11 +553,9 @@ namespace DnDCS.Client
             if (this.receivedMap == null)
                 return;
 
+            // Note that there's no reason to set clipping now because the Picture Box that we are drawing on is set to Fill and never grows beyond that.
             var g = e.Graphics;
-
-            // Force clipping to the visible area only. This clipping will be translated as needed in the subsequent calls, but ensures
-            // that we never try to draw beyond the visible area.
-            g.SetClip(new Rectangle(0, 0, this.Width, this.Height));
+            g.InterpolationMode = System.Drawing.Drawing2D.InterpolationMode.Low;
 
             if (this.isBlackoutOn)
             {
@@ -645,7 +644,7 @@ namespace DnDCS.Client
                     if (isBlackoutOn)
                         y += AssetsLoader.BlackoutImage.Height;
 
-                    g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
+                    g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
                 }
             }
         }

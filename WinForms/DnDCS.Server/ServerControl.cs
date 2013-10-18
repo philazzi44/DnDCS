@@ -1061,7 +1061,7 @@ namespace DnDCS.Server
                     var x = (this.pbxMap.Width / 2.0f) - (msgSize.Width / 2.0f);
                     var y = (this.pbxMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
                     
-                    g.DrawString(zoomMsgs[i], font, Brushes.White, x, y);
+                    g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
                 }
             }
         }
