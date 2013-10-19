@@ -32,6 +32,7 @@ namespace DnDCS.WinFormsLibs
         private bool showGrid;
         private int? gridSize;
         private Pen gridPen;
+        private int keyAcceleration = 5;
 
         public event Action<Keys> TryToggleFullScreen;
 
@@ -194,6 +195,24 @@ namespace DnDCS.WinFormsLibs
             ZoomImage(false);
         }
 
+        protected override bool IsInputKey(Keys keyData)
+        {
+            switch (keyData)
+            {
+                case Keys.Right:
+                case Keys.Left:
+                case Keys.Up:
+                case Keys.Down:
+                    return true;
+                case Keys.Shift | Keys.Right:
+                case Keys.Shift | Keys.Left:
+                case Keys.Shift | Keys.Up:
+                case Keys.Shift | Keys.Down:
+                    return true;
+            }
+            return base.IsInputKey(keyData);
+        }
+
         protected void HandleKeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.Oemplus && e.Control)
@@ -209,6 +228,30 @@ namespace DnDCS.WinFormsLibs
                 e.Handled = true;
                 return;
             }
+
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+            {
+                var deltaX = 0;
+                var deltaY = 0;
+
+                if (e.KeyCode == Keys.Up)
+                    deltaY = -1;
+                if (e.KeyCode == Keys.Down)
+                    deltaY = 1;
+                if (e.KeyCode == Keys.Left)
+                    deltaX = -1;
+                if (e.KeyCode == Keys.Right)
+                    deltaX = 1;
+
+                deltaY = deltaY * keyAcceleration;
+                deltaX = deltaX * keyAcceleration;
+
+                origin.X = (int)(origin.X + (deltaX / zoomFactor));
+                origin.Y = (int)(origin.Y + (deltaY / zoomFactor));
+                CheckBounds();
+                Invalidate();
+                keyAcceleration = Math.Min(100, keyAcceleration + 1);
+            }
         }
 
         protected void HandleKeyUp(object sender, KeyEventArgs e)
@@ -221,6 +264,18 @@ namespace DnDCS.WinFormsLibs
                 }
                 e.Handled = true;
                 return;
+            }
+
+            if (e.KeyCode == Keys.Up || e.KeyCode == Keys.Down || e.KeyCode == Keys.Left || e.KeyCode == Keys.Right)
+            {
+                keyAcceleration = 5;
+            }
+
+            if (e.KeyCode == Keys.Home)
+            {
+                origin.X = map.Width / 2 - Width / 2;
+                origin.Y = map.Height / 2 - Height / 2;
+                ZoomFactor = 1;
             }
         }
 
