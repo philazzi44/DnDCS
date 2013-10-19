@@ -322,10 +322,11 @@ namespace DnDCS.WinFormsLibs
 
                     if (IsPointInPolygon(points, offsetX, offsetY))
                     {
-                        row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 96);
+                        row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 0);
                     }
                 }
             }
+
             map.UnlockBits(bmd);
             Invalidate();
         }
