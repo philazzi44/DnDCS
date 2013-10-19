@@ -287,7 +287,9 @@ namespace DnDCS.WinFormsLibs
 
             ApplyFog(new[] {
                 new SimplePoint(0, 0),
-                new SimplePoint(map.Width, map.Height)
+                new SimplePoint(map.Width, 0),
+                new SimplePoint(map.Width, map.Height),
+                new SimplePoint(0, map.Height),
             }, false);
 
         }
@@ -309,11 +311,40 @@ namespace DnDCS.WinFormsLibs
                 var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
                 for (var x = 0; x < bmd.Width; x++)
                 {
-                    row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 96);
+                    var offsetX = x + boundingBoxBuffered.X;
+                    var offsetY = y + boundingBoxBuffered.Y;
+
+                    if (offsetX < boundingBox.X || offsetX > boundingBox.X + boundingBox.Width ||
+                        offsetY < boundingBox.Y || offsetY > boundingBox.Y + boundingBox.Height)
+                    {
+                        continue;
+                    }
+
+                    if (IsPointInPolygon(points, offsetX, offsetY))
+                    {
+                        row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 96);
+                    }
                 }
             }
             map.UnlockBits(bmd);
             Invalidate();
+        }
+
+        public bool IsPointInPolygon(SimplePoint[] polygon, float testx, float testy)
+        {
+            int nvert = polygon.Length;
+            var vertx = polygon.Select(x => (float)(x.X)).ToArray();
+            var verty = polygon.Select(x => (float)(x.Y)).ToArray();
+
+            int i, j = 0;
+            bool c = false;
+            for (i = 0, j = nvert - 1; i < nvert; j = i++)
+            {
+                if (((verty[i] > testy) != (verty[j] > testy)) &&
+                 (testx < (vertx[j] - vertx[i]) * (testy - verty[i]) / (verty[j] - verty[i]) + vertx[i]))
+                    c = !c;
+            }
+            return c;
         }
 
         private Rectangle GetBoundingBox(SimplePoint[] points, int buffer = 8)
