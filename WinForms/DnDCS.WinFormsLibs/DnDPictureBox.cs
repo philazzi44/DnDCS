@@ -489,11 +489,10 @@ namespace DnDCS.WinFormsLibs
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
-            //e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-            //e.Graphics.SmoothingMode = SmoothingMode.None;
-            //e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-
-            //e.Graphics.Clear(this.pbxMap.BackColor);
+            e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+            e.Graphics.SmoothingMode = SmoothingMode.None;
+            e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+            
             PaintAll(e.Graphics);
         }
 

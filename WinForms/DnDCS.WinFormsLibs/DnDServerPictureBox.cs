@@ -92,6 +92,8 @@ namespace DnDCS.WinFormsLibs
             centerMapPointDrawTimer = new Timer();
             centerMapPointDrawTimer.Tick += new EventHandler(centerMapPointDrawTimer_Tick);
             this.centerMapPointDrawTimer.Interval = 1000;
+
+            this.pbxMap.MouseDoubleClick += new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
 
         protected override ImageAttributes CreateFogAttributes()
