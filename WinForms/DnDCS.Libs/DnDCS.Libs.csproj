@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientSocketConnection.cs" />
+    <Compile Include="Clipper.cs" />
     <Compile Include="ConfigValues.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Persistence.cs" />

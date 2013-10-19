@@ -167,7 +167,12 @@ namespace DnDCS.Server
             if (loadedMap != null)
                 connection.WriteMap(loadedMap);
             if (fog != null)
-                connection.WriteFog(fog);
+            {
+                foreach (var update in this.allFogUpdates)
+                {
+                    connection.WriteFogUpdate(update);
+                }
+            }
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }
@@ -300,7 +305,10 @@ namespace DnDCS.Server
                             {
                                 var fogUpdates = fogData.Data.ToFogUpdate();
                                 this.UpdateFogImage(fogUpdates, false);
-                                connection.WriteFog(fog);
+                                foreach (var update in fogUpdates)
+                                {
+                                    connection.WriteFogUpdate(update);
+                                }
                                 this.pbxMap.Refresh();
                             }
                         }
@@ -356,7 +364,9 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = true;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                {
+                    connection.WriteFogUpdate(lastFogUpdate);
+                }
             }
         }
         
@@ -375,7 +385,9 @@ namespace DnDCS.Server
                 redoLastFogAction.Enabled = redoFogUpdates.Any();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                {
+                    connection.WriteFogUpdate(lastFogUpdate);
+                }
             }
         }
 
@@ -512,14 +524,19 @@ namespace DnDCS.Server
                 pbxMap.Refresh();
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(fog);
+                {
+                    connection.WriteFogUpdate(fogAllFogUpdate);
+                }
             }
         }
 
         private void btnSyncFog_Click(object sender, EventArgs e)
         {
             // TODO: More efficient to send the list of updates rather than the full fog map.
-            connection.WriteFog(fog);
+            foreach (var update in this.allFogUpdates)
+            {
+                connection.WriteFogUpdate(update);
+            }
         }
 
         private void btnLoadImage_Click(object sender, EventArgs e)

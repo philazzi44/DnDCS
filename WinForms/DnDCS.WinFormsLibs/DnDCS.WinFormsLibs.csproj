@@ -21,6 +21,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -53,6 +54,9 @@
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="DnDPictureBox.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DnDSparklesPictureBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
     <Compile Include="IDnDCSControl.cs" />
