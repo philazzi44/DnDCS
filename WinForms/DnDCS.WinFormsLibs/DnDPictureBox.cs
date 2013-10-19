@@ -145,16 +145,34 @@ namespace DnDCS.WinFormsLibs
 
         public virtual void SetMapAsync(Image newMap)
         {
+            if (newMap == null)
+                return;
+
+            var newFog = new Bitmap(newMap.Width, newMap.Height);
+            using (var g = Graphics.FromImage(newFog))
+                g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
+
             this.BeginInvoke(new Action(() =>
             {
                 var oldMap = this.LoadedMap;
+                var oldFog = this.Fog;
+
                 this.LoadedMap = newMap;
                 this.LoadedMapSize = newMap.Size;
+                this.Fog = newFog;
+                OnNewMapSet();
                 this.RefreshMapPictureBox();
 
                 if (oldMap != null)
                     oldMap.Dispose();
+                if (oldFog != null)
+                    oldFog.Dispose();
+
             }));
+        }
+        
+        protected virtual void OnNewMapSet()
+        {
         }
 
         public void SetGridSize(bool showGrid, int gridSize)

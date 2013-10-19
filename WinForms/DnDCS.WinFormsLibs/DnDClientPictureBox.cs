@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Windows.Forms;
 using System.Drawing;
-using System.Drawing.Imaging;
-using DnDCS.WinFormsLibs.Assets;
+using System.Linq;
 using DnDCS.Libs.SimpleObjects;
+using DnDCS.WinFormsLibs.Assets;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -38,34 +34,6 @@ namespace DnDCS.WinFormsLibs
         #endregion Init and Cleanup
 
         #region Setters
-
-        // TODO: This is 99% identical to the Server version
-        public override void SetMapAsync(Image newMap)
-        {
-            if (newMap == null)
-                return;
-
-            var newFog = new Bitmap(newMap.Width, newMap.Height);
-            using (var g = Graphics.FromImage(newFog))
-                g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
-
-            this.BeginInvoke(new Action(() =>
-            {
-                var oldMap = base.LoadedMap;
-                var oldFog = this.Fog;
-
-                base.LoadedMap = newMap;
-                base.LoadedMapSize = newMap.Size;
-                this.Fog = newFog;
-                base.RefreshMapPictureBox();
-
-                if (oldMap != null)
-                    oldMap.Dispose();
-                if (oldFog != null)
-                    oldFog.Dispose();
-
-            }));
-        }
 
         public void SetFogAsync(Image newFog)
         {
