@@ -7,9 +7,5 @@ namespace DnDCS.Libs
 {
     public static class Constants
     {
-        public const float ZoomStep = 0.1f;
-        public const float ZoomLargeStep = 0.2f;
-        public const float ScrollWheelStepScrollPercent = 0.05f;
-        public const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
     }
 }

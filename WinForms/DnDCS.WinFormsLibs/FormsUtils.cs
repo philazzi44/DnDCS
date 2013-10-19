@@ -96,5 +96,9 @@ namespace DnDCS.WinFormsLibs
             connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
         }
 
+        public static TransformedGraphics TranslateAndZoom(this Graphics g, Point scroll, float zoom)
+        {
+            return new TransformedGraphics(g, scroll, zoom);
+        }
     }
 }

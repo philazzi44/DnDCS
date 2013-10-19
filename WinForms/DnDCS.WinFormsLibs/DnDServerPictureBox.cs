@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Drawing;
+
+using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
 using System.Drawing.Imaging;
 using DnDCS.WinFormsLibs.Assets;
@@ -12,15 +14,15 @@ namespace DnDCS.WinFormsLibs
 {
     public class DnDServerPictureBox : DnDPictureBox
     {
-        public enum Tool
-        {
-            SelectTool,
-            FogAddTool,
-            FogRemoveTool,
-        }
+        private bool IsToolFogAddOrRemove { get { return (this.CurrentTool == DnDMapConstants.Tool.FogAddTool || this.CurrentTool == DnDMapConstants.Tool.FogRemoveTool); } }
 
-        private Tool currentTool;
-        public Tool CurrentTool
+        private DateTime lastMouseMoveDrawFogTime = DateTime.MinValue;
+
+        public event Action<FogUpdate> OnOneFogUpdatesChanged;
+        public event Action OnManyFogUpdatesChanged;
+
+        private DnDMapConstants.Tool currentTool;
+        public DnDMapConstants.Tool CurrentTool
         {
             get { return this.currentTool; }
             set
@@ -30,10 +32,10 @@ namespace DnDCS.WinFormsLibs
 
                 switch (this.currentTool)
                 {
-                    case Tool.SelectTool:
+                    case DnDMapConstants.Tool.SelectTool:
                         break;
-                    case Tool.FogAddTool:
-                    case Tool.FogRemoveTool:
+                    case DnDMapConstants.Tool.FogAddTool:
+                    case DnDMapConstants.Tool.FogRemoveTool:
                         this.pbxMap.Cursor = Cursors.Arrow;
                         this.IsRemovingFog = null;
                         break;
@@ -41,11 +43,15 @@ namespace DnDCS.WinFormsLibs
 
                 switch (value)
                 {
-                    case Tool.SelectTool:
+                    case DnDMapConstants.Tool.SelectTool:
                         break;
-                    case Tool.FogAddTool:
+                    case DnDMapConstants.Tool.FogAddTool:
+                        this.pbxMap.Cursor = Cursors.Cross;
+                        this.IsRemovingFog = false;
                         break;
-                    case Tool.FogRemoveTool:
+                    case DnDMapConstants.Tool.FogRemoveTool:
+                        this.pbxMap.Cursor = Cursors.Cross;
+                        this.IsRemovingFog = true;
                         break;
                 }
 
@@ -55,7 +61,6 @@ namespace DnDCS.WinFormsLibs
         
         private List<FogUpdate> allFogUpdates = new List<FogUpdate>();
 
-        public Bitmap Fog { get; private set; }
         private Bitmap newFog;
 
         private FogUpdate currentFogUpdate;
@@ -69,24 +74,7 @@ namespace DnDCS.WinFormsLibs
 
         private readonly Brush newFogClearBrush = Brushes.Red;
 
-        private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
-
-        /// <summary> This is the brush that is used to draw on the Fog bitmap. </summary>
-        private static readonly Brush FOG_BRUSH = Brushes.Black;
         private readonly Brush newFogBrush = Brushes.Gray;
-        private readonly ImageAttributes fogAttributes = new ImageAttributes();
-
-        private Pen gridPen;
-        public Pen GridPen
-        {
-            get { return this.gridPen; }
-            set
-            {
-                if (this.gridPen != null)
-                    this.gridPen.Dispose();
-                this.gridPen = value;
-            }
-        }
 
         /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
         private DateTime? centerMapImageAnimationStartTime;
@@ -97,9 +85,7 @@ namespace DnDCS.WinFormsLibs
         private Image centerMapImage;
         public event Action<SimplePoint> PerformCenterMap;
 
-        public DnDServerPictureBox()
-        { 
-        }
+        #region Init and Cleanup
 
         protected override void Initialize()
         {
@@ -110,6 +96,58 @@ namespace DnDCS.WinFormsLibs
             centerMapPointDrawTimer.Tick += new EventHandler(centerMapPointDrawTimer_Tick);
             this.centerMapPointDrawTimer.Interval = 1000;
         }
+
+        protected override ImageAttributes CreateFogAttributes()
+        {
+            // All colors are alpha blended by the alpha specified
+            float[][] fogMatrixItems = { new float[] {1, 0, 0, 0, 0},
+                                         new float[] {0, 1, 0, 0, 0},
+                                         new float[] {0, 0, 1, 0, 0},
+                                         new float[] {0, 0, 0, ((float)FogAlpha) / 255f, 0}, 
+                                         new float[] {0, 0, 0, 0, 1}
+                                    };
+            var fogAttributes = new ImageAttributes();
+            fogAttributes.SetColorMatrix(new ColorMatrix(fogMatrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+            fogAttributes.SetColorKey(DnDMapConstants.FOG_CLEAR_BRUSH.Color, DnDMapConstants.FOG_CLEAR_BRUSH.Color, ColorAdjustType.Bitmap);
+            return fogAttributes;
+        }
+
+        #endregion Init and Cleanup
+
+        #region Setters
+
+        // TODO: This is 99% identical to the Client version
+        public override void SetMapAsync(Image newMap)
+        {
+            if (newMap == null)
+                return;
+
+            var newFog = new Bitmap(newMap.Width, newMap.Height);
+            using (var g = Graphics.FromImage(newFog))
+                g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
+
+            this.BeginInvoke(new Action(() =>
+            {
+                var oldMap = base.LoadedMap;
+                var oldFog = this.Fog;
+                LoadedMap = newMap;
+                base.LoadedMap = newMap;
+                base.LoadedMapSize = newMap.Size;
+                this.Fog = newFog;
+                base.RefreshMapPictureBox();
+
+                if (oldMap != null)
+                    oldMap.Dispose();
+                if (oldFog != null)
+                    oldFog.Dispose();
+
+                allFogUpdates.Clear();
+            }));
+        }
+
+        #endregion Setters
+
+        #region Fog Actions
 
         public void TryUndoLastFogAction()
         {
@@ -151,6 +189,56 @@ namespace DnDCS.WinFormsLibs
             this.RefreshMapPictureBox();
         }
 
+        #endregion Fog Actions
+
+        #region Fog Updates
+
+        private void UpdateNewFogImage(FogUpdate fogUpdate)
+        {
+            using (var g = Graphics.FromImage(newFog))
+            {
+                g.FillPolygon((fogUpdate.IsClearing) ? newFogClearBrush : newFogBrush, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+            }
+        }
+
+        private void UpdateFogImage(FogUpdate fogUpdate)
+        {
+            UpdateFogImage(new[] { fogUpdate });
+        }
+
+        private void UpdateFogImage(FogUpdate[] fogUpdates)
+        {
+            using (var g = Graphics.FromImage(this.Fog))
+            {
+                foreach (var fogUpdate in fogUpdates)
+                {
+                    g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                }
+            }
+
+            allFogUpdates.AddRange(fogUpdates);
+
+            if (fogUpdates.Length == 1 && OnOneFogUpdatesChanged != null)
+                OnOneFogUpdatesChanged(fogUpdates[0]);
+            if (fogUpdates.Length > 1 && OnManyFogUpdatesChanged != null)
+                OnManyFogUpdatesChanged();
+        }
+
+
+        public void SetFogUpdates(FogUpdate[] fogUpdates)
+        {
+            using (var g = Graphics.FromImage(this.Fog))
+                g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
+
+            this.allFogUpdates.Clear();
+            UpdateFogImage(fogUpdates);
+            base.RefreshMapPictureBox();
+        }
+
+        #endregion Fog Updates
+
+        #region Map Events
+
         private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
         {
             if (this.LoadedMap == null)
@@ -170,22 +258,24 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        private Point lastDragPosition;
-
         protected override void HandleMouseDown(MouseEventArgs e)
         {
-            if (base.LoadedMap == null)
+            // Anything this override cannot handle will delegate to the base implementation.
+            if (base.LoadedMap == null ||
+                IsZoomFactorInProgress
+                || e.Button != System.Windows.Forms.MouseButtons.Left)
+            {
+                base.HandleMouseDown(e);
                 return;
-            if (IsZoomFactorInProgress)
-                return;
-
-            var doMouseDrag = false;
+            }
 
             if (e.Button == System.Windows.Forms.MouseButtons.Left)
             {
-                doMouseDrag = (this.CurrentTool == Tool.SelectTool);
-
-                if ((this.CurrentTool == Tool.FogAddTool || this.CurrentTool == Tool.FogRemoveTool) && IsRemovingFog.HasValue)
+                if (this.CurrentTool == DnDMapConstants.Tool.SelectTool)
+                {
+                    HandleMouseDown_DragMap(e);
+                }
+                else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
                 {
                     newFog = new Bitmap(Fog.Width, Fog.Height);
 
@@ -193,39 +283,34 @@ namespace DnDCS.WinFormsLibs
                     currentFogUpdate.Add(e.Location.Translate(base.ScrollPosition).ToSimplePoint());
                 }
             }
-            else if (e.Button == System.Windows.Forms.MouseButtons.Right)
-            {
-                doMouseDrag = (this.CurrentTool == Tool.SelectTool || ((this.CurrentTool == Tool.FogAddTool || this.CurrentTool == Tool.FogRemoveTool) && IsRemovingFog.HasValue));
-            }
-
-            if (doMouseDrag)
-            {
-                HandleMouseDown_DragMap(e);
-            }
         }
 
         protected override void HandleMouseMove(MouseEventArgs e)
         {
-            if (this.LoadedMap == null)
+            // Anything this override cannot handle will delegate to the base implementation.
+            if (base.LoadedMap == null ||
+                IsZoomFactorInProgress
+                || e.Button != System.Windows.Forms.MouseButtons.Left)
+            {
+                base.HandleMouseMove(e);
                 return;
-            if (IsZoomFactorInProgress)
-                return;
-
-            var doMouseDrag = false;
-
+            }
+            
             if (e.Button == MouseButtons.Left)
             {
-                doMouseDrag = (this.CurrentTool == Tool.SelectTool);
-
-                if ((this.CurrentTool == Tool.FogAddTool || this.CurrentTool == Tool.FogRemoveTool) && IsRemovingFog.HasValue)
+                if (this.CurrentTool == DnDMapConstants.Tool.SelectTool)
+                {
+                    HandleMouseMove_DragMap(e);
+                }
+                else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
                 {
                     if (currentFogUpdate == null)
                         return;
 
                     // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
-                    if (DateTime.Now - lastMouseMoveTime < MouseMoveInterval)
+                    if (DateTime.Now - lastMouseMoveDrawFogTime < DnDMapConstants.MouseMoveDrawFogInterval)
                         return;
-                    lastMouseMoveTime = DateTime.Now;
+                    lastMouseMoveDrawFogTime = DateTime.Now;
 
                     // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
                     Console.WriteLine(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
@@ -236,29 +321,21 @@ namespace DnDCS.WinFormsLibs
                     pbxMap.Invalidate();
                 }
             }
-            else if (e.Button == MouseButtons.Right)
-            {
-                doMouseDrag = true;
-            }
-
-            if (doMouseDrag)
-            {
-                HandleMouseMove_DragMap(e);
-            }
         }
 
-        protected void HandleMouseUp(object sender, MouseEventArgs e)
+        protected override void HandleMouseUp(MouseEventArgs e)
         {
-            if (this.LoadedMap == null)
+            // Anything this override cannot handle will delegate to the base implementation.
+            if (base.LoadedMap == null || 
+                IsZoomFactorInProgress || 
+                currentFogUpdate == null
+                || e.Button != System.Windows.Forms.MouseButtons.Left)
+            {
+                base.HandleMouseUp(e);
                 return;
-            if (IsZoomFactorInProgress)
-                return;
-            if (currentFogUpdate == null)
-                return;
-            if (e.Button != System.Windows.Forms.MouseButtons.Left)
-                return;
+            }
 
-            if ((this.CurrentTool == Tool.FogAddTool || this.CurrentTool == Tool.FogRemoveTool) && IsRemovingFog.HasValue)
+            if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
             {
                 var toBeDisposedFog = newFog;
                 newFog = null;
@@ -271,19 +348,69 @@ namespace DnDCS.WinFormsLibs
                 currentFogUpdate.Add(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
                 if (currentFogUpdate.Length >= 3)
                 {
-                    UpdateFogImage(currentFogUpdate);
                     undoFogUpdates.AddLast(currentFogUpdate);
+                    UpdateFogImage(currentFogUpdate);
+                    base.RefreshMapPictureBox();
 
-                    if (OnFogUpdateAdded != null)
-                        OnFogUpdateAdded(currentFogUpdate);
-
-                    this.RefreshMapPictureBox();
-                    
                     currentFogUpdate = null;
+                }
+            }
+            else
+            {
+                base.HandleMouseUp(e);
+            }
+        }
+
+        #endregion Map Events
+
+        #region Painting
+
+        protected override void PaintAll(Graphics g)
+        {
+            using (var transformedGraphics = TranslateAndZoom(g))
+            {
+                PaintMap(transformedGraphics);
+                PaintGrid(transformedGraphics);
+                PaintFog(transformedGraphics);
+                PaintNewfog(transformedGraphics);
+            }
+
+            PaintCenterMapOverlayIcon(g);
+            PaintZoomFactorText(g);
+        }
+
+        private void PaintNewfog(TransformedGraphics g)
+        {
+            if (this.newFog != null)
+            {
+                g.Graphics.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, base.FogAttributes);
+            }
+        }
+
+        private void PaintCenterMapOverlayIcon(Graphics graphics)
+        {
+            if (centerMapImage != null && lastCenterMapPoint.HasValue)
+            {
+                // Draw it at the location, so that the bottom/center is at the centered point.
+                using (var g = Translate(graphics))
+                {
+                    g.Graphics.DrawImage(centerMapImage, lastCenterMapPoint.Value.Translate(-(centerMapImage.Width / 2), -centerMapImage.Height));
                 }
             }
         }
 
-        public event Action<FogUpdate> OnFogUpdateAdded;
+        #endregion Painting
+
+        private void centerMapPointDrawTimer_Tick(object sender, EventArgs e)
+        {
+            if (centerMapImage == null || !centerMapImageAnimationStartTime.HasValue || !lastCenterMapPoint.HasValue
+                   || (centerMapImageAnimationStartTime.Value + centerMapImageAnimationDuration < DateTime.Now))
+            {
+                centerMapImageAnimationStartTime = null;
+                lastCenterMapPoint = null;
+                centerMapPointDrawTimer.Enabled = false;
+            }
+            base.RefreshMapPictureBox();
+        }
     }
 }

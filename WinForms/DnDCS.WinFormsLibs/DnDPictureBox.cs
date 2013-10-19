@@ -6,45 +6,79 @@ using System.Windows.Forms;
 using System.Drawing;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
+using System.Drawing.Imaging;
 
 namespace DnDCS.WinFormsLibs
 {
     public partial class DnDPictureBox : UserControl
     {
+        // Init Values
+        private bool isInitialized;
+
+        // Map Values
         public Image LoadedMap { get; protected set; }
         protected Size LoadedMapSize { get; set; }
         private int LogicalMapWidth { get { return (int)(LoadedMapSize.Width * AssignedZoomFactor); } }
         private int LogicalMapHeight { get { return (int)(LoadedMapSize.Height * AssignedZoomFactor); } }
 
+        // Grid Values
         private int? gridSize;
-        private Pen gridPen;
+        private Pen gridPen = new Pen(Color.Aqua);
+        public Pen GridPen
+        {
+            get { return this.gridPen; }
+            set
+            {
+                if (this.gridPen != null)
+                    this.gridPen.Dispose();
+                this.gridPen = value;
+            }
+        }
 
+        // Fog Values
+        private byte fogAlpha;
+        public byte FogAlpha
+        {
+            get { return this.fogAlpha; }
+            set
+            {
+                this.fogAlpha = value;
+                if (isInitialized)
+                    this.FogAttributes = CreateFogAttributes();
+            }
+        }
+
+        public Image Fog { get; protected set; }
+
+        // Zoom Values
+        public bool AllowZoom { get; set; }
         private float assignedZoomFactor = 1.0f;
         protected float AssignedZoomFactor { get { return this.assignedZoomFactor; } private set { this.assignedZoomFactor = value; } }
         private float variableZoomFactor = 1.0f;
         protected bool IsZoomFactorInProgress { get; private set; }
         private Font zoomFactorFont;
+        protected virtual int ZoomFactorTextYOffset { get { return 0; } }
         private static readonly string[] ZoomInstructionMessages = new[] {
                                                                             "Press Enter or Left Click to commit the zoom factor.",
                                                                             "Press Escape or Right Click to cancel."
                                                                          };
 
+
+        // Scroll Values
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
 
-        protected virtual int ZoomFactorTextYOffset { get { return 0; } }
+        // Paint Values
+        protected ImageAttributes FogAttributes { get; set; }
 
+        // Callbacks
         public event Action<Keys> TryToggleFullScreen;
 
-        public bool AllowZoom { get; set; }
+        #region Init and Cleanup
 
         public DnDPictureBox()
         {
             this.InitializeComponent();
-        }
-
-        protected virtual void Initialize()
-        { 
         }
 
         public void Init()
@@ -52,6 +86,8 @@ namespace DnDCS.WinFormsLibs
             this.BackColor = Color.Black;
 
             this.zoomFactorFont = new Font(SystemFonts.DefaultFont.FontFamily, 24.0f);
+
+            this.FogAttributes = CreateFogAttributes();
 
             this.Initialize();
 
@@ -66,11 +102,32 @@ namespace DnDCS.WinFormsLibs
             this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
             this.pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
             this.pbxMap.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.pbxMap_PreviewKeyDown);
+
+            isInitialized = true;
         }
 
-        private void pbxMap_LostFocus(object sender, EventArgs e)
+        protected virtual void Initialize()
+        { 
+        }
+
+        protected virtual ImageAttributes CreateFogAttributes()
         {
-            this.pbxMap.Focus();
+            var fogAttributes = new ImageAttributes();
+
+            if (FogAlpha != 255)
+            {
+                // All colors are alpha blended by the alpha specified
+                float[][] fogMatrixItems = {
+                                               new float[] { 1, 0, 0, 0, 0 },
+                                               new float[] { 0, 1, 0, 0, 0 },
+                                               new float[] { 0, 0, 1, 0, 0 },
+                                               new float[] { 0, 0, 0, ((float)FogAlpha) / 255f, 0 },
+                                               new float[] { 0, 0, 0, 0, 1 }
+                                           };
+                fogAttributes.SetColorMatrix(new ColorMatrix(fogMatrixItems), ColorMatrixFlag.Default, ColorAdjustType.Bitmap);
+            }
+            fogAttributes.SetColorKey(DnDMapConstants.FOG_CLEAR_BRUSH.Color, DnDMapConstants.FOG_CLEAR_BRUSH.Color, ColorAdjustType.Bitmap);
+            return fogAttributes;
         }
 
         protected override void Dispose(bool disposing)
@@ -82,13 +139,21 @@ namespace DnDCS.WinFormsLibs
             base.Dispose(disposing);
         }
 
+        #endregion Init and Cleanup
+
+        #region Setters
+
         public virtual void SetMapAsync(Image newMap)
         {
             this.BeginInvoke(new Action(() =>
             {
+                var oldMap = this.LoadedMap;
                 this.LoadedMap = newMap;
                 this.LoadedMapSize = newMap.Size;
                 this.RefreshMapPictureBox();
+
+                if (oldMap != null)
+                    oldMap.Dispose();
             }));
         }
 
@@ -107,7 +172,14 @@ namespace DnDCS.WinFormsLibs
             RefreshMapPictureBox();
         }
 
+        #endregion Setters
+
         #region Map Events
+
+        private void pbxMap_LostFocus(object sender, EventArgs e)
+        {
+            this.pbxMap.Focus();
+        }
 
         public void RefreshMapPictureBox(bool immediateRefresh = false)
         {
@@ -238,6 +310,7 @@ namespace DnDCS.WinFormsLibs
             HandleMouseMove(e);
         }
 
+        /// <summary> By default, scroll drags for left/right buttons. Override to change this behavior. </summary>
         protected virtual void HandleMouseMove(MouseEventArgs e)
         {
             if (this.LoadedMap == null)
@@ -286,6 +359,8 @@ namespace DnDCS.WinFormsLibs
 
         protected virtual void HandleMouseUp(MouseEventArgs e)
         {
+            if (this.LoadedMap == null)
+                return;
             if (IsZoomFactorInProgress)
                 return;
 
@@ -307,9 +382,9 @@ namespace DnDCS.WinFormsLibs
                 return;
 
             if (zoomIn)
-                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
             else
-                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? Constants.ZoomLargeStep : Constants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
 
             IsZoomFactorInProgress = true;
 
@@ -342,9 +417,9 @@ namespace DnDCS.WinFormsLibs
             // Scroll left/right
             int newValue;
             if (isLeft)
-                newValue = this.ScrollPosition.X - (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.X - (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
             else
-                newValue = this.ScrollPosition.X + (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.X + (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
             SetScroll(newValue, null);
         }
 
@@ -353,9 +428,9 @@ namespace DnDCS.WinFormsLibs
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.ScrollPosition.Y - (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.Y - (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
             else
-                newValue = this.ScrollPosition.Y + (distance ?? (int)(pbxMap.Width * Constants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.Y + (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
             SetScroll(null, newValue);
         }
 
@@ -398,44 +473,52 @@ namespace DnDCS.WinFormsLibs
             PaintAll(e.Graphics);
         }
 
-        protected virtual void PaintAll(Graphics g)
+        protected virtual void PaintAll(Graphics graphics)
         {
             throw new NotImplementedException("Must be overridden.");
         }
 
-        protected void PaintMap(Graphics g)
+        protected void PaintMap(TransformedGraphics g)
         {
             if (this.LoadedMap != null)
             {
-                g.TranslateTransform(-this.ScrollPosition.X, -this.ScrollPosition.Y);
-                g.ScaleTransform(AssignedZoomFactor, AssignedZoomFactor);
-                {
-                    g.DrawImage(this.LoadedMap, Point.Empty);
-                }
-                g.ResetTransform();
+                g.Graphics.DrawImage(this.LoadedMap, Point.Empty);
             }
         }
 
-        protected void PaintGrid(Graphics g)
+        protected void PaintGrid(TransformedGraphics g)
         {
             // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
             // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
             if (gridSize.HasValue)
             {
-                g.TranslateTransform(-this.ScrollPosition.X, -this.ScrollPosition.Y);
-                g.ScaleTransform(AssignedZoomFactor, AssignedZoomFactor);
+                for (int x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
                 {
-                    for (int x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
-                    {
-                        g.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
-                    }
-                    for (int y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
-                    {
-                        g.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
-                    }
+                    g.Graphics.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
                 }
-                g.ResetTransform();
+                for (int y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
+                {
+                    g.Graphics.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
+                }
             }
+        }
+
+        protected void PaintFog(TransformedGraphics g)
+        {
+            if (Fog != null)
+            {
+                g.Graphics.DrawImage(Fog, new Rectangle(0, 0, LoadedMapSize.Width, LoadedMapSize.Height), 0, 0, Fog.Width, Fog.Height, GraphicsUnit.Pixel, this.FogAttributes);
+            }
+        }
+
+        protected TransformedGraphics Translate(Graphics g)
+        {
+            return g.TranslateAndZoom(this.ScrollPosition, 1.0f);
+        }
+
+        protected TransformedGraphics TranslateAndZoom(Graphics g)
+        {
+            return g.TranslateAndZoom(this.ScrollPosition, AssignedZoomFactor);
         }
 
         protected void PaintZoomFactorText(Graphics g)

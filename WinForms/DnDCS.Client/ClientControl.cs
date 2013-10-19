@@ -15,11 +15,14 @@ namespace DnDCS.Client
 {
     public partial class ClientControl : UserControl, IDnDCSControl
     {
-        private MenuItem fullScreenMenuItem;
+        // Parent Form Communication
         public Action<bool> ToggleFullScreen { get; set; }
-
         private string initialParentFormText;
 
+        // Menu References
+        private MenuItem fullScreenMenuItem;
+
+        // Client Connection
         private ClientSocketConnection connection;
 
         #region Init and Cleanup
@@ -35,8 +38,8 @@ namespace DnDCS.Client
 
             this.Disposed += new EventHandler(ClientControl_Disposed);
 
-            this.ctlDnDMap.Init();
             this.ctlDnDMap.TryToggleFullScreen += new Action<Keys>(ctlDnDMap_TryToggleFullScreen);
+            this.ctlDnDMap.Init();
 
             Connect();
         }
@@ -154,7 +157,6 @@ namespace DnDCS.Client
         private void connection_OnBlackoutReceived(bool isBlackoutOn)
         {
             this.ctlDnDMap.IsBlackoutOn = isBlackoutOn;
-            this.ctlDnDMap.RefreshMapPictureBox();
         }
 
         private void connection_OnMapReceived(SimpleImage mapImage)
@@ -173,7 +175,7 @@ namespace DnDCS.Client
 
         private void connection_OnCenterMapReceived(SimplePoint centerMap)
         {
-            this.ctlDnDMap.CenterMap(centerMap);
+            this.ctlDnDMap.SetCenterMap(centerMap);
         }
 
         private void connection_OnFogReceived(SimpleImage fogImage)

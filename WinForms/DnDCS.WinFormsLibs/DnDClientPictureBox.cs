@@ -12,68 +12,58 @@ namespace DnDCS.WinFormsLibs
 {
     public class DnDClientPictureBox : DnDPictureBox
     {
-        private Image fog;
-
-        public bool IsBlackoutOn { get; set; }
-
-        private readonly ImageAttributes fogAttributes = new ImageAttributes();
-        private readonly SolidBrush fogClearBrush = new SolidBrush(Color.White);
-        private readonly Brush fogBrush = Brushes.Black;
-        private readonly Color fogColor = Color.Black;
+        private bool isBlackoutOn;
+        public bool IsBlackoutOn
+        {
+            get { return this.isBlackoutOn; }
+            set
+            {
+                this.isBlackoutOn = value;
+                this.RefreshMapPictureBox();
+            }
+        }
 
         // If we're also showing the Blackout image, then show the text beneath it.
         protected override int ZoomFactorTextYOffset { get { return (IsBlackoutOn) ? AssetsLoader.BlackoutImage.Height : 0; } }
+
+        #region Init and Cleanup
         
-        public DnDClientPictureBox()
-        { 
-            
-        }
-
-        protected override void Initialize()
-        {
-            base.Initialize();
-
-            fogAttributes.SetColorKey(fogClearBrush.Color, fogClearBrush.Color, ColorAdjustType.Bitmap);
-        }
-
         protected override void Dispose(bool disposing)
         {
-            if (fog != null)
-                fog.Dispose();
+            if (Fog != null)
+                Fog.Dispose();
             base.Dispose(disposing);
         }
 
-        protected override void PaintAll(Graphics g)
-        {
-            if (this.IsBlackoutOn)
-            {
-                PaintBlackout(g);
-            }
-            else
-            {
-                if (this.LoadedMap == null)
-                    return;
+        #endregion Init and Cleanup
 
-                PaintMap(g);
-                PaintGrid(g);
-                PaintFog(g);
+        #region Setters
 
-                PaintZoomFactorText(g);
-            }
-        }
-
+        // TODO: This is 99% identical to the Server version
         public override void SetMapAsync(Image newMap)
         {
+            if (newMap == null)
+                return;
+
             var newFog = new Bitmap(newMap.Width, newMap.Height);
             using (var g = Graphics.FromImage(newFog))
-                g.Clear(fogColor);
+                g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
 
             this.BeginInvoke(new Action(() =>
             {
+                var oldMap = base.LoadedMap;
+                var oldFog = this.Fog;
+
                 base.LoadedMap = newMap;
                 base.LoadedMapSize = newMap.Size;
-                this.fog = newFog;
+                this.Fog = newFog;
                 base.RefreshMapPictureBox();
+
+                if (oldMap != null)
+                    oldMap.Dispose();
+                if (oldFog != null)
+                    oldFog.Dispose();
+
             }));
         }
 
@@ -81,7 +71,7 @@ namespace DnDCS.WinFormsLibs
         {
             this.BeginInvoke(new Action(() =>
             {
-                this.fog = newFog;
+                this.Fog = newFog;
                 RefreshMapPictureBox();
             }));
         }
@@ -89,26 +79,26 @@ namespace DnDCS.WinFormsLibs
         public void SetFogUpdateAsync(FogUpdate fogUpdate)
         {
             Image fogImageToUpdate;
-            var isNewFogImage = (this.fog == null);
+            var isNewFogImage = (this.Fog == null);
             if (isNewFogImage)
                 fogImageToUpdate = new Bitmap(base.LoadedMapSize.Width, base.LoadedMapSize.Height);
             else
-                fogImageToUpdate = this.fog;
+                fogImageToUpdate = this.Fog;
 
             using (var g = Graphics.FromImage(fogImageToUpdate))
             {
                 if (isNewFogImage)
-                    g.FillRectangle(fogBrush, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
-                g.FillPolygon((fogUpdate.IsClearing) ? fogClearBrush : fogBrush, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                    g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
+                g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
             }
 
             if (isNewFogImage)
-                this.fog = fogImageToUpdate;
+                this.Fog = fogImageToUpdate;
 
             RefreshMapPictureBox();
         }
 
-        public void CenterMap(SimplePoint centerMap)
+        public void SetCenterMap(SimplePoint centerMap)
         {
             // Take the point that we want to show, and center it on the client's UI.
             this.BeginInvoke(new Action(() =>
@@ -118,6 +108,29 @@ namespace DnDCS.WinFormsLibs
             }));
         }
 
+        #endregion Setters
+
+        #region Painting
+
+        protected override void PaintAll(Graphics g)
+        {
+            if (this.IsBlackoutOn)
+            {
+                PaintBlackout(g);
+            }
+            else
+            {
+                using (var transformedGraphics = TranslateAndZoom(g))
+                {
+                    PaintMap(transformedGraphics);
+                    PaintGrid(transformedGraphics);
+                    PaintFog(transformedGraphics);
+                }
+
+                PaintZoomFactorText(g);
+            }
+        }
+
         private void PaintBlackout(Graphics g)
         {
             // Draw the Blackout Image in the center.
@@ -125,18 +138,6 @@ namespace DnDCS.WinFormsLibs
             g.DrawImage(AssetsLoader.BlackoutImage, this.pbxMap.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.pbxMap.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
         }
 
-        private void PaintFog(Graphics g)
-        {
-            if (fog != null)
-            {
-                g.TranslateTransform(-this.ScrollPosition.X, -this.ScrollPosition.Y);
-                g.ScaleTransform(AssignedZoomFactor, AssignedZoomFactor);
-                {
-                    g.DrawImage(fog, new Rectangle(0, 0, LoadedMapSize.Width, LoadedMapSize.Height), 0, 0, fog.Width, fog.Height, GraphicsUnit.Pixel, fogAttributes);
-                }
-                g.ResetTransform();
-            }
-        }
-
+        #endregion Painting
     }
 }
