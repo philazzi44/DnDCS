@@ -28,6 +28,7 @@ namespace DnDCS.WinFormsLibs
         private int drawWidth;
         private int drawHeight;
         private Point centerPoint;
+        private static object lockObject = new object();
 
         public event Action<Keys> TryToggleFullScreen;
 
@@ -43,25 +44,29 @@ namespace DnDCS.WinFormsLibs
             get { return map; }
             set
             {
-                if (map != null)
+                lock (lockObject)
                 {
-                    map.Dispose();
-                    origin = new Point(0, 0);
-                    apparentSize = new Size(0, 0);
-                    zoomFactor = 1;
-                    GC.Collect();
+                    if (map != null)
+                    {
+                        map.Dispose();
+                        origin = new Point(0, 0);
+                        apparentSize = new Size(0, 0);
+                        zoomFactor = 1;
+                        GC.Collect();
+                    }
+
+                    if (value == null)
+                    {
+                        map = null;
+                        Invalidate();
+                        return;
+                    }
+
+                    var r = new Rectangle(0, 0, value.Width, value.Height);
+                    map = new Bitmap(value);
+                    map = map.Clone(r, PixelFormat.Format32bppArgb);
                 }
 
-                if (value == null)
-                {
-                    map = null;
-                    Invalidate();
-                    return;
-                }
-
-                var r = new Rectangle(0, 0, value.Width, value.Height);
-                map = new Bitmap(value);
-                map = map.Clone(r, PixelFormat.Format32bppArgb);
                 ApplyFullFog();
                 Invalidate();
             }
@@ -313,45 +318,48 @@ namespace DnDCS.WinFormsLibs
             var boundingBoxBuffered = GetBoundingBox(offsetPoints, 4);
             var boundingBox = GetBoundingBox(points, 0);
 
-            var bmd = map.LockBits(boundingBoxBuffered, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-            var pixelSize = 4;
-            Parallel.For(0, bmd.Height, (y) =>
+            lock (lockObject)
             {
-                var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
-                for (var x = 0; x < bmd.Width; x++)
+                var bmd = map.LockBits(boundingBoxBuffered, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+                var pixelSize = 4;
+                Parallel.For(0, bmd.Height, (y) =>
                 {
-                    var offsetX = x + boundingBoxBuffered.X;
-                    var offsetY = y + boundingBoxBuffered.Y;
+                    var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
+                    for (var x = 0; x < bmd.Width; x++)
+                    {
+                        var offsetX = x + boundingBoxBuffered.X;
+                        var offsetY = y + boundingBoxBuffered.Y;
 
-                    if (isClearing && row[x *pixelSize + 3] == 255)
-                    {
-                        continue;
-                    }
-
-                    if (IsPointInPolygon(points, offsetX, offsetY))
-                    {
-                        row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 0);
-                    }
-                    else if (isClearing && IsPointInPolygon(offsetPoints, offsetX, offsetY))
-                    {
-                        var testPoint = new SimplePoint(offsetX, offsetY);
-                        var dist = LineToPointDistance2D(points[0], points[1], testPoint);
-                        for (int i = 0, j = points.Length - 1; i < points.Length; j = i++)
+                        if (isClearing && row[x * pixelSize + 3] == 255)
                         {
-                            var newDist = LineToPointDistance2D(points[j], points[i], testPoint);
-                            if (newDist < dist)
-                                dist = newDist;
+                            continue;
                         }
 
-                        var alpha = (255 - 5.5 * dist);
-                        alpha = Math.Max(Math.Floor(alpha), 0);
-                        alpha = Math.Min(alpha + row[x * pixelSize + 3], 255);
-                        row[x * pixelSize + 3] = (byte)(alpha);
-                    }
-                }
-            });
+                        if (IsPointInPolygon(points, offsetX, offsetY))
+                        {
+                            row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 0);
+                        }
+                        else if (isClearing && IsPointInPolygon(offsetPoints, offsetX, offsetY))
+                        {
+                            var testPoint = new SimplePoint(offsetX, offsetY);
+                            var dist = LineToPointDistance2D(points[0], points[1], testPoint);
+                            for (int i = 0, j = points.Length - 1; i < points.Length; j = i++)
+                            {
+                                var newDist = LineToPointDistance2D(points[j], points[i], testPoint);
+                                if (newDist < dist)
+                                    dist = newDist;
+                            }
 
-            map.UnlockBits(bmd);
+                            var alpha = (255 - 5.5 * dist);
+                            alpha = Math.Max(Math.Floor(alpha), 0);
+                            alpha = Math.Min(alpha + row[x * pixelSize + 3], 255);
+                            row[x * pixelSize + 3] = (byte)(alpha);
+                        }
+                    }
+                });
+
+                map.UnlockBits(bmd);
+            }
             Invalidate();
         }
 
@@ -447,12 +455,15 @@ namespace DnDCS.WinFormsLibs
                 return;
             }
 
-            g.PixelOffsetMode = PixelOffsetMode.Half;
-            g.SmoothingMode = SmoothingMode.None;
-            g.InterpolationMode = InterpolationMode.NearestNeighbor;
+            lock (lockObject)
+            {
+                g.PixelOffsetMode = PixelOffsetMode.Half;
+                g.SmoothingMode = SmoothingMode.None;
+                g.InterpolationMode = InterpolationMode.NearestNeighbor;
 
-            sourceRect = new Rectangle(origin.X, origin.Y, drawWidth, drawHeight);
-            g.DrawImage(map, destRect, sourceRect, GraphicsUnit.Pixel);
+                sourceRect = new Rectangle(origin.X, origin.Y, drawWidth, drawHeight);
+                g.DrawImage(map, destRect, sourceRect, GraphicsUnit.Pixel);
+            }
         }
 
         private void ZoomImage(bool zoomIn = true)

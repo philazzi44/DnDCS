@@ -167,7 +167,13 @@ namespace DnDCS.Server
             if (loadedMap != null)
                 connection.WriteMap(loadedMap);
             if (fog != null)
+            {
                 connection.WriteFog(fog);
+                foreach (var update in this.allFogUpdates)
+                {
+                    connection.WriteFogUpdate(update);
+                }
+            }
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(gridPen.Color.ToSocketColor());
         }
@@ -301,6 +307,10 @@ namespace DnDCS.Server
                                 var fogUpdates = fogData.Data.ToFogUpdate();
                                 this.UpdateFogImage(fogUpdates, false);
                                 connection.WriteFog(fog);
+                                foreach (var update in fogUpdates)
+                                {
+                                    connection.WriteFogUpdate(update);
+                                }
                                 this.pbxMap.Refresh();
                             }
                         }
