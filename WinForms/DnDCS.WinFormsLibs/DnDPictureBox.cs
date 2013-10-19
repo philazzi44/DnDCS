@@ -7,6 +7,7 @@ using System.Drawing;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
 using System.Drawing.Imaging;
+using System.Drawing.Drawing2D;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -36,7 +37,7 @@ namespace DnDCS.WinFormsLibs
         }
 
         // Fog Values
-        private byte fogAlpha;
+        private byte fogAlpha = 255;
         public byte FogAlpha
         {
             get { return this.fogAlpha; }
@@ -152,7 +153,7 @@ namespace DnDCS.WinFormsLibs
             using (var g = Graphics.FromImage(newFog))
                 g.Clear(DnDMapConstants.FOG_BRUSH_COLOR);
 
-            this.BeginInvoke(new Action(() =>
+            this.Invoke(new Action(() =>
             {
                 var oldMap = this.LoadedMap;
                 var oldFog = this.Fog;
@@ -488,6 +489,11 @@ namespace DnDCS.WinFormsLibs
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         private void pbxMap_Paint(object sender, PaintEventArgs e)
         {
+            //e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+            //e.Graphics.SmoothingMode = SmoothingMode.None;
+            //e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+
+            //e.Graphics.Clear(this.pbxMap.BackColor);
             PaintAll(e.Graphics);
         }
 
@@ -525,7 +531,7 @@ namespace DnDCS.WinFormsLibs
         {
             if (Fog != null)
             {
-                g.Graphics.DrawImage(Fog, new Rectangle(0, 0, LoadedMapSize.Width, LoadedMapSize.Height), 0, 0, Fog.Width, Fog.Height, GraphicsUnit.Pixel, this.FogAttributes);
+                g.Graphics.DrawImage(Fog, new Rectangle(0, 0, Fog.Width, Fog.Height), 0, 0, Fog.Width, Fog.Height, GraphicsUnit.Pixel, this.FogAttributes);
             }
         }
 

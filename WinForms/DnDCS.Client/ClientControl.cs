@@ -39,6 +39,7 @@ namespace DnDCS.Client
             this.Disposed += new EventHandler(ClientControl_Disposed);
 
             this.ctlDnDMap.TryToggleFullScreen += new Action<Keys>(ctlDnDMap_TryToggleFullScreen);
+            this.ctlDnDMap.AllowZoom = true;
             this.ctlDnDMap.Init();
 
             Connect();

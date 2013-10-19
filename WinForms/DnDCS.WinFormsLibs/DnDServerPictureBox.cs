@@ -345,14 +345,14 @@ namespace DnDCS.WinFormsLibs
                 PaintMap(transformedGraphics);
                 PaintGrid(transformedGraphics);
                 PaintFog(transformedGraphics);
-                PaintNewfog(transformedGraphics);
+                PaintNewFog(transformedGraphics);
             }
 
             PaintCenterMapOverlayIcon(g);
             PaintZoomFactorText(g);
         }
 
-        private void PaintNewfog(TransformedGraphics g)
+        private void PaintNewFog(TransformedGraphics g)
         {
             if (this.newFog != null)
             {

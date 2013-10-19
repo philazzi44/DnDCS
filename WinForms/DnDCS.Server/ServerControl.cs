@@ -415,14 +415,16 @@ namespace DnDCS.Server
             serverData.ShowGrid = this.chkShowGrid.Checked;
             Persistence.SaveServerData(serverData);
 
-            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+            if (connection != null)
+                connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
             this.ctlDnDMap.RefreshMapPictureBox();
         }
 
         private void nudGridSize_ValueChanged(object sender, EventArgs e)
         {
-            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+            if (connection != null)
+                connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
             this.ctlDnDMap.RefreshMapPictureBox();
         }
