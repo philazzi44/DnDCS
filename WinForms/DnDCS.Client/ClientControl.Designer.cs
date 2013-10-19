@@ -28,16 +28,22 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.ctlDnDMap = new DnDCS.WinFormsLibs.DnDClientPictureBox();
+            this.ctlDnDMap = new DnDCS.WinFormsLibs.DnDSparklesPictureBox();
             this.SuspendLayout();
             // 
             // ctlDnDMap
             // 
-            this.ctlDnDMap.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.ctlDnDMap.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ctlDnDMap.BackColor = System.Drawing.Color.Black;
+            this.ctlDnDMap.Fog = null;
+            this.ctlDnDMap.IsBlackoutOn = false;
             this.ctlDnDMap.Location = new System.Drawing.Point(0, 0);
+            this.ctlDnDMap.Map = null;
             this.ctlDnDMap.Name = "ctlDnDMap";
-            this.ctlDnDMap.Size = new System.Drawing.Size(640, 480);
-            this.ctlDnDMap.TabIndex = 2;
+            this.ctlDnDMap.Size = new System.Drawing.Size(634, 477);
+            this.ctlDnDMap.TabIndex = 0;
             // 
             // ClientControl
             // 
@@ -53,7 +59,9 @@
 
         #endregion
 
-        private WinFormsLibs.DnDClientPictureBox ctlDnDMap;
+        private WinFormsLibs.DnDSparklesPictureBox ctlDnDMap;
+
+
 
     }
 }

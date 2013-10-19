@@ -163,7 +163,8 @@ namespace DnDCS.Client
             {
                 // Since we received a new map, we'll automatically black out everything with fog until the Server tells us otherwise.
                 var newMap = mapImage.Bytes.ToImage();
-                this.ctlDnDMap.SetMapAsync(newMap);
+                //this.ctlDnDMap.SetMapAsync(newMap);
+                ctlDnDMap.Map = mapImage.Bytes.ToImage();
             }
             catch (Exception e)
             {
