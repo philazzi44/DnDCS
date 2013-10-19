@@ -23,12 +23,15 @@ namespace DnDCS.WinFormsLibs
         private Graphics gfx;
         private Rectangle sourceRect;
         private Rectangle destRect;
-        private double zoomFactor;
+        private float zoomFactor;
         private Size apparentSize;
         private int drawWidth;
         private int drawHeight;
         private Point centerPoint;
         private static object lockObject = new object();
+        private bool showGrid;
+        private int? gridSize;
+        private Pen gridPen;
 
         public event Action<Keys> TryToggleFullScreen;
 
@@ -82,7 +85,7 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        public double ZoomFactor
+        public float ZoomFactor
         {
             get { return zoomFactor; }
             set
@@ -94,7 +97,7 @@ namespace DnDCS.WinFormsLibs
                 }
                 if (zoomFactor < 0.05)
                 {
-                    zoomFactor = 0.05;
+                    zoomFactor = 0.05f;
                 }
 
                 if (map != null)
@@ -163,12 +166,22 @@ namespace DnDCS.WinFormsLibs
 
         public void SetGridSize(bool showGrid, int gridSize)
         {
-
+            this.showGrid = showGrid;
+            if (showGrid)
+                this.gridSize = gridSize;
+            else
+                this.gridSize = null;
+            Invalidate();
         }
 
         public void SetGridColor(SimpleColor gridColor)
         {
-
+            if (gridPen != null)
+            {
+                gridPen.Dispose();
+            }
+            gridPen = new Pen(Color.FromArgb(gridColor.A, gridColor.R, gridColor.G, gridColor.B));
+            Invalidate();
         }
 
         public void ZoomIn()
@@ -275,6 +288,7 @@ namespace DnDCS.WinFormsLibs
             else
             {
                 DrawImage(e.Graphics);
+                DrawGrid(e.Graphics);
             }
             base.OnPaint(e);
         }
@@ -339,7 +353,7 @@ namespace DnDCS.WinFormsLibs
                         {
                             row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 0);
                         }
-                        else if (isClearing && IsPointInPolygon(offsetPoints, offsetX, offsetY))
+                        else if (IsPointInPolygon(offsetPoints, offsetX, offsetY))
                         {
                             var testPoint = new SimplePoint(offsetX, offsetY);
                             var dist = LineToPointDistance2D(points[0], points[1], testPoint);
@@ -352,7 +366,10 @@ namespace DnDCS.WinFormsLibs
 
                             var alpha = (255 - 5.5 * dist);
                             alpha = Math.Max(Math.Floor(alpha), 0);
-                            alpha = Math.Min(alpha + row[x * pixelSize + 3], 255);
+                            if (isClearing)
+                                alpha = Math.Min(alpha + row[x * pixelSize + 3], 255);
+                            else
+                                alpha = Math.Max(row[x * pixelSize + 3] - alpha, 0);
                             row[x * pixelSize + 3] = (byte)(alpha);
                         }
                     }
@@ -418,14 +435,6 @@ namespace DnDCS.WinFormsLibs
                 return;
             }
 
-            if (origin.X < 0)
-            {
-                origin.X = 0;
-            }
-            if (origin.Y < 0)
-            {
-                origin.Y = 0;
-            }
             if (origin.X > map.Width - (ClientSize.Width / zoomFactor))
             {
                 origin.X = (int)(map.Width - (ClientSize.Width / zoomFactor));
@@ -433,6 +442,15 @@ namespace DnDCS.WinFormsLibs
             if (origin.Y > map.Height - (ClientSize.Height / zoomFactor))
             {
                 origin.Y = (int)(map.Height - (ClientSize.Height / zoomFactor));
+            }
+
+            if (origin.X < 0)
+            {
+                origin.X = 0;
+            }
+            if (origin.Y < 0)
+            {
+                origin.Y = 0;
             }
         }
 
@@ -446,6 +464,24 @@ namespace DnDCS.WinFormsLibs
         {
             g.Clear(Color.Black);
             g.DrawImage(AssetsLoader.BlackoutImage, Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
+        }
+
+        private void DrawGrid(Graphics g)
+        {
+            if (gridSize.HasValue && gridPen != null)
+            {
+                g.TranslateTransform(-1 * this.origin.X, -1 * this.origin.Y);
+                g.ScaleTransform(zoomFactor, zoomFactor);
+                for (int x = 0; x < map.Width; x += gridSize.Value)
+                {
+                    g.DrawLine(gridPen, x, 0, x, map.Height);
+                }
+                for (int y = 0; y < map.Height; y += gridSize.Value)
+                {
+                    g.DrawLine(gridPen, 0, y, map.Width, y);
+                }
+                g.ResetTransform();
+            }
         }
 
         private void DrawImage(Graphics g)
@@ -472,11 +508,11 @@ namespace DnDCS.WinFormsLibs
             centerPoint.Y = origin.Y + sourceRect.Height / 2;
             if (zoomIn)
             {
-                ZoomFactor = Math.Round(zoomFactor * 1.1, 2);
+                ZoomFactor = (float)Math.Round(zoomFactor * 1.1, 2);
             }
             else
             {
-                ZoomFactor = Math.Round(zoomFactor * 0.9, 2);
+                ZoomFactor = (float)Math.Round(zoomFactor * 0.9, 2);
             }
 
             origin.X = (int)(centerPoint.X - ClientSize.Width / zoomFactor / 2);
