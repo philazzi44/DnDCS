@@ -123,6 +123,10 @@ namespace DnDCS.WinFormsLibs
 
         public DnDSparklesPictureBox()
         {
+            MouseDown += HandleMouseDown;
+            MouseMove += HandleMouseMove;
+            MouseWheel += HandleMouseWheel;
+
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
         }
@@ -184,6 +188,50 @@ namespace DnDCS.WinFormsLibs
         public void ZoomOut()
         {
             ZoomImage(false);
+        }
+
+        protected void HandleMouseDown(object sender, MouseEventArgs e)
+        {
+            if (map == null)
+            {
+                return;
+            }
+
+            startPoint = new Point(e.X, e.Y);
+            Focus();
+        }
+
+        protected void HandleMouseMove(object sender, MouseEventArgs e)
+        {
+            if (map == null)
+            {
+                return;
+            }
+
+            if (e.Button == MouseButtons.Right)
+            {
+                var deltaX = startPoint.X - e.X;
+                var deltaY = startPoint.Y - e.Y;
+                origin.X = (int)(origin.X + (deltaX / zoomFactor));
+                origin.Y = (int)(origin.Y + (deltaY / zoomFactor));
+
+                CheckBounds();
+                startPoint.X = e.X;
+                startPoint.Y = e.Y;
+                Invalidate();
+            }
+        }
+
+        protected void HandleMouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta > 0)
+            {
+                ZoomImage(true);
+            }
+            else if (e.Delta < 0)
+            {
+                ZoomImage(false);
+            }
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -252,11 +300,11 @@ namespace DnDCS.WinFormsLibs
             centerPoint.Y = origin.Y + sourceRect.Height / 2;
             if (zoomIn)
             {
-                zoomFactor = Math.Round(zoomFactor * 1.1, 2);
+                ZoomFactor = Math.Round(zoomFactor * 1.1, 2);
             }
             else
             {
-                zoomFactor = Math.Round(zoomFactor * 0.9, 2);
+                ZoomFactor = Math.Round(zoomFactor * 0.9, 2);
             }
 
             origin.X = (int)(centerPoint.X - ClientSize.Width / zoomFactor / 2);
