@@ -66,7 +66,7 @@ namespace DnDCS.WinFormsLibs
                     map.Dispose();
                     origin = new Point(0, 0);
                     apparentSize = new Size(0, 0);
-                    ZoomFactor = 1;
+                    zoomFactor = 1;
                     GC.Collect();
                 }
 
@@ -123,9 +123,11 @@ namespace DnDCS.WinFormsLibs
 
         public DnDSparklesPictureBox()
         {
+            KeyDown += HandleKeyDown;
             KeyUp += HandleKeyUp;
             MouseDown += HandleMouseDown;
             MouseMove += HandleMouseMove;
+            MouseUp += HandleMouseUp;
             MouseWheel += HandleMouseWheel;
 
             SetStyle(ControlStyles.AllPaintingInWmPaint, true);
@@ -191,6 +193,23 @@ namespace DnDCS.WinFormsLibs
             ZoomImage(false);
         }
 
+        protected void HandleKeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Oemplus && e.Control)
+            {
+                ZoomIn();
+                e.Handled = true;
+                return;
+            }
+
+            if (e.KeyCode == Keys.OemMinus && e.Control)
+            {
+                ZoomOut();
+                e.Handled = true;
+                return;
+            }
+        }
+
         protected void HandleKeyUp(object sender, KeyEventArgs e)
         {
             if (e.KeyCode == Keys.F11 || e.KeyCode == Keys.Escape)
@@ -213,6 +232,11 @@ namespace DnDCS.WinFormsLibs
 
             startPoint = new Point(e.X, e.Y);
             Focus();
+
+            if (e.Button == MouseButtons.Right)
+            {
+                Cursor = Cursors.SizeAll;
+            }
         }
 
         protected void HandleMouseMove(object sender, MouseEventArgs e)
@@ -234,6 +258,11 @@ namespace DnDCS.WinFormsLibs
                 startPoint.Y = e.Y;
                 Invalidate();
             }
+        }
+
+        protected void HandleMouseUp(object sender, MouseEventArgs e)
+        {
+            Cursor = Cursors.Default;
         }
 
         protected void HandleMouseWheel(object sender, MouseEventArgs e)
