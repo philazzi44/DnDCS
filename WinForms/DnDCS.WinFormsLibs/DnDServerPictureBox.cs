@@ -74,11 +74,9 @@ namespace DnDCS.WinFormsLibs
         private readonly Brush newFogBrush = Brushes.Gray;
 
         /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
-        private DateTime? centerMapImageAnimationStartTime;
+        private readonly int centerMapImageDisplayDuration = 1000;
         private Point? lastCenterMapPoint;
         private Timer centerMapPointDrawTimer;
-        /// <summary> The duration of the Center Map Image icon being shown. </summary>
-        private readonly TimeSpan centerMapImageAnimationDuration = TimeSpan.FromSeconds(1);
         private Image centerMapImage;
         public event Action<SimplePoint> PerformCenterMap;
 
@@ -90,8 +88,14 @@ namespace DnDCS.WinFormsLibs
 
             centerMapImage = AssetsLoader.CenterMapOverlayIcon;
             centerMapPointDrawTimer = new Timer();
-            centerMapPointDrawTimer.Tick += new EventHandler(centerMapPointDrawTimer_Tick);
-            this.centerMapPointDrawTimer.Interval = 1000;
+            centerMapPointDrawTimer.Tick += (o, e) =>
+            {
+                // When it fires, simply disable the timer altogether and hide the image.
+                lastCenterMapPoint = null;
+                centerMapPointDrawTimer.Enabled = false;
+                base.RefreshMapPictureBox();
+            };
+            this.centerMapPointDrawTimer.Interval = centerMapImageDisplayDuration;
 
             this.pbxMap.MouseDoubleClick += new MouseEventHandler(pbxMap_MouseDoubleClick);
         }
@@ -226,7 +230,6 @@ namespace DnDCS.WinFormsLibs
                     // Get the coordinates in real map coordinates by unwinding the Scroll and Zoom factor.
                     lastCenterMapPoint = e.Location.Translate(base.ScrollPosition);
                     PerformCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
-                    this.centerMapImageAnimationStartTime = DateTime.Now;
                     centerMapPointDrawTimer.Enabled = true;
                     this.RefreshMapPictureBox();
                 }
@@ -375,17 +378,5 @@ namespace DnDCS.WinFormsLibs
         }
 
         #endregion Painting
-
-        private void centerMapPointDrawTimer_Tick(object sender, EventArgs e)
-        {
-            if (centerMapImage == null || !centerMapImageAnimationStartTime.HasValue || !lastCenterMapPoint.HasValue
-                   || (centerMapImageAnimationStartTime.Value + centerMapImageAnimationDuration < DateTime.Now))
-            {
-                centerMapImageAnimationStartTime = null;
-                lastCenterMapPoint = null;
-                centerMapPointDrawTimer.Enabled = false;
-            }
-            base.RefreshMapPictureBox();
-        }
     }
 }

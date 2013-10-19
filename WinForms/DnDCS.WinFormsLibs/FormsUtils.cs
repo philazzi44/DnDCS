@@ -88,11 +88,17 @@ namespace DnDCS.WinFormsLibs
 
         public static void WriteMap(this ServerSocketConnection connection, Image map)
         {
+            if (connection.ClientsCount == 0)
+                return;
+
             connection.WriteMap(map.Width, map.Height, map.ToBytes());
         }
 
         public static void WriteFog(this ServerSocketConnection connection, Image fog)
         {
+            if (connection.ClientsCount == 0)
+                return;
+
             connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
         }
 

@@ -150,39 +150,60 @@ namespace DnDCS.Libs
 
         public void WriteMap(int mapImageWidth, int mapImageHeight, byte[] mapImageBytes)
         {
+            if (ClientsCount == 0)
+                return;
+
             if (mapImageBytes != null && mapImageBytes.Length > 0)
                 Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageWidth, mapImageHeight, mapImageBytes));
         }
 
         public void WriteCenterMap(SimplePoint point)
         {
+            if (ClientsCount == 0)
+                return;
+
             Write(new CenterMapSocketObject(point));
         }
 
         public void WriteFog(int fogImageWidth, int fogImageHeight, byte[] fogImageBytes)
         {
+            if (ClientsCount == 0)
+                return;
+
             if (fogImageBytes != null && fogImageBytes.Length > 0)
                 Write(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageWidth, fogImageHeight, fogImageBytes));
         }
 
         public void WriteFogUpdate(FogUpdate fogUpdate)
         {
+            if (ClientsCount == 0)
+                return;
+
             if (fogUpdate != null && fogUpdate.Length != 0)
                 Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)
         {
+            if (ClientsCount == 0)
+                return;
+
             Write(new GridSizeSocketObject(showGrid, gridSize));
         }
 
         public void WriteGridColor(SimpleColor color)
         {
+            if (ClientsCount == 0)
+                return;
+
             Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color.A, color.R, color.G, color.B));
         }
 
         public void WriteBlackout(bool isBlackoutOn)
         {
+            if (ClientsCount == 0)
+                return;
+
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
         }
 
