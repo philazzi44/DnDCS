@@ -37,7 +37,6 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ctlDnDMap.BackColor = System.Drawing.Color.Black;
-            this.ctlDnDMap.Fog = null;
             this.ctlDnDMap.IsBlackoutOn = false;
             this.ctlDnDMap.Location = new System.Drawing.Point(0, 0);
             this.ctlDnDMap.Map = null;

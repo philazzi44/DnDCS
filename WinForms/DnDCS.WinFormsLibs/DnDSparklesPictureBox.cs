@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using DnDCS.Libs.SimpleObjects;
+using DnDCS.WinFormsLibs.Assets;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -34,28 +35,6 @@ namespace DnDCS.WinFormsLibs
             get { return apparentSize; }
         }
 
-        public Image Fog
-        {
-            get { return fog; }
-            set
-            {
-                if (fog != null)
-                {
-                    fog.Dispose();
-                    GC.Collect();
-                }
-
-                if (value == null)
-                {
-                    fog = null;
-                    Invalidate();
-                    return;
-                }
-
-                fog = (Bitmap)value;
-            }
-        }
-
         public Image Map
         {
             get { return map; }
@@ -80,6 +59,7 @@ namespace DnDCS.WinFormsLibs
                 var r = new Rectangle(0, 0, value.Width, value.Height);
                 map = new Bitmap(value);
                 map = map.Clone(r, PixelFormat.Format32bppArgb);
+                ApplyFullFog();
                 Invalidate();
             }
         }
@@ -170,7 +150,7 @@ namespace DnDCS.WinFormsLibs
 
         public void SetFogUpdateAsync(FogUpdate fogUpdate)
         {
-
+            ApplyFog(fogUpdate.Points, fogUpdate.IsClearing);
         }
 
         public void SetGridSize(bool showGrid, int gridSize)
@@ -280,7 +260,14 @@ namespace DnDCS.WinFormsLibs
         protected override void OnPaint(PaintEventArgs e)
         {
             e.Graphics.Clear(BackColor);
-            DrawImage(e.Graphics);
+            //if (IsBlackoutOn)
+            //{
+            //    DrawBlackout(e.Graphics);
+            //}
+            //else
+            //{
+                DrawImage(e.Graphics);
+            //}
             base.OnPaint(e);
         }
 
@@ -289,6 +276,75 @@ namespace DnDCS.WinFormsLibs
             destRect = new Rectangle(0, 0, ClientSize.Width, ClientSize.Height);
             ComputeDrawingArea();
             base.OnSizeChanged(e);
+        }
+
+        private unsafe void ApplyFullFog()
+        {
+            if (map == null)
+            {
+                return;
+            }
+
+            ApplyFog(new[] {
+                new SimplePoint(0, 0),
+                new SimplePoint(map.Width, map.Height)
+            }, false);
+
+        }
+
+        private unsafe void ApplyFog(SimplePoint[] points, bool isClearing)
+        {
+            if (map == null)
+            {
+                return;
+            }
+
+            var boundingBoxBuffered = GetBoundingBox(points);
+            var boundingBox = GetBoundingBox(points, 0);
+
+            var bmd = map.LockBits(boundingBoxBuffered, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
+            var pixelSize = 4;
+            for (var y = 0; y < bmd.Height; y++)
+            {
+                var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
+                for (var x = 0; x < bmd.Width; x++)
+                {
+                    row[x * pixelSize + 3] = (byte)(isClearing ? 255 : 96);
+                }
+            }
+            map.UnlockBits(bmd);
+            Invalidate();
+        }
+
+        private Rectangle GetBoundingBox(SimplePoint[] points, int buffer = 8)
+        {
+            if (points.Length == 0)
+            {
+                return new Rectangle(0, 0, 0, 0);
+            }
+
+            var left = points[0].X;
+            var right = points[0].X;
+            var top = points[0].Y;
+            var bottom = points[0].Y;
+            foreach (var point in points)
+            {
+                if (point.X < left)
+                    left = point.X;
+                if (point.X > right)
+                    right = point.X;
+                if (point.Y < top)
+                    top = point.Y;
+                if (point.Y > bottom)
+                    bottom = point.Y;
+            }
+
+            var rect = new Rectangle(left, top, right - left, bottom - top);
+            rect.X = Math.Max(0, rect.X - buffer);
+            rect.Y = Math.Max(0, rect.Y - buffer);
+            rect.Width = Math.Min(map.Width - rect.X, rect.Width + buffer);
+            rect.Height = Math.Min(map.Height - rect.Y, rect.Height + buffer);
+            return rect;
         }
 
         private void CheckBounds()
@@ -320,6 +376,12 @@ namespace DnDCS.WinFormsLibs
         {
             drawHeight = (int)(Height / zoomFactor);
             drawWidth = (int)(Width / zoomFactor);
+        }
+
+        private void DrawBlackout(Graphics g)
+        {
+            g.Clear(Color.Black);
+            g.DrawImage(AssetsLoader.BlackoutImage, Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
         }
 
         private void DrawImage(Graphics g)
