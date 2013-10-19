@@ -123,6 +123,7 @@ namespace DnDCS.WinFormsLibs
 
         public DnDSparklesPictureBox()
         {
+            KeyUp += HandleKeyUp;
             MouseDown += HandleMouseDown;
             MouseMove += HandleMouseMove;
             MouseWheel += HandleMouseWheel;
@@ -188,6 +189,19 @@ namespace DnDCS.WinFormsLibs
         public void ZoomOut()
         {
             ZoomImage(false);
+        }
+
+        protected void HandleKeyUp(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.F11 || e.KeyCode == Keys.Escape)
+            {
+                if (TryToggleFullScreen != null)
+                {
+                    TryToggleFullScreen(e.KeyCode);
+                }
+                e.Handled = true;
+                return;
+            }
         }
 
         protected void HandleMouseDown(object sender, MouseEventArgs e)

@@ -80,7 +80,7 @@ namespace DnDCS
                 if (this.WindowState == FormWindowState.Maximized)
                     this.WindowState = FormWindowState.Normal;
 
-                this.TopMost = true;
+                //this.TopMost = true;
                 this.FormBorderStyle = FormBorderStyle.None;
                 this.WindowState = FormWindowState.Maximized;
                 this.Menu = null;

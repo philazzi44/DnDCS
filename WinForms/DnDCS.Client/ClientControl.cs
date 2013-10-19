@@ -63,7 +63,7 @@ namespace DnDCS.Client
             var fileMenu = new MenuItem("File");
             fileMenu.MenuItems.AddRange(new MenuItem[]
             {
-                fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false, Shortcut = Shortcut.F11 },
+                fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false },
                 new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
