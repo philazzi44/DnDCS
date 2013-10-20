@@ -33,7 +33,7 @@ namespace DnDCS.WinFormsLibs
                         break;
                     case DnDMapConstants.Tool.FogAddTool:
                     case DnDMapConstants.Tool.FogRemoveTool:
-                        this.pbxMap.Cursor = Cursors.Arrow;
+                        this.Cursor = Cursors.Arrow;
                         this.IsRemovingFog = null;
                         break;
                 }
@@ -43,11 +43,11 @@ namespace DnDCS.WinFormsLibs
                     case DnDMapConstants.Tool.SelectTool:
                         break;
                     case DnDMapConstants.Tool.FogAddTool:
-                        this.pbxMap.Cursor = Cursors.Cross;
+                        this.Cursor = Cursors.Cross;
                         this.IsRemovingFog = false;
                         break;
                     case DnDMapConstants.Tool.FogRemoveTool:
-                        this.pbxMap.Cursor = Cursors.Cross;
+                        this.Cursor = Cursors.Cross;
                         this.IsRemovingFog = true;
                         break;
                 }
@@ -93,11 +93,11 @@ namespace DnDCS.WinFormsLibs
                 // When it fires, simply disable the timer altogether and hide the image.
                 lastCenterMapPoint = null;
                 centerMapPointDrawTimer.Enabled = false;
-                base.RefreshMapPictureBox();
+                base.RefreshAll();
             };
             this.centerMapPointDrawTimer.Interval = centerMapImageDisplayDuration;
 
-            this.pbxMap.MouseDoubleClick += new MouseEventHandler(pbxMap_MouseDoubleClick);
+            this.MouseDoubleClick += new MouseEventHandler(HandleMouseDoubleClickEvent);
         }
 
         protected override ImageAttributes CreateFogAttributes()
@@ -137,7 +137,7 @@ namespace DnDCS.WinFormsLibs
                 UpdateFogImage(lastFogUpdate);
                 redoFogUpdates.AddLast(lastFogUpdate);
                 undoFogUpdates.RemoveLast();
-                base.RefreshMapPictureBox();
+                base.RefreshAll();
                 return lastFogUpdate;
             }
 
@@ -153,7 +153,7 @@ namespace DnDCS.WinFormsLibs
                 UpdateFogImage(lastFogUpdate);
                 undoFogUpdates.AddLast(lastFogUpdate);
                 redoFogUpdates.RemoveLast();
-                this.RefreshMapPictureBox();
+                this.RefreshAll();
                 return lastFogUpdate;
             }
 
@@ -171,7 +171,7 @@ namespace DnDCS.WinFormsLibs
             UpdateFogImage(fogAllFogUpdate);
             undoFogUpdates.Clear();
             redoFogUpdates.Clear();
-            this.RefreshMapPictureBox();
+            this.RefreshAll();
 
             return fogAllFogUpdate;
         }
@@ -219,14 +219,14 @@ namespace DnDCS.WinFormsLibs
 
             this.allFogUpdates.Clear();
             UpdateFogImage(fogUpdates);
-            base.RefreshMapPictureBox();
+            base.RefreshAll();
         }
 
         #endregion Fog Updates
 
         #region Map Events
 
-        private void pbxMap_MouseDoubleClick(object sender, MouseEventArgs e)
+        private void HandleMouseDoubleClickEvent(object sender, MouseEventArgs e)
         {
             if (this.LoadedMap == null)
                 return;
@@ -239,7 +239,7 @@ namespace DnDCS.WinFormsLibs
                     lastCenterMapPoint = e.Location.Translate(base.ScrollPosition);
                     PerformCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
                     centerMapPointDrawTimer.Enabled = true;
-                    this.RefreshMapPictureBox();
+                    this.RefreshAll();
                 }
             }
         }
@@ -304,7 +304,7 @@ namespace DnDCS.WinFormsLibs
 
                     UpdateNewFogImage(currentFogUpdate);
 
-                    pbxMap.Invalidate();
+                    this.RefreshAll();
                 }
             }
         }
@@ -336,7 +336,7 @@ namespace DnDCS.WinFormsLibs
                 {
                     undoFogUpdates.AddLast(currentFogUpdate);
                     UpdateFogImage(currentFogUpdate);
-                    base.RefreshMapPictureBox();
+                    base.RefreshAll();
 
                     currentFogUpdate = null;
                 }

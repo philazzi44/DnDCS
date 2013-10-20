@@ -15,7 +15,7 @@ namespace DnDCS.WinFormsLibs
             set
             {
                 this.isBlackoutOn = value;
-                this.RefreshMapPictureBox();
+                this.RefreshAll();
             }
         }
 
@@ -40,7 +40,7 @@ namespace DnDCS.WinFormsLibs
             this.BeginInvoke(new Action(() =>
             {
                 this.Fog = newFog;
-                RefreshMapPictureBox();
+                RefreshAll();
             }));
         }
 
@@ -63,7 +63,7 @@ namespace DnDCS.WinFormsLibs
             if (isNewFogImage)
                 this.Fog = fogImageToUpdate;
 
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         public void SetCenterMap(SimplePoint centerMap)
@@ -72,7 +72,7 @@ namespace DnDCS.WinFormsLibs
             this.BeginInvoke(new Action(() =>
             {
                 // The point that came in is raw on the map, so we need to account for the client's zoom factor.
-                SetScroll((int)(centerMap.X * AssignedZoomFactor) - this.pbxMap.Width / 2, (int)(centerMap.Y * AssignedZoomFactor) - this.pbxMap.Height / 2);
+                SetScroll((int)(centerMap.X * AssignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * AssignedZoomFactor) - this.Height / 2);
             }));
         }
 
@@ -103,7 +103,7 @@ namespace DnDCS.WinFormsLibs
         {
             // Draw the Blackout Image in the center.
             g.Clear(Color.Black);
-            g.DrawImage(AssetsLoader.BlackoutImage, this.pbxMap.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.pbxMap.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
+            g.DrawImage(AssetsLoader.BlackoutImage, this.Width / 2.0f - AssetsLoader.BlackoutImage.Width / 2.0f, this.Height / 2.0f - AssetsLoader.BlackoutImage.Height / 2.0f);
         }
 
         #endregion Painting

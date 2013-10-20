@@ -321,7 +321,7 @@ namespace DnDCS.Server
 
                     connection.WriteGridColor(colorOptions.GridLineColor.ToSocketColor());
 
-                    this.ctlDnDMap.RefreshMapPictureBox();
+                    this.ctlDnDMap.RefreshAll();
                 }
             }
         }
@@ -419,7 +419,7 @@ namespace DnDCS.Server
             if (connection != null)
                 connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            this.ctlDnDMap.RefreshMapPictureBox();
+            this.ctlDnDMap.RefreshAll();
         }
 
         private void nudGridSize_ValueChanged(object sender, EventArgs e)
@@ -427,7 +427,7 @@ namespace DnDCS.Server
             if (connection != null)
                 connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            this.ctlDnDMap.RefreshMapPictureBox();
+            this.ctlDnDMap.RefreshAll();
         }
 
         private void nudGridSize_Leave(object sender, EventArgs e)

@@ -94,21 +94,21 @@ namespace DnDCS.WinFormsLibs
             this.Initialize();
 
             // Force focus the Picture Box in all cases, so it can properly respond to events.
-            this.pbxMap.Focus();
+            this.Focus();
 
-            this.pbxMap.LostFocus += new EventHandler(pbxMap_LostFocus);
-            this.pbxMap.Paint += new System.Windows.Forms.PaintEventHandler(this.pbxMap_Paint);
-            this.pbxMap.MouseClick += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseClick);
-            this.pbxMap.MouseDown += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseDown);
-            this.pbxMap.MouseMove += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseMove);
-            this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
-            this.pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
-            this.pbxMap.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.pbxMap_PreviewKeyDown);
-            this.pbxMap.KeyUp += new KeyEventHandler(pbxMap_KeyUp);
+            this.LostFocus += new EventHandler(HandleLostFocus);
+            this.Paint += new System.Windows.Forms.PaintEventHandler(this.HandlePaintEvent);
+            this.MouseClick += new System.Windows.Forms.MouseEventHandler(this.HandleMouseClick);
+            this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.HandleMouseDownEvent);
+            this.MouseMove += new System.Windows.Forms.MouseEventHandler(this.HandleMouseMoveEvent);
+            this.MouseUp += new System.Windows.Forms.MouseEventHandler(this.HandleMouseUpEvent);
+            this.MouseWheel += new MouseEventHandler(HandleMouseWheelEvent);
+            this.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.HandlePreviewKeyDownEevent);
+            this.KeyUp += new KeyEventHandler(HandleKeyUpEvent);
 
-            // Not sure if these are already enabled by default in a Picture Box or not... Will turn on if needed. Can't set it on the pbx directly as it's a protected setter.
-            // this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
-            // this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            // These are styles that apply to PictureBoxes by default, but since we're not using one, we need to set them explicitly.
+            this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
             isInitialized = true;
         }
@@ -168,7 +168,7 @@ namespace DnDCS.WinFormsLibs
                 this.LoadedMapSize = newMap.Size;
                 this.Fog = newFog;
                 OnNewMapSet();
-                this.RefreshMapPictureBox();
+                this.RefreshAll();
 
                 if (oldMap != null)
                     oldMap.Dispose();
@@ -185,7 +185,7 @@ namespace DnDCS.WinFormsLibs
         public void SetGridSize(bool showGrid, int gridSize)
         {
             this.gridSize = (showGrid) ? gridSize : new Nullable<int>();
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         public void SetGridColor(SimpleColor gridColor)
@@ -194,33 +194,33 @@ namespace DnDCS.WinFormsLibs
                 gridPen.Dispose();
             gridPen = new Pen(Color.FromArgb(gridColor.A, gridColor.R, gridColor.G, gridColor.B));
 
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         #endregion Setters
 
         #region Map Events
 
-        private void pbxMap_LostFocus(object sender, EventArgs e)
+        private void HandleLostFocus(object sender, EventArgs e)
         {
-            this.pbxMap.Focus();
+            this.Focus();
         }
 
-        public void RefreshMapPictureBox(bool immediateRefresh = false)
+        public void RefreshAll(bool immediateRefresh = false)
         {
-            if (pbxMap.InvokeRequired)
+            if (this.InvokeRequired)
             {
-                pbxMap.BeginInvoke(new Action(() => { RefreshMapPictureBox(immediateRefresh); }));
+                this.BeginInvoke(new Action(() => { RefreshAll(immediateRefresh); }));
                 return;
             }
 
             if (immediateRefresh)
-                pbxMap.Refresh();
+                this.Refresh();
             else
-                pbxMap.Invalidate();
+                this.Invalidate();
         }
 
-        private void pbxMap_PreviewKeyDown(object sender, PreviewKeyDownEventArgs e)
+        private void HandlePreviewKeyDownEevent(object sender, PreviewKeyDownEventArgs e)
         {
             if (e.KeyCode == Keys.F11 || e.KeyCode == Keys.Escape)
             {
@@ -273,17 +273,17 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        private void pbxMap_KeyUp(object sender, KeyEventArgs e)
+        private void HandleKeyUpEvent(object sender, KeyEventArgs e)
         {
             keyboardScrollAccel = 1.0d;
         }
 
-        private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
+        private void HandleMouseWheelEvent(object sender, MouseEventArgs e)
         {
-            HandleMouseWheelEvent(e);
+            HandleMouseWheel(e);
         }
 
-        public void HandleMouseWheelEvent(MouseEventArgs e)
+        public void HandleMouseWheel(MouseEventArgs e)
         {
             if (e.Delta != 0)
             {
@@ -307,10 +307,10 @@ namespace DnDCS.WinFormsLibs
                 }
             }
 
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
-        private void pbxMap_MouseClick(object sender, MouseEventArgs e)
+        private void HandleMouseClick(object sender, MouseEventArgs e)
         {
             if (IsZoomFactorInProgress && (e.Button == MouseButtons.Left || e.Button == MouseButtons.Right))
             {
@@ -318,7 +318,7 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        private void pbxMap_MouseDown(object sender, MouseEventArgs e)
+        private void HandleMouseDownEvent(object sender, MouseEventArgs e)
         {
             HandleMouseDown(e);
         }
@@ -336,10 +336,10 @@ namespace DnDCS.WinFormsLibs
         protected void HandleMouseDown_DragMap(MouseEventArgs e)
         {
             lastScrollDragPosition = e.Location;
-            this.pbxMap.Cursor = Cursors.SizeAll;
+            this.Cursor = Cursors.SizeAll;
         }
 
-        private void pbxMap_MouseMove(object sender, MouseEventArgs e)
+        private void HandleMouseMoveEvent(object sender, MouseEventArgs e)
         {
             HandleMouseMove(e);
         }
@@ -386,7 +386,7 @@ namespace DnDCS.WinFormsLibs
             lastScrollDragPosition = e.Location;
         }
 
-        private void pbxMap_MouseUp(object sender, MouseEventArgs e)
+        private void HandleMouseUpEvent(object sender, MouseEventArgs e)
         {
             HandleMouseUp(e);
         }
@@ -403,7 +403,7 @@ namespace DnDCS.WinFormsLibs
 
         protected void HandleMouseUp_Drag(MouseEventArgs e)
         {
-            this.pbxMap.Cursor = Cursors.Default;
+            this.Cursor = Cursors.Default;
         }
 
         #endregion Map Events
@@ -422,7 +422,7 @@ namespace DnDCS.WinFormsLibs
 
             IsZoomFactorInProgress = true;
 
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         private void CommitOrRollBackZoom(bool commit)
@@ -439,7 +439,7 @@ namespace DnDCS.WinFormsLibs
             {
                 variableZoomFactor = AssignedZoomFactor;
             }
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         #endregion Zoom Logic
@@ -451,9 +451,9 @@ namespace DnDCS.WinFormsLibs
             // Scroll left/right
             int newValue;
             if (isLeft)
-                newValue = this.ScrollPosition.X - (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.X - (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             else
-                newValue = this.ScrollPosition.X + (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.X + (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             SetScroll(newValue, null);
         }
 
@@ -462,9 +462,9 @@ namespace DnDCS.WinFormsLibs
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.ScrollPosition.Y - (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.Y - (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             else
-                newValue = this.ScrollPosition.Y + (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.Y + (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             SetScroll(null, newValue);
         }
 
@@ -483,18 +483,18 @@ namespace DnDCS.WinFormsLibs
 
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.LogicalMapWidth < this.pbxMap.Width)
+            if (this.LogicalMapWidth < this.Width)
                 desiredX = 0;
             else
-                desiredX = Math.Min(desiredX.Value, this.LogicalMapWidth - this.pbxMap.Width);
+                desiredX = Math.Min(desiredX.Value, this.LogicalMapWidth - this.Width);
 
-            if (this.LogicalMapHeight < this.pbxMap.Height)
+            if (this.LogicalMapHeight < this.Height)
                 desiredY = 0;
             else
-                desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.pbxMap.Height);
+                desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.Height);
 
             this.ScrollPosition = new Point(desiredX.Value, desiredY.Value);
-            RefreshMapPictureBox();
+            RefreshAll();
         }
 
         #endregion Scroll Logic
@@ -502,7 +502,7 @@ namespace DnDCS.WinFormsLibs
         #region Painting
 
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
-        private void pbxMap_Paint(object sender, PaintEventArgs e)
+        private void HandlePaintEvent(object sender, PaintEventArgs e)
         {
             e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
             e.Graphics.SmoothingMode = SmoothingMode.None;
@@ -570,8 +570,8 @@ namespace DnDCS.WinFormsLibs
                 {
                     // Draw each line one after the other, separating them by the height of the message, centered on the screen.
                     var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.pbxMap.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.pbxMap.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
+                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
+                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
                     y += ZoomFactorTextYOffset;
 
                     g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
