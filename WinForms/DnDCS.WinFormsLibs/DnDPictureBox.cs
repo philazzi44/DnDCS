@@ -49,7 +49,8 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        public Image Fog { get; protected set; }
+        public bool UseFogAlphaEffect { get; set; }
+        public Bitmap Fog { get; protected set; }
 
         // Zoom Values
         public bool AllowZoom { get; set; }
@@ -504,11 +505,18 @@ namespace DnDCS.WinFormsLibs
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         private void HandlePaintEvent(object sender, PaintEventArgs e)
         {
-            e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-            e.Graphics.SmoothingMode = SmoothingMode.None;
-            e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
-            
-            PaintAll(e.Graphics);
+            try
+            {
+                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+                e.Graphics.SmoothingMode = SmoothingMode.None;
+                e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+
+                PaintAll(e.Graphics);
+            }
+            catch (Exception e1)
+            {
+                Logger.LogError("Painting Failure", e1);
+            }
         }
 
         protected virtual void PaintAll(Graphics graphics)

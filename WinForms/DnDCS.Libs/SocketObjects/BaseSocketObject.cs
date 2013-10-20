@@ -28,6 +28,8 @@ namespace DnDCS.Libs.SimpleObjects
                 case SocketConstants.SocketAction.Exit:
                     return new BaseSocketObject(action);
 
+                case SocketConstants.SocketAction.UseFogAlphaEffect:
+                    return UseFogAlphaEffectSocketObject.UseFogAlphaEffectObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.GridSize:
                     return GridSizeSocketObject.GridSizeObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.GridColor:

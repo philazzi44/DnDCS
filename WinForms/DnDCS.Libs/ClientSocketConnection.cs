@@ -28,6 +28,7 @@ namespace DnDCS.Libs
         public event Action<SimplePoint> OnCenterMapReceived;
         public event Action<SimpleImage> OnFogReceived;
         public event Action<FogUpdate> OnFogUpdateReceived;
+        public event Action<bool> OnUseFogAlphaEffectReceived;
         public event Action<bool, int> OnGridSizeReceived;
         public event Action<SimpleColor> OnGridColorReceived;
         public event Action OnExitReceived;
@@ -107,6 +108,12 @@ namespace DnDCS.Libs
                             Logger.LogDebug("Read Fog Update action.");
                             if (OnFogUpdateReceived != null)
                                 OnFogUpdateReceived(((FogUpdateSocketObject)socketObject).FogUpdateInstance);
+                            break;
+
+                        case SocketConstants.SocketAction.UseFogAlphaEffect:
+                            Logger.LogDebug("Read Use Fog Alpha Effect action.");
+                            if (OnUseFogAlphaEffectReceived != null)
+                                OnUseFogAlphaEffectReceived(((UseFogAlphaEffectSocketObject)socketObject).UseFogAlphaEffect);
                             break;
 
                         case SocketConstants.SocketAction.GridSize:

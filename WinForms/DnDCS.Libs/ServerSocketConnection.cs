@@ -183,6 +183,14 @@ namespace DnDCS.Libs
                 Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
         }
 
+        public void WriteUseFogAlphaEffect(bool useFogAlphaEffect)
+        {
+            if (ClientsCount == 0)
+                return;
+
+            Write(new UseFogAlphaEffectSocketObject(useFogAlphaEffect));
+        }
+
         public void WriteGridSize(bool showGrid, int gridSize)
         {
             if (ClientsCount == 0)

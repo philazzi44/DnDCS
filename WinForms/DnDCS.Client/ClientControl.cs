@@ -128,6 +128,7 @@ namespace DnDCS.Client
             connection.OnCenterMapReceived += new Action<SimplePoint>(connection_OnCenterMapReceived);
             connection.OnFogReceived += new Action<SimpleImage>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<FogUpdate>(connection_OnFogUpdateReceived);
+            connection.OnUseFogAlphaEffectReceived += new Action<bool>(connection_OnUseFogAlphaEffectReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
             connection.OnBlackoutReceived += new Action<bool>(connection_OnBlackoutReceived);
@@ -195,6 +196,11 @@ namespace DnDCS.Client
         private void connection_OnFogUpdateReceived(FogUpdate fogUpdate)
         {
             this.ctlDnDMap.SetFogUpdateAsync(fogUpdate);
+        }
+
+        private void connection_OnUseFogAlphaEffectReceived(bool useFogAlphaEffect)
+        {
+            this.ctlDnDMap.UseFogAlphaEffect = useFogAlphaEffect;
         }
         
         private void connection_OnGridSizeReceived(bool showGrid, int gridSize)

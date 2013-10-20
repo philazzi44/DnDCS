@@ -6,6 +6,8 @@ using System.Linq;
 using System.Windows.Forms;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS.WinFormsLibs.Assets;
+using ClipperLib;
+using System.Threading.Tasks;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -195,11 +197,19 @@ namespace DnDCS.WinFormsLibs
 
         private void UpdateFogImage(FogUpdate[] fogUpdates)
         {
-            using (var g = Graphics.FromImage(this.Fog))
+            if (UseFogAlphaEffect)
             {
-                foreach (var fogUpdate in fogUpdates)
+                ImageProcessing.ApplyFog(this.Fog, fogUpdates);
+            }
+            else
+            {
+                using (var g = Graphics.FromImage(this.Fog))
                 {
-                    g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                    foreach (var fogUpdate in fogUpdates)
+                    {
+                        g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                    }
+                    this.RefreshAll(true);
                 }
             }
 
@@ -210,7 +220,6 @@ namespace DnDCS.WinFormsLibs
             if (fogUpdates.Length > 1 && OnManyFogUpdatesChanged != null)
                 OnManyFogUpdatesChanged();
         }
-
 
         public void SetFogUpdates(FogUpdate[] fogUpdates)
         {

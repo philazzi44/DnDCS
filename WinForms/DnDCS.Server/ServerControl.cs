@@ -76,6 +76,7 @@ namespace DnDCS.Server
             realTimeFogUpdates = serverData.RealTimeFogUpdates;
             btnSyncFog.Visible = !realTimeFogUpdates;
             gbxLog.Visible = serverData.ShowLog;
+            this.ctlDnDMap.UseFogAlphaEffect = serverData.UseFogAlphaEffect;
             gbxGridSize.Visible = serverData.ShowGridValues;
             chkShowGrid.Checked = serverData.ShowGrid;
             nudGridSize.Minimum = ConfigValues.MinimumGridSize;
@@ -145,6 +146,7 @@ namespace DnDCS.Server
                 connection.WriteMap(this.ctlDnDMap.LoadedMap);
             if (this.ctlDnDMap.Fog != null)
                 connection.WriteFog(this.ctlDnDMap.Fog);
+            connection.WriteUseFogAlphaEffect(this.ctlDnDMap.UseFogAlphaEffect);
             connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
             connection.WriteGridColor(this.ctlDnDMap.GridPen.Color.ToSocketColor());
         }
@@ -175,6 +177,9 @@ namespace DnDCS.Server
                 redoLastFogAction = new MenuItem("Redo Last Fog Action", OnRedoLastFogAction_Click, Shortcut.CtrlY) { Enabled = false },
                 new MenuItem("-"),
                 new MenuItem("Real-time Fog Updates", OnRealTimeFogUpdates_Click) { Checked = serverData.RealTimeFogUpdates },
+                new MenuItem("-"),
+                new MenuItem("Use Fog Alpha Effect", OnUseFogAlphaEffect_Click) { Checked = serverData.UseFogAlphaEffect },
+
                 new MenuItem("-"),
                 new MenuItem("Show Grid Values", OnShowGridValues_Click) { Checked = serverData.ShowGridValues },
                 new MenuItem("Show Log", OnShowLog_Click) { Checked = serverData.ShowLog },
@@ -263,6 +268,20 @@ namespace DnDCS.Server
 
             if (lastFogAction != null && realTimeFogUpdates)
                 connection.WriteFogUpdate(lastFogAction);
+        }
+
+        private void OnUseFogAlphaEffect_Click(object sender, EventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+
+            var useFogAlphaEffect = (menuItem.Checked = !menuItem.Checked);
+
+            this.ctlDnDMap.UseFogAlphaEffect = useFogAlphaEffect;
+            var serverData = Persistence.LoadServerData();
+            serverData.UseFogAlphaEffect = useFogAlphaEffect;
+            Persistence.SaveServerData(serverData);
+
+            connection.WriteUseFogAlphaEffect(useFogAlphaEffect);
         }
 
         private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)

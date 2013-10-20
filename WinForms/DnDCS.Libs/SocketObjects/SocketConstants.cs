@@ -16,6 +16,7 @@ namespace DnDCS.Libs.SimpleObjects
             CenterMap,
             Fog,
             FogUpdate,
+            UseFogAlphaEffect,
             GridSize,
             GridColor,
             BlackoutOn,

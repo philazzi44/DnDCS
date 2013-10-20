@@ -9,6 +9,8 @@ namespace DnDCS.Libs.PersistenceObjects
 
         public string[] ServerImageUrlHistory { get; set; }
 
+        public bool UseFogAlphaEffect { get; set; }
+
         public bool ShowGrid { get; set; }
         public int GridSize { get; set; }
         public bool IsGridColorSet { get; set; }

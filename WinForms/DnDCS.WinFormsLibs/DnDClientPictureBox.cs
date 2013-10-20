@@ -37,27 +37,48 @@ namespace DnDCS.WinFormsLibs
 
         public void SetFogAsync(Image newFog)
         {
+            var newFogBitmap = newFog as Bitmap;
+            if (newFogBitmap == null)
+            {
+                newFogBitmap = new Bitmap(newFogBitmap);
+                newFog.Dispose();
+            }
+
             this.BeginInvoke(new Action(() =>
             {
-                this.Fog = newFog;
+                this.Fog = newFogBitmap;
                 RefreshAll();
             }));
         }
 
         public void SetFogUpdateAsync(FogUpdate fogUpdate)
         {
-            Image fogImageToUpdate;
+            Bitmap fogImageToUpdate;
             var isNewFogImage = (this.Fog == null);
             if (isNewFogImage)
                 fogImageToUpdate = new Bitmap(base.LoadedMapSize.Width, base.LoadedMapSize.Height);
             else
                 fogImageToUpdate = this.Fog;
 
-            using (var g = Graphics.FromImage(fogImageToUpdate))
+            if (this.UseFogAlphaEffect)
             {
                 if (isNewFogImage)
-                    g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
-                g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                {
+                    using (var g = Graphics.FromImage(fogImageToUpdate))
+                    {
+                        g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
+                    }
+                }
+                ImageProcessing.ApplyFog(fogImageToUpdate, fogUpdate);
+            }
+            else
+            {
+                using (var g = Graphics.FromImage(fogImageToUpdate))
+                {
+                    if (isNewFogImage)
+                        g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
+                    g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                }
             }
 
             if (isNewFogImage)
