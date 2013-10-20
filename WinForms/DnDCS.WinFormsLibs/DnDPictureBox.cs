@@ -68,6 +68,7 @@ namespace DnDCS.WinFormsLibs
         // Scroll Values
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
+        private double keyboardScrollAccel = 1.0d;
 
         // Paint Values
         protected ImageAttributes FogAttributes { get; set; }
@@ -103,6 +104,11 @@ namespace DnDCS.WinFormsLibs
             this.pbxMap.MouseUp += new System.Windows.Forms.MouseEventHandler(this.pbxMap_MouseUp);
             this.pbxMap.MouseWheel += new MouseEventHandler(pbxMap_MouseWheel);
             this.pbxMap.PreviewKeyDown += new System.Windows.Forms.PreviewKeyDownEventHandler(this.pbxMap_PreviewKeyDown);
+            this.pbxMap.KeyUp += new KeyEventHandler(pbxMap_KeyUp);
+
+            // Not sure if these are already enabled by default in a Picture Box or not... Will turn on if needed. Can't set it on the pbx directly as it's a protected setter.
+            // this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
+            // this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
             isInitialized = true;
         }
@@ -226,8 +232,8 @@ namespace DnDCS.WinFormsLibs
 
             if (e.Control)
             {
-                if ((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up) || (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.Down))
-                    ZoomInOrOut((e.KeyCode == Keys.Add || e.KeyCode == Keys.Up), e.Shift);
+                if ((e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus || e.KeyCode == Keys.Up) || (e.KeyCode == Keys.Subtract || e.KeyCode == Keys.OemMinus || e.KeyCode == Keys.Down))
+                    ZoomInOrOut((e.KeyCode == Keys.Add || e.KeyCode == Keys.Oemplus || e.KeyCode == Keys.Up), e.Shift);
                 return;
             }
 
@@ -244,23 +250,32 @@ namespace DnDCS.WinFormsLibs
                 switch (e.KeyCode)
                 {
                     case Keys.Up:
-                        ScrollUpOrDown(true);
+                        ScrollUpOrDown(true, null, keyboardScrollAccel);
+                        keyboardScrollAccel += 0.5d;
                         break;
                     case Keys.Down:
-                        ScrollUpOrDown(false);
+                        ScrollUpOrDown(false, null, keyboardScrollAccel);
+                        keyboardScrollAccel += 0.5d;
                         break;
                 }
 
                 switch (e.KeyCode)
                 {
                     case Keys.Left:
-                        ScrollLeftOrRight(true);
+                        ScrollLeftOrRight(true, null, keyboardScrollAccel);
+                        keyboardScrollAccel += 0.5d;
                         break;
                     case Keys.Right:
-                        ScrollLeftOrRight(false);
+                        ScrollLeftOrRight(false, null, keyboardScrollAccel);
+                        keyboardScrollAccel += 0.5d;
                         break;
                 }
             }
+        }
+
+        private void pbxMap_KeyUp(object sender, KeyEventArgs e)
+        {
+            keyboardScrollAccel = 1.0d;
         }
 
         private void pbxMap_MouseWheel(object sender, MouseEventArgs e)
@@ -321,7 +336,7 @@ namespace DnDCS.WinFormsLibs
         protected void HandleMouseDown_DragMap(MouseEventArgs e)
         {
             lastScrollDragPosition = e.Location;
-            this.pbxMap.Cursor = Cursors.Hand;
+            this.pbxMap.Cursor = Cursors.SizeAll;
         }
 
         private void pbxMap_MouseMove(object sender, MouseEventArgs e)
@@ -431,25 +446,25 @@ namespace DnDCS.WinFormsLibs
 
         #region Scroll Logic
 
-        private void ScrollLeftOrRight(bool isLeft, int? distance = null)
+        private void ScrollLeftOrRight(bool isLeft, int? distance = null, double factor = 1.0)
         {
             // Scroll left/right
             int newValue;
             if (isLeft)
-                newValue = this.ScrollPosition.X - (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.X - (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             else
-                newValue = this.ScrollPosition.X + (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.X + (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             SetScroll(newValue, null);
         }
 
-        private void ScrollUpOrDown(bool isUp, int? distance = null)
+        private void ScrollUpOrDown(bool isUp, int? distance = null, double factor = 1.0)
         {
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.ScrollPosition.Y - (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.Y - (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             else
-                newValue = this.ScrollPosition.Y + (distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent));
+                newValue = this.ScrollPosition.Y + (int)((distance ?? (int)(pbxMap.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             SetScroll(null, newValue);
         }
 

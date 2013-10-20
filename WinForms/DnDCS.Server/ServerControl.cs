@@ -214,6 +214,7 @@ namespace DnDCS.Server
                             {
                                 var fogUpdates = fogData.Data.ToFogUpdate();
                                 this.ctlDnDMap.SetFogUpdates(fogUpdates);
+                                // Seems easier to just blast out the full fog, rather than a series of Fog Updates.
                                 connection.WriteFog(this.ctlDnDMap.Fog);
                             }
                         }
@@ -246,22 +247,22 @@ namespace DnDCS.Server
 
         private void OnUndoLastFogAction_Click(object sender, EventArgs e)
         {
-            this.ctlDnDMap.TryUndoLastFogAction();
+            var lastFogAction = this.ctlDnDMap.TryUndoLastFogAction();
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if (realTimeFogUpdates)
-                connection.WriteFog(this.ctlDnDMap.Fog);
+            if (lastFogAction != null && realTimeFogUpdates)
+                connection.WriteFogUpdate(lastFogAction);
         }
 
         private void OnRedoLastFogAction_Click(object sender, EventArgs e)
         {
-            this.ctlDnDMap.TryRedoLastFogAction();
+            var lastFogAction = this.ctlDnDMap.TryRedoLastFogAction();
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if (realTimeFogUpdates)
-                connection.WriteFog(this.ctlDnDMap.Fog);
+            if (lastFogAction != null && realTimeFogUpdates)
+                connection.WriteFogUpdate(lastFogAction);
         }
 
         private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)
@@ -387,13 +388,13 @@ namespace DnDCS.Server
             var title = (revealAll) ? "Reveal Entire Map?" : "Fog Entire Map?";
             if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
-                this.ctlDnDMap.FogOrRevealAll(revealAll);
+                var fogOrRevealFogUpdate = this.ctlDnDMap.FogOrRevealAll(revealAll);
 
                 undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
                 redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
                 if (realTimeFogUpdates)
-                    connection.WriteFog(this.ctlDnDMap.Fog);
+                    connection.WriteFogUpdate(fogOrRevealFogUpdate);
             }
         }
 

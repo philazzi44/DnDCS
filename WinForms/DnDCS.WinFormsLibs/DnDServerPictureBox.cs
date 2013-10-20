@@ -128,7 +128,7 @@ namespace DnDCS.WinFormsLibs
 
         #region Fog Actions
 
-        public void TryUndoLastFogAction()
+        public FogUpdate TryUndoLastFogAction()
         {
             if (AnyUndoFogUpdates)
             {
@@ -138,10 +138,13 @@ namespace DnDCS.WinFormsLibs
                 redoFogUpdates.AddLast(lastFogUpdate);
                 undoFogUpdates.RemoveLast();
                 base.RefreshMapPictureBox();
+                return lastFogUpdate;
             }
+
+            return null;
         }
 
-        public void TryRedoLastFogAction()
+        public FogUpdate TryRedoLastFogAction()
         {
             if (AnyRedoFogUpdates)
             {
@@ -150,11 +153,14 @@ namespace DnDCS.WinFormsLibs
                 UpdateFogImage(lastFogUpdate);
                 undoFogUpdates.AddLast(lastFogUpdate);
                 redoFogUpdates.RemoveLast();
-                pbxMap.Refresh();
+                this.RefreshMapPictureBox();
+                return lastFogUpdate;
             }
+
+            return null;
         }
 
-        public void FogOrRevealAll(bool revealAll)
+        public FogUpdate FogOrRevealAll(bool revealAll)
         {
             var fogAllFogUpdate = new FogUpdate(revealAll);
             fogAllFogUpdate.Add(new SimplePoint(0, 0));
@@ -166,6 +172,8 @@ namespace DnDCS.WinFormsLibs
             undoFogUpdates.Clear();
             redoFogUpdates.Clear();
             this.RefreshMapPictureBox();
+
+            return fogAllFogUpdate;
         }
 
         #endregion Fog Actions
