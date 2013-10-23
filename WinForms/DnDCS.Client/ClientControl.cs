@@ -69,10 +69,19 @@ namespace DnDCS.Client
             {
                 fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false, Shortcut = Shortcut.F11 },
                 new MenuItem("-"),
+                new MenuItem("Flip View", OnFlipView_Click) { Checked = false },
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
             return menu;
+        }
+
+        private void OnFlipView_Click(object sender, EventArgs e)
+        {
+            var menuItem = sender as MenuItem;
+
+            this.ctlDnDMap.IsFlippedView = (menuItem.Checked = !menuItem.Checked);
+            this.ctlDnDMap.RefreshAll();
         }
 
         private void OnFullScreen_Click(object sender, EventArgs e)

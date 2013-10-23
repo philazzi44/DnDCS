@@ -71,6 +71,9 @@ namespace DnDCS.WinFormsLibs
         private Point lastScrollDragPosition;
         private double keyboardScrollAccel = 1.0d;
 
+        // Flipped View Values
+        public bool IsFlippedView { get; set; }
+
         // Paint Values
         protected ImageAttributes FogAttributes { get; set; }
 
@@ -559,12 +562,12 @@ namespace DnDCS.WinFormsLibs
 
         protected TransformedGraphics Translate(Graphics g)
         {
-            return g.TranslateAndZoom(this.ScrollPosition, 1.0f);
+            return g.TranslateAndZoom(this.ScrollPosition, this.LoadedMapSize, 1.0f, this.IsFlippedView);
         }
 
         protected TransformedGraphics TranslateAndZoom(Graphics g)
         {
-            return g.TranslateAndZoom(this.ScrollPosition, AssignedZoomFactor);
+            return g.TranslateAndZoom(this.ScrollPosition, this.LoadedMapSize, AssignedZoomFactor, this.IsFlippedView);
         }
 
         protected void PaintZoomFactorText(Graphics g)
