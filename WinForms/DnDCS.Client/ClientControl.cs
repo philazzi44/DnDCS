@@ -70,6 +70,7 @@ namespace DnDCS.Client
                 fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false, Shortcut = Shortcut.F11 },
                 new MenuItem("-"),
                 new MenuItem("Flip View", OnFlipView_Click) { Checked = false },
+                new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
