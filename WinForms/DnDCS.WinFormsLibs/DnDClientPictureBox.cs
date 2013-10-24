@@ -56,33 +56,40 @@ namespace DnDCS.WinFormsLibs
             Bitmap fogImageToUpdate;
             var isNewFogImage = (this.Fog == null);
             if (isNewFogImage)
+            {
                 fogImageToUpdate = new Bitmap(base.LoadedMapSize.Width, base.LoadedMapSize.Height);
-            else
-                fogImageToUpdate = this.Fog;
-
-            if (this.UseFogAlphaEffect)
-            {
-                if (isNewFogImage)
-                {
-                    using (var g = Graphics.FromImage(fogImageToUpdate))
-                    {
-                        g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
-                    }
-                }
-                ImageProcessing.ApplyFogInwards(fogImageToUpdate, fogUpdate);
-            }
-            else
-            {
                 using (var g = Graphics.FromImage(fogImageToUpdate))
                 {
-                    if (isNewFogImage)
-                        g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
-                    g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                    g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
                 }
             }
+            else
+            {
+                fogImageToUpdate = this.Fog;
+            }
 
-            if (isNewFogImage)
-                this.Fog = fogImageToUpdate;
+            var doAction = new Action(() =>
+                    {
+                        if (this.UseFogAlphaEffect)
+                        {
+                            ImageProcessing.ApplyFogInwards(fogImageToUpdate, fogUpdate);
+                        }
+                        else
+                        {
+                            ImageProcessing.ApplyFogDirect(fogImageToUpdate, fogUpdate);
+                        }
+                    });
+
+            // For new images, it's not tied to the control in any way so we can perform the update on the thread. Otherwise, we need
+            // to sync up to the main thread to draw on the image.
+            if (isNewFogImage || !this.InvokeRequired)
+            {
+                doAction();
+                if (isNewFogImage)
+                    this.Fog = fogImageToUpdate;
+            }
+            else
+                this.Invoke(doAction);
 
             RefreshAll();
         }
