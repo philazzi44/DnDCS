@@ -70,6 +70,8 @@ namespace DnDCS.WinFormsLibs
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
         private double keyboardScrollAccel = 1.0d;
+        private bool useHighQuality = true;
+        private readonly Timer scrollHighQualityTimer = new Timer();
 
         // Flipped View Values
         public bool IsFlippedView { get; set; }
@@ -114,6 +116,10 @@ namespace DnDCS.WinFormsLibs
             this.SetStyle(ControlStyles.AllPaintingInWmPaint, true);
             this.SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
 
+            // This timer is used to re-enable High Quality Graphics, which are disabled when a scroll action is performed (for performance reasons).
+            scrollHighQualityTimer.Interval = DnDMapConstants.OnScrollHighQualityTimerInterval;
+            scrollHighQualityTimer.Tick += new EventHandler(scrollHighQualityTimer_Tick);
+            
             isInitialized = true;
         }
 
@@ -498,7 +504,18 @@ namespace DnDCS.WinFormsLibs
                 desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.Height);
 
             this.ScrollPosition = new Point(desiredX.Value, desiredY.Value);
+
+            useHighQuality = false;
+            scrollHighQualityTimer.Start();
+
             RefreshAll();
+        }
+
+        private void scrollHighQualityTimer_Tick(object sender, EventArgs e)
+        {
+            useHighQuality = true;
+            scrollHighQualityTimer.Stop();
+            this.RefreshAll();
         }
 
         #endregion Scroll Logic
@@ -510,9 +527,12 @@ namespace DnDCS.WinFormsLibs
         {
             try
             {
-                e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
-                e.Graphics.SmoothingMode = SmoothingMode.None;
-                e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                if (!useHighQuality)
+                {
+                    e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
+                    e.Graphics.SmoothingMode = SmoothingMode.None;
+                    e.Graphics.InterpolationMode = InterpolationMode.NearestNeighbor;
+                }
 
                 PaintAll(e.Graphics);
             }
