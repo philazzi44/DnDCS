@@ -19,6 +19,9 @@ namespace DnDCS.WinFormsLibs
         public const float ZoomLargeStep = 0.2f;
         public const float ScrollWheelStepScrollPercent = 0.05f;
         public const byte DEFAULT_FOG_BRUSH_ALPHA = 90;
+        public const int FogAlphaEffectInwardsDelta = -30;
+        public const int FogAlphaEffectOutwardsDelta = 30;
+        public const int FogAlphaEffectRetryDelta = 5;
 
         public static readonly Brush FOG_BRUSH = Brushes.Black;
         public static readonly Color FOG_BRUSH_COLOR = Color.Black;

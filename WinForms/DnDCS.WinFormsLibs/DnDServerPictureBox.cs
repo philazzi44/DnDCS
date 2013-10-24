@@ -170,7 +170,7 @@ namespace DnDCS.WinFormsLibs
             fogAllFogUpdate.Add(new SimplePoint(this.Fog.Width, this.Fog.Height));
             fogAllFogUpdate.Add(new SimplePoint(0, this.Fog.Height));
 
-            UpdateFogImage(fogAllFogUpdate);
+            UpdateFogImage(fogAllFogUpdate, true);
             undoFogUpdates.Clear();
             redoFogUpdates.Clear();
             this.RefreshAll();
@@ -190,27 +190,23 @@ namespace DnDCS.WinFormsLibs
             }
         }
 
-        private void UpdateFogImage(FogUpdate fogUpdate)
+        private void UpdateFogImage(FogUpdate fogUpdate, bool ignoreFogAlphaEffect = false)
         {
-            UpdateFogImage(new[] { fogUpdate });
+            UpdateFogImage(new[] { fogUpdate }, ignoreFogAlphaEffect);
         }
 
-        private void UpdateFogImage(FogUpdate[] fogUpdates)
+        private void UpdateFogImage(FogUpdate[] fogUpdates, bool ignoreFogAlphaEffect = false)
         {
-            if (UseFogAlphaEffect)
+            if (!ignoreFogAlphaEffect && UseFogAlphaEffect)
             {
-                ImageProcessing.ApplyFog(this.Fog, fogUpdates);
+                if (!ImageProcessing.ApplyFogInwards(this.Fog, fogUpdates))
+                    return;
             }
             else
             {
-                using (var g = Graphics.FromImage(this.Fog))
-                {
-                    foreach (var fogUpdate in fogUpdates)
-                    {
-                        g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
-                    }
-                    this.RefreshAll(true);
-                }
+                if (!ImageProcessing.ApplyFogDirect(this.Fog, fogUpdates))
+                    return;
+                this.RefreshAll(true);
             }
 
             allFogUpdates.AddRange(fogUpdates);

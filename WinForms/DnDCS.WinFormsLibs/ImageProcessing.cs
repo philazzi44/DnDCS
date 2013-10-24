@@ -12,10 +12,37 @@ namespace DnDCS.WinFormsLibs
 {
     public static class ImageProcessing
     {
-        public static unsafe void ApplyFog(Bitmap fog, params FogUpdate[] fogUpdates)
+        public static bool ApplyFogOutwards(Bitmap fog, params FogUpdate[] fogUpdates)
+        {
+            return ApplyFog(fog, DnDMapConstants.FogAlphaEffectOutwardsDelta, fogUpdates);
+        }
+
+        public static bool ApplyFogInwards(Bitmap fog, params FogUpdate[] fogUpdates)
+        {
+            return ApplyFog(fog, DnDMapConstants.FogAlphaEffectInwardsDelta, fogUpdates);
+        }
+
+        public static bool ApplyFogDirect(Bitmap fog, params FogUpdate[] fogUpdates)
+        {
+            using (var g = Graphics.FromImage(fog))
+            {
+                foreach (var fogUpdate in fogUpdates)
+                {
+                    g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.FOG_CLEAR_BRUSH : DnDMapConstants.FOG_BRUSH,
+                                  fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                }
+            }
+            return true;
+        }
+
+        private static unsafe bool ApplyFog(Bitmap fog, int delta, params FogUpdate[] fogUpdates)
         {
             if (fog == null || fogUpdates == null || !fogUpdates.Any())
-                return;
+                return false;
+
+            var isInwards = (delta < 0);
+
+            var anyComplete = false;
 
             // TODO: Look into a better way to handle multiple fog updates at the same time?
             foreach (var fogUpdate in fogUpdates)
@@ -23,17 +50,47 @@ namespace DnDCS.WinFormsLibs
                 var points = fogUpdate.Points;
                 var isAddingFog = !fogUpdate.IsClearing;
 
-                var polygon = new List<IntPoint>(points.Select(x => new IntPoint(x.X, x.Y)));
-                var polygons = new List<List<IntPoint>>() { polygon };
-                polygons = Clipper.OffsetPolygons(polygons, 48, JoinType.jtRound);
+                var pointPolygon = new List<IntPoint>(points.Select(x => new IntPoint(x.X, x.Y)));
+                var pointPolygons = new List<List<IntPoint>>() { pointPolygon };
+                var offsetPolygons = Clipper.OffsetPolygons(pointPolygons, delta, JoinType.jtRound);
 
-                var offsetPoints = polygons[0].Select(x => new SimplePoint((int)x.X, (int)x.Y)).ToArray();
+                // If our offset was simply too large to have an offset polygon, we'll change it (towards 0)
+                // until we find one. If we never do, we'll just do direct drawing as the shape is too small for alpha fading.
+                var retryDelta = delta;
+                if (isInwards)
+                {
+                    // Inwards means the delta is negative (to make the fog go inwards), so we'll add to it to get it to -1.
+                    while (offsetPolygons.Count == 0 && retryDelta != -1)
+                    {
+                        // The last iteration will end up with retryDelta set to 1, which will cause the smallest offset polygon to be generated.
+                        retryDelta = Math.Min(-1, retryDelta + DnDMapConstants.FogAlphaEffectRetryDelta);
+                        offsetPolygons = Clipper.OffsetPolygons(pointPolygons, retryDelta, JoinType.jtRound);
+                    }
+                }
+
+                // If we still don't have any offset polygon, then the size must just be too small so we'll draw it using the direct method instead.
+                if (offsetPolygons.Count == 0)
+                {
+                    anyComplete |= ApplyFogDirect(fog, fogUpdates);
+                    continue;
+                }
+
+                var offsetPoints = offsetPolygons[0].Select(x => new SimplePoint((int)x.X, (int)x.Y)).ToArray();
+
+                // When we're doing inwards delta, the offsetPoints shape is smaller than the points shape.
+                // Therefore, we'll flip the variables to pretend that the user drew the smaller shape.
+                if (isInwards)
+                {
+                    var p = points;
+                    points = offsetPoints;
+                    offsetPoints = p;
+                }
 
                 var boundingBoxBuffered = GetBoundingBox(fog, offsetPoints, 4);
                 var boundingBox = GetBoundingBox(fog, points, 0);
 
                 var bmd = fog.LockBits(boundingBoxBuffered, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-                var pixelSize = 4;
+                const int pixelSize = 4;
                 Parallel.For(0, bmd.Height, (y) =>
                 {
                     var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
@@ -47,6 +104,11 @@ namespace DnDCS.WinFormsLibs
                             continue;
                         }
 
+                        // When going outwards, we reveal everything in the points (the actual drawn polygon)
+                        //                      we partially reveal anything in the offset polygons
+                        // When going inwards, we reveal anythign in the offset points (an inner polygon)
+                        //                      we partially reveal anything in the actual polygon
+                        // This is handled by flipping the points and offsetPoints variables above.
                         if (IsPointInPolygon(points, offsetX, offsetY))
                         {
                             row[x * pixelSize + 3] = (byte)(isAddingFog ? 255 : 0);
@@ -74,7 +136,10 @@ namespace DnDCS.WinFormsLibs
                 });
 
                 fog.UnlockBits(bmd);
+                anyComplete = true;
             }
+
+            return anyComplete;
         }
 
         private static bool IsPointInPolygon(SimplePoint[] polygon, float testx, float testy)

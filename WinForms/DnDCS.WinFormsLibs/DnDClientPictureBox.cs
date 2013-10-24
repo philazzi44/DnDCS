@@ -69,7 +69,7 @@ namespace DnDCS.WinFormsLibs
                         g.FillRectangle(DnDMapConstants.FOG_BRUSH, 0, 0, fogImageToUpdate.Width, fogImageToUpdate.Height);
                     }
                 }
-                ImageProcessing.ApplyFog(fogImageToUpdate, fogUpdate);
+                ImageProcessing.ApplyFogInwards(fogImageToUpdate, fogUpdate);
             }
             else
             {
