@@ -6,8 +6,6 @@ using System.Linq;
 using System.Windows.Forms;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS.WinFormsLibs.Assets;
-using ClipperLib;
-using System.Threading.Tasks;
 
 namespace DnDCS.WinFormsLibs
 {
@@ -60,6 +58,7 @@ namespace DnDCS.WinFormsLibs
         
         private List<FogUpdate> allFogUpdates = new List<FogUpdate>();
 
+        private bool drawNewFog;
         private Bitmap newFog;
 
         private FogUpdate currentFogUpdate;
@@ -70,10 +69,6 @@ namespace DnDCS.WinFormsLibs
         public bool AnyRedoFogUpdates { get { return this.redoFogUpdates.Any(); } }
 
         public bool? IsRemovingFog { get; set; }
-
-        private readonly Brush newFogClearBrush = Brushes.Red;
-
-        private readonly Brush newFogBrush = Brushes.Gray;
 
         /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
         private readonly int centerMapImageDisplayDuration = 1000;
@@ -124,6 +119,11 @@ namespace DnDCS.WinFormsLibs
         protected override void OnNewMapSet()
         {
             allFogUpdates.Clear();
+
+            // When we have a new map, we'll re-create the newFog image to match the size.
+            if (this.newFog != null)
+                this.newFog.Dispose();
+            this.newFog = new Bitmap(base.LoadedMapSize.Width, base.LoadedMapSize.Height);
         }
 
         #endregion Setters
@@ -186,7 +186,8 @@ namespace DnDCS.WinFormsLibs
         {
             using (var g = Graphics.FromImage(newFog))
             {
-                g.FillPolygon((fogUpdate.IsClearing) ? newFogClearBrush : newFogBrush, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
+                g.Clear(Color.Transparent);
+                g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.NEW_FOG_CLEAR_BRUSH : DnDMapConstants.NEW_FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
             }
         }
 
@@ -268,8 +269,6 @@ namespace DnDCS.WinFormsLibs
                 }
                 else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
                 {
-                    newFog = new Bitmap(Fog.Width, Fog.Height);
-
                     currentFogUpdate = new FogUpdate(this.IsRemovingFog.Value);
                     currentFogUpdate.Add(e.Location.Translate(base.ScrollPosition).ToSimplePoint());
                 }
@@ -304,10 +303,12 @@ namespace DnDCS.WinFormsLibs
                     lastMouseMoveDrawFogTime = DateTime.Now;
 
                     // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-                    Console.WriteLine(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
                     currentFogUpdate.Add(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
 
                     UpdateNewFogImage(currentFogUpdate);
+
+                    // Turn on drawing the New Fog image now that we have something to draw from the New Fog Image.
+                    drawNewFog = true;
 
                     this.RefreshAll();
                 }
@@ -328,10 +329,10 @@ namespace DnDCS.WinFormsLibs
 
             if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
             {
-                var toBeDisposedFog = newFog;
-                newFog = null;
-                if (toBeDisposedFog != null)
-                    toBeDisposedFog.Dispose();
+                // Turn off the NewFog image from being drawn and then clear it out for the next drawing.
+                drawNewFog = false;
+                using (var g = Graphics.FromImage(this.newFog))
+                    g.Clear(Color.Transparent);
 
                 // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
                 // at least 3 points, then we don't have a shape that can be used.
@@ -372,7 +373,7 @@ namespace DnDCS.WinFormsLibs
 
         private void PaintNewFog(TransformedGraphics g)
         {
-            if (this.newFog != null)
+            if (this.newFog != null && this.drawNewFog)
             {
                 g.Graphics.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, base.FogAttributes);
             }
