@@ -10,3 +10,4 @@ The Client instance has visibility only what is allowed, and can zoom in/out for
 
 Version History
 1.0 - 09/22/2013
+1.3 - 10/24/2013
