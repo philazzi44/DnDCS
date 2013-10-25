@@ -29,8 +29,7 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(DnDServerControlPanel));
-            this.spltControls = new System.Windows.Forms.SplitContainer();
-            this.flpControls = new System.Windows.Forms.FlowLayoutPanel();
+            this.flpTop = new System.Windows.Forms.FlowLayoutPanel();
             this.gbxCommands = new System.Windows.Forms.GroupBox();
             this.btnFogAddTool = new System.Windows.Forms.Button();
             this.btnSyncFog = new System.Windows.Forms.Button();
@@ -47,53 +46,31 @@
             this.gbxLog = new System.Windows.Forms.GroupBox();
             this.tboLog = new System.Windows.Forms.RichTextBox();
             this.btnClearLog = new System.Windows.Forms.Button();
-            this.pnlBottom = new System.Windows.Forms.Panel();
+            this.flpAllControls = new System.Windows.Forms.FlowLayoutPanel();
             this.ctlMiniMap = new DnDCS.WinFormsLibs.DnDMiniMap();
-            ((System.ComponentModel.ISupportInitialize)(this.spltControls)).BeginInit();
-            this.spltControls.Panel1.SuspendLayout();
-            this.spltControls.Panel2.SuspendLayout();
-            this.spltControls.SuspendLayout();
-            this.flpControls.SuspendLayout();
+            this.flpTop.SuspendLayout();
             this.gbxCommands.SuspendLayout();
             this.gbxGridSize.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudGridSize)).BeginInit();
             this.gbxLog.SuspendLayout();
-            this.pnlBottom.SuspendLayout();
+            this.flpAllControls.SuspendLayout();
             this.SuspendLayout();
             // 
-            // spltControls
+            // flpTop
             // 
-            this.spltControls.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.spltControls.Location = new System.Drawing.Point(0, 0);
-            this.spltControls.Name = "spltControls";
-            this.spltControls.Orientation = System.Windows.Forms.Orientation.Horizontal;
-            // 
-            // spltControls.Panel1
-            // 
-            this.spltControls.Panel1.Controls.Add(this.flpControls);
-            // 
-            // spltControls.Panel2
-            // 
-            this.spltControls.Panel2.Controls.Add(this.pnlBottom);
-            this.spltControls.Panel2MinSize = 125;
-            this.spltControls.Size = new System.Drawing.Size(127, 500);
-            this.spltControls.SplitterDistance = 371;
-            this.spltControls.TabIndex = 0;
-            // 
-            // flpControls
-            // 
-            this.flpControls.AutoScroll = true;
-            this.flpControls.BackColor = System.Drawing.SystemColors.ControlDark;
-            this.flpControls.Controls.Add(this.gbxCommands);
-            this.flpControls.Controls.Add(this.gbxGridSize);
-            this.flpControls.Controls.Add(this.gbxLog);
-            this.flpControls.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
-            this.flpControls.Location = new System.Drawing.Point(0, 0);
-            this.flpControls.Name = "flpControls";
-            this.flpControls.Size = new System.Drawing.Size(125, 371);
-            this.flpControls.TabIndex = 0;
-            this.flpControls.WrapContents = false;
-            this.flpControls.SizeChanged += new System.EventHandler(this.flpControls_SizeChanged);
+            this.flpTop.AutoScroll = true;
+            this.flpTop.BackColor = System.Drawing.SystemColors.ControlDark;
+            this.flpTop.Controls.Add(this.gbxCommands);
+            this.flpTop.Controls.Add(this.gbxGridSize);
+            this.flpTop.Controls.Add(this.gbxLog);
+            this.flpTop.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
+            this.flpTop.Location = new System.Drawing.Point(0, 3);
+            this.flpTop.Margin = new System.Windows.Forms.Padding(0, 3, 0, 3);
+            this.flpTop.Name = "flpTop";
+            this.flpTop.Size = new System.Drawing.Size(125, 400);
+            this.flpTop.TabIndex = 0;
+            this.flpTop.WrapContents = false;
+            this.flpTop.SizeChanged += new System.EventHandler(this.flpTop_SizeChanged);
             // 
             // gbxCommands
             // 
@@ -106,7 +83,8 @@
             this.gbxCommands.Controls.Add(this.btnFogAll);
             this.gbxCommands.Controls.Add(this.btnToggleBlackout);
             this.gbxCommands.Enabled = false;
-            this.gbxCommands.Location = new System.Drawing.Point(3, 3);
+            this.gbxCommands.Location = new System.Drawing.Point(1, 3);
+            this.gbxCommands.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxCommands.Name = "gbxCommands";
             this.gbxCommands.Size = new System.Drawing.Size(101, 233);
             this.gbxCommands.TabIndex = 1;
@@ -213,7 +191,8 @@
             this.gbxGridSize.Controls.Add(this.chkShowGrid);
             this.gbxGridSize.Controls.Add(this.nudGridSize);
             this.gbxGridSize.Enabled = false;
-            this.gbxGridSize.Location = new System.Drawing.Point(3, 242);
+            this.gbxGridSize.Location = new System.Drawing.Point(1, 242);
+            this.gbxGridSize.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxGridSize.Name = "gbxGridSize";
             this.gbxGridSize.Size = new System.Drawing.Size(101, 47);
             this.gbxGridSize.TabIndex = 2;
@@ -266,7 +245,8 @@
             this.gbxLog.Controls.Add(this.tboLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
             this.gbxLog.Enabled = false;
-            this.gbxLog.Location = new System.Drawing.Point(3, 295);
+            this.gbxLog.Location = new System.Drawing.Point(1, 295);
+            this.gbxLog.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxLog.Name = "gbxLog";
             this.gbxLog.Size = new System.Drawing.Size(101, 160);
             this.gbxLog.TabIndex = 0;
@@ -303,23 +283,23 @@
             this.btnClearLog.UseVisualStyleBackColor = true;
             this.btnClearLog.Click += new System.EventHandler(this.btnClearLog_Click);
             // 
-            // pnlBottom
+            // flpAllControls
             // 
-            this.pnlBottom.Controls.Add(this.ctlMiniMap);
-            this.pnlBottom.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.pnlBottom.Location = new System.Drawing.Point(0, 0);
-            this.pnlBottom.Name = "pnlBottom";
-            this.pnlBottom.Size = new System.Drawing.Size(127, 125);
-            this.pnlBottom.TabIndex = 0;
+            this.flpAllControls.Controls.Add(this.flpTop);
+            this.flpAllControls.Controls.Add(this.ctlMiniMap);
+            this.flpAllControls.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.flpAllControls.Location = new System.Drawing.Point(0, 0);
+            this.flpAllControls.Margin = new System.Windows.Forms.Padding(0);
+            this.flpAllControls.Name = "flpAllControls";
+            this.flpAllControls.Size = new System.Drawing.Size(127, 534);
+            this.flpAllControls.TabIndex = 0;
             // 
             // ctlMiniMap
             // 
-            this.ctlMiniMap.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
             this.ctlMiniMap.DnDMapControl = null;
-            this.ctlMiniMap.Location = new System.Drawing.Point(1, 1);
-            this.ctlMiniMap.Margin = new System.Windows.Forms.Padding(0);
-            this.ctlMiniMap.MaximumSize = new System.Drawing.Size(100, 100);
+            this.ctlMiniMap.Location = new System.Drawing.Point(1, 409);
+            this.ctlMiniMap.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
+            this.ctlMiniMap.MaximumSize = new System.Drawing.Size(125, 125);
             this.ctlMiniMap.MinimumSize = new System.Drawing.Size(125, 125);
             this.ctlMiniMap.Name = "ctlMiniMap";
             this.ctlMiniMap.Size = new System.Drawing.Size(125, 125);
@@ -330,32 +310,28 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.Controls.Add(this.spltControls);
+            this.Controls.Add(this.flpAllControls);
+            this.Margin = new System.Windows.Forms.Padding(0);
             this.MinimumSize = new System.Drawing.Size(127, 0);
             this.Name = "DnDServerControlPanel";
-            this.Size = new System.Drawing.Size(127, 500);
+            this.Size = new System.Drawing.Size(127, 534);
             this.Load += new System.EventHandler(this.DnDServerControlPanel_Load);
-            this.spltControls.Panel1.ResumeLayout(false);
-            this.spltControls.Panel2.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)(this.spltControls)).EndInit();
-            this.spltControls.ResumeLayout(false);
-            this.flpControls.ResumeLayout(false);
+            this.SizeChanged += new System.EventHandler(this.DnDServerControlPanel_SizeChanged);
+            this.flpTop.ResumeLayout(false);
             this.gbxCommands.ResumeLayout(false);
             this.gbxGridSize.ResumeLayout(false);
             this.gbxGridSize.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.nudGridSize)).EndInit();
             this.gbxLog.ResumeLayout(false);
-            this.pnlBottom.ResumeLayout(false);
+            this.flpAllControls.ResumeLayout(false);
             this.ResumeLayout(false);
 
         }
 
         #endregion
 
-        private System.Windows.Forms.SplitContainer spltControls;
-        private System.Windows.Forms.Panel pnlBottom;
         private DnDMiniMap ctlMiniMap;
-        private System.Windows.Forms.FlowLayoutPanel flpControls;
+        private System.Windows.Forms.FlowLayoutPanel flpTop;
         private System.Windows.Forms.GroupBox gbxCommands;
         private System.Windows.Forms.Button btnFogAddTool;
         private System.Windows.Forms.Button btnSyncFog;
@@ -372,5 +348,6 @@
         private System.Windows.Forms.GroupBox gbxLog;
         private System.Windows.Forms.RichTextBox tboLog;
         private System.Windows.Forms.Button btnClearLog;
+        private System.Windows.Forms.FlowLayoutPanel flpAllControls;
     }
 }

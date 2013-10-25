@@ -60,7 +60,7 @@ namespace DnDCS.WinFormsLibs
         {
             InitializeComponent();
 
-            initialCommandsRightBuffer = this.flpControls.Right - this.gbxCommands.Right;
+            initialCommandsRightBuffer = this.flpTop.Right - this.gbxCommands.Right;
         }
 
         private void DnDServerControlPanel_Load(object sender, EventArgs e)
@@ -80,7 +80,6 @@ namespace DnDCS.WinFormsLibs
             var serverData = Persistence.LoadServerData();
             this.realTimeFogUpdates = serverData.RealTimeFogUpdates;
             btnSyncFog.Visible = !this.realTimeFogUpdates;
-            gbxLog.Visible = serverData.ShowLog;
 
             gbxGridSize.Visible = serverData.ShowGridValues;
             chkShowGrid.Checked = serverData.ShowGrid;
@@ -88,18 +87,36 @@ namespace DnDCS.WinFormsLibs
             nudGridSize.Maximum = ConfigValues.MaximumGridSize;
             nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
 
+            gbxLog.Visible = serverData.ShowLog;
+
+            this.flpTop.Height = GetTopFlowPanelHeight();
+
             this.ctlMiniMap.DnDMapControl = this.DnDMapControl;
             this.ctlMiniMap.OnNewCenterMap += new Action<Libs.SimpleObjects.SimplePoint>(ctlMiniMap_OnNewCenterMap);
             this.ctlMiniMap.Init();
+        }
+
+        private int GetTopFlowPanelHeight()
+        {
+            var visibleControls = this.flpTop.Controls.OfType<Control>().Where(c => c.Visible).OrderBy(c => c.Top).ToArray();
+            var totalHeight = visibleControls.Sum(c => c.Height + c.Margin.Top + c.Margin.Bottom);
+
+            var diff = (totalHeight + this.ctlMiniMap.Height) - this.Height;
+            if (diff > 0)
+            {
+                // Our height is trying to go above the full height of the control, so we'll subtract so the Mini Map always fits.
+                totalHeight -= diff;
+            }
+            return totalHeight;
         }
 
         #endregion Init and Cleanup
 
         #region Control and Tool Events
 
-        private void flpControls_SizeChanged(object sender, EventArgs e)
+        private void flpTop_SizeChanged(object sender, EventArgs e)
         {
-            this.gbxCommands.Width = flpControls.Width - gbxCommands.Margin.Right - initialCommandsRightBuffer;
+            this.gbxCommands.Width = flpTop.Width - gbxCommands.Margin.Right - initialCommandsRightBuffer;
         }
 
         private void btnSelectTool_Click(object sender, EventArgs e)
@@ -217,14 +234,17 @@ namespace DnDCS.WinFormsLibs
 
         private void gbxGridSize_VisibleChanged(object sender, EventArgs e)
         {
-            var newHeight = Math.Min(this.spltControls.Panel1.Height,this.flpControls.Controls.OfType<Control>().Last(c => c.Visible).Bottom + flpControls.Margin.Top + flpControls.Margin.Bottom);
-            this.flpControls.Height = newHeight;
+            this.flpTop.Height = GetTopFlowPanelHeight();
         }
 
         private void gbxLog_VisibleChanged(object sender, EventArgs e)
         {
-            var newHeight = Math.Min(this.spltControls.Panel1.Height, this.flpControls.Controls.OfType<Control>().Last(c => c.Visible).Bottom + flpControls.Margin.Top + flpControls.Margin.Bottom);
-            this.flpControls.Height = newHeight;
+            this.flpTop.Height = GetTopFlowPanelHeight();
+        }
+
+        private void DnDServerControlPanel_SizeChanged(object sender, EventArgs e)
+        {
+            this.flpTop.Height = GetTopFlowPanelHeight();
         }
 
         #endregion Control and Tool Events
