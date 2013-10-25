@@ -215,6 +215,18 @@ namespace DnDCS.WinFormsLibs
             this.btnClearLog.Enabled = (this.tboLog.TextLength > 0);
         }
 
+        private void gbxGridSize_VisibleChanged(object sender, EventArgs e)
+        {
+            var newHeight = Math.Min(this.spltControls.Panel1.Height,this.flpControls.Controls.OfType<Control>().Last(c => c.Visible).Bottom + flpControls.Margin.Top + flpControls.Margin.Bottom);
+            this.flpControls.Height = newHeight;
+        }
+
+        private void gbxLog_VisibleChanged(object sender, EventArgs e)
+        {
+            var newHeight = Math.Min(this.spltControls.Panel1.Height, this.flpControls.Controls.OfType<Control>().Last(c => c.Visible).Bottom + flpControls.Margin.Top + flpControls.Margin.Bottom);
+            this.flpControls.Height = newHeight;
+        }
+
         #endregion Control and Tool Events
 
         #region Mini Map Events

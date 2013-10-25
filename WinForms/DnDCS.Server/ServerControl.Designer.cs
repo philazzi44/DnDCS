@@ -54,7 +54,7 @@
             // spltServer.Panel2
             // 
             this.spltServer.Panel2.Controls.Add(this.ctlControlPanel);
-            this.spltServer.Panel2MinSize = 130;
+            this.spltServer.Panel2MinSize = 127;
             this.spltServer.Size = new System.Drawing.Size(804, 489);
             this.spltServer.SplitterDistance = 670;
             this.spltServer.TabIndex = 1;
@@ -81,13 +81,13 @@
             this.ctlControlPanel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.ctlControlPanel.LoadImageMenuItem = null;
             this.ctlControlPanel.Location = new System.Drawing.Point(0, 0);
-            this.ctlControlPanel.MinimumSize = new System.Drawing.Size(125, 0);
+            this.ctlControlPanel.MinimumSize = new System.Drawing.Size(127, 0);
             this.ctlControlPanel.Name = "ctlControlPanel";
             this.ctlControlPanel.RealTimeFogUpdates = false;
             this.ctlControlPanel.RedoLastFogActionMenuItem = null;
             this.ctlControlPanel.ShowGridValues = true;
             this.ctlControlPanel.ShowLogValues = true;
-            this.ctlControlPanel.Size = new System.Drawing.Size(126, 485);
+            this.ctlControlPanel.Size = new System.Drawing.Size(127, 485);
             this.ctlControlPanel.TabIndex = 0;
             this.ctlControlPanel.UndoLastFogActionMenuItem = null;
             // 

@@ -76,22 +76,22 @@
             // 
             this.spltControls.Panel2.Controls.Add(this.pnlBottom);
             this.spltControls.Panel2MinSize = 125;
-            this.spltControls.Size = new System.Drawing.Size(125, 500);
+            this.spltControls.Size = new System.Drawing.Size(127, 500);
             this.spltControls.SplitterDistance = 371;
             this.spltControls.TabIndex = 0;
             // 
             // flpControls
             // 
             this.flpControls.AutoScroll = true;
+            this.flpControls.BackColor = System.Drawing.SystemColors.ControlDark;
             this.flpControls.Controls.Add(this.gbxCommands);
             this.flpControls.Controls.Add(this.gbxGridSize);
             this.flpControls.Controls.Add(this.gbxLog);
-            this.flpControls.Dock = System.Windows.Forms.DockStyle.Fill;
             this.flpControls.FlowDirection = System.Windows.Forms.FlowDirection.TopDown;
             this.flpControls.Location = new System.Drawing.Point(0, 0);
             this.flpControls.Name = "flpControls";
             this.flpControls.Size = new System.Drawing.Size(125, 371);
-            this.flpControls.TabIndex = 1;
+            this.flpControls.TabIndex = 0;
             this.flpControls.WrapContents = false;
             this.flpControls.SizeChanged += new System.EventHandler(this.flpControls_SizeChanged);
             // 
@@ -219,6 +219,7 @@
             this.gbxGridSize.TabIndex = 2;
             this.gbxGridSize.TabStop = false;
             this.gbxGridSize.Text = "Grid Size";
+            this.gbxGridSize.VisibleChanged += new System.EventHandler(this.gbxGridSize_VisibleChanged);
             // 
             // lblGridSize
             // 
@@ -271,6 +272,7 @@
             this.gbxLog.TabIndex = 0;
             this.gbxLog.TabStop = false;
             this.gbxLog.Text = "Log";
+            this.gbxLog.VisibleChanged += new System.EventHandler(this.gbxLog_VisibleChanged);
             // 
             // tboLog
             // 
@@ -307,7 +309,7 @@
             this.pnlBottom.Dock = System.Windows.Forms.DockStyle.Fill;
             this.pnlBottom.Location = new System.Drawing.Point(0, 0);
             this.pnlBottom.Name = "pnlBottom";
-            this.pnlBottom.Size = new System.Drawing.Size(125, 125);
+            this.pnlBottom.Size = new System.Drawing.Size(127, 125);
             this.pnlBottom.TabIndex = 0;
             // 
             // ctlMiniMap
@@ -315,21 +317,23 @@
             this.ctlMiniMap.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ctlMiniMap.DnDMapControl = null;
-            this.ctlMiniMap.Location = new System.Drawing.Point(0, 0);
+            this.ctlMiniMap.Location = new System.Drawing.Point(1, 1);
+            this.ctlMiniMap.Margin = new System.Windows.Forms.Padding(0);
             this.ctlMiniMap.MaximumSize = new System.Drawing.Size(100, 100);
             this.ctlMiniMap.MinimumSize = new System.Drawing.Size(125, 125);
             this.ctlMiniMap.Name = "ctlMiniMap";
             this.ctlMiniMap.Size = new System.Drawing.Size(125, 125);
             this.ctlMiniMap.TabIndex = 0;
+            this.ctlMiniMap.TabStop = false;
             // 
             // DnDServerControlPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.spltControls);
-            this.MinimumSize = new System.Drawing.Size(125, 0);
+            this.MinimumSize = new System.Drawing.Size(127, 0);
             this.Name = "DnDServerControlPanel";
-            this.Size = new System.Drawing.Size(125, 500);
+            this.Size = new System.Drawing.Size(127, 500);
             this.Load += new System.EventHandler(this.DnDServerControlPanel_Load);
             this.spltControls.Panel1.ResumeLayout(false);
             this.spltControls.Panel2.ResumeLayout(false);
