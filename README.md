@@ -9,5 +9,7 @@ instance has full visibility to the entire map and controls which areas are visi
 The Client instance has visibility only what is allowed, and can zoom in/out for the appropriate experience.
 
 Version History
+
 1.0 - 09/22/2013
-1.3 - 10/24/2013
+
+1.3 - 10/25/2013
