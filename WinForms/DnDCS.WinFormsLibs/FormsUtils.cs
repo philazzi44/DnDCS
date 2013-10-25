@@ -57,7 +57,7 @@ namespace DnDCS.WinFormsLibs
             return Color.FromArgb(color.A, color.R, color.G, color.B);
         }
 
-        public static SimpleColor ToSocketColor(this Color color)
+        public static SimpleColor ToSimpleColor(this Color color)
         {
             return new SimpleColor(color.A, color.R, color.G, color.B);
         }

@@ -56,7 +56,7 @@ namespace DnDCS.WinFormsLibs
             }
         }
         
-        private List<FogUpdate> allFogUpdates = new List<FogUpdate>();
+        private readonly List<FogUpdate> allFogUpdates = new List<FogUpdate>();
 
         private bool drawNewFog;
         private Bitmap newFog;
@@ -89,7 +89,7 @@ namespace DnDCS.WinFormsLibs
             {
                 // When it fires, simply disable the timer altogether and hide the image.
                 lastCenterMapPoint = null;
-                centerMapPointDrawTimer.Enabled = false;
+                centerMapPointDrawTimer.Stop();
                 base.RefreshAll();
             };
             this.centerMapPointDrawTimer.Interval = centerMapImageDisplayDuration;
@@ -244,7 +244,8 @@ namespace DnDCS.WinFormsLibs
                     // Get the coordinates in real map coordinates by unwinding the Scroll and Zoom factor.
                     lastCenterMapPoint = e.Location.Translate(base.ScrollPosition);
                     PerformCenterMap(lastCenterMapPoint.Value.ToSimplePoint());
-                    centerMapPointDrawTimer.Enabled = true;
+                    centerMapPointDrawTimer.Stop();
+                    centerMapPointDrawTimer.Start();
                     this.RefreshAll();
                 }
             }

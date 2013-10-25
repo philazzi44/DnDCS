@@ -186,7 +186,7 @@ namespace DnDCS.WinFormsLibs
             if (Connection != null)
                 Connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            this.DnDMapControl.RefreshAll();
+            this.DnDMapControl.SetGridSize(chkShowGrid.Checked, (int)nudGridSize.Value);
         }
 
         private void nudGridSize_ValueChanged(object sender, EventArgs e)
@@ -194,7 +194,7 @@ namespace DnDCS.WinFormsLibs
             if (Connection != null)
                 Connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
 
-            this.DnDMapControl.RefreshAll();
+            this.DnDMapControl.SetGridSize(chkShowGrid.Checked, (int)nudGridSize.Value);
         }
 
         private void nudGridSize_Leave(object sender, EventArgs e)
@@ -202,6 +202,7 @@ namespace DnDCS.WinFormsLibs
             var serverData = Persistence.LoadServerData();
             serverData.GridSize = (chkShowGrid.Checked) ? (int)this.nudGridSize.Value : 0;
             Persistence.SaveServerData(serverData);
+            this.DnDMapControl.SetGridSize(chkShowGrid.Checked, (int)nudGridSize.Value);
         }
 
         private void btnClearLog_Click(object sender, EventArgs e)

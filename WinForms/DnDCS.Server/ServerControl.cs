@@ -128,7 +128,7 @@ namespace DnDCS.Server
                 connection.WriteFog(this.ctlDnDMap.Fog);
             connection.WriteUseFogAlphaEffect(this.ctlDnDMap.UseFogAlphaEffect);
             connection.WriteGridSize(this.ctlControlPanel.ShowGrid, this.ctlControlPanel.ShowGrid ? this.ctlControlPanel.GridSize : 0);
-            connection.WriteGridColor(this.ctlDnDMap.GridPen.Color.ToSocketColor());
+            connection.WriteGridColor(this.ctlDnDMap.GridPen.Color.ToSimpleColor());
         }
 
         #endregion Connection Logic and Callbacks
@@ -318,8 +318,9 @@ namespace DnDCS.Server
 
                     Persistence.SaveServerData(serverData);
 
-                    connection.WriteGridColor(colorOptions.GridLineColor.ToSocketColor());
+                    connection.WriteGridColor(colorOptions.GridLineColor.ToSimpleColor());
 
+                    this.ctlDnDMap.SetGridColor(colorOptions.GridLineColor.ToSimpleColor());
                     this.ctlDnDMap.RefreshAll();
                 }
             }
