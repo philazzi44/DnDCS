@@ -342,14 +342,32 @@ namespace DnDCS.Server
 
             if (this.ctlControlPanel.RealTimeFogUpdates)
                 connection.WriteFogUpdate(fogUpdate);
+
+            Persistence.SaveServerFogData(this.mapUrl, new ServerFogData()
+            {
+                Data = this.ctlDnDMap.AllFogUpdates.Select(f => new FogData()
+                                                           {
+                                                               IsClearing = f.IsClearing,
+                                                               Points = f.Points
+                                                           }).ToArray()
+            });
         }
-        
+
         private void ctlDnDMap_OnManyFogUpdatesChanged()
         {
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
             connection.WriteFog(this.ctlDnDMap.Fog);
+
+            Persistence.SaveServerFogData(this.mapUrl, new ServerFogData()
+            {
+                Data = this.ctlDnDMap.AllFogUpdates.Select(f => new FogData()
+                                                           {
+                                                               IsClearing = f.IsClearing,
+                                                               Points = f.Points
+                                                           }).ToArray()
+            });
         }
 
         #endregion DnD Map Events

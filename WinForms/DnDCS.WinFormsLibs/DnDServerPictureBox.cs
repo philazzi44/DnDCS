@@ -55,8 +55,9 @@ namespace DnDCS.WinFormsLibs
                 this.currentTool = value;
             }
         }
-        
+
         private readonly List<FogUpdate> allFogUpdates = new List<FogUpdate>();
+        public IEnumerable<FogUpdate> AllFogUpdates { get { return this.allFogUpdates.ToArray(); } }
 
         private bool drawNewFog;
         private Bitmap newFog;
