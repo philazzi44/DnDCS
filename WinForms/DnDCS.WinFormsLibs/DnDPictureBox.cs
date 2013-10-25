@@ -88,8 +88,20 @@ namespace DnDCS.WinFormsLibs
             get { return isFlippedView; }
             set
             {
-                // TODO: If changing, flip the scroll position.
+                if (value == isFlippedView)
+                    return;
+
                 isFlippedView = value;
+                if (value)
+                {
+                    // Going from Unflipped to Flipped, so we can simply reverse the coordinates.
+                    SetScroll(this.LoadedMapSize.Width - ScrollPosition.X, this.LoadedMapSize.Height - ScrollPosition.Y);
+                }
+                else
+                {
+                    // Going from Flipped to Unflipped, which means we actually want to reverse the bottom-right of our ScrollPosition, which will become our new Top-Left coordinate.
+                    SetScroll(this.LoadedMapSize.Width - (ScrollPosition.X + this.Width), this.LoadedMapSize.Height - (ScrollPosition.Y + this.Height));
+                }
             }
         }
 
@@ -195,6 +207,7 @@ namespace DnDCS.WinFormsLibs
                 this.LoadedMapSize = newMap.Size;
                 this.Fog = newFog;
                 OnNewMapAndFogSet();
+                SetScroll(0, 0);
                 this.RefreshAll();
 
                 if (oldMap != null)
