@@ -59,7 +59,6 @@
             // flpTop
             // 
             this.flpTop.AutoScroll = true;
-            this.flpTop.BackColor = System.Drawing.SystemColors.ControlDark;
             this.flpTop.Controls.Add(this.gbxCommands);
             this.flpTop.Controls.Add(this.gbxGridSize);
             this.flpTop.Controls.Add(this.gbxLog);
