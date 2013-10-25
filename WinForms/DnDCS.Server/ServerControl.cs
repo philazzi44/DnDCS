@@ -266,7 +266,7 @@ namespace DnDCS.Server
 
         private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)
         {
-            this.ctlControlPanel.EnableControlPanel();
+            this.ctlControlPanel.SetSelectTool();
 
             var menuItem = (MenuItem)sender;
             this.ctlControlPanel.RealTimeFogUpdates = menuItem.Checked = !menuItem.Checked;

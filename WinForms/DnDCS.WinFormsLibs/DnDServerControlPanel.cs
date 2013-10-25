@@ -228,7 +228,14 @@ namespace DnDCS.WinFormsLibs
         public void EnableControlPanel(DnDMapConstants.Tool initialTool = DnDMapConstants.Tool.SelectTool)
         {
             gbxCommands.Enabled = true;
+            gbxGridSize.Enabled = true;
+            gbxLog.Enabled = true;
             ToggleTools(initialTool);
+        }
+
+        public void SetSelectTool()
+        {
+            this.ToggleTools(DnDMapConstants.Tool.SelectTool);
         }
 
         private void ToggleTools(DnDMapConstants.Tool newTool)

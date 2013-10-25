@@ -212,6 +212,7 @@
             this.gbxGridSize.Controls.Add(this.lblGridSize);
             this.gbxGridSize.Controls.Add(this.chkShowGrid);
             this.gbxGridSize.Controls.Add(this.nudGridSize);
+            this.gbxGridSize.Enabled = false;
             this.gbxGridSize.Location = new System.Drawing.Point(3, 242);
             this.gbxGridSize.Name = "gbxGridSize";
             this.gbxGridSize.Size = new System.Drawing.Size(101, 47);
@@ -240,7 +241,6 @@
             // 
             // nudGridSize
             // 
-            this.nudGridSize.Enabled = false;
             this.nudGridSize.Location = new System.Drawing.Point(53, 19);
             this.nudGridSize.Maximum = new decimal(new int[] {
             256,
@@ -264,6 +264,7 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxLog.Controls.Add(this.tboLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
+            this.gbxLog.Enabled = false;
             this.gbxLog.Location = new System.Drawing.Point(3, 295);
             this.gbxLog.Name = "gbxLog";
             this.gbxLog.Size = new System.Drawing.Size(101, 160);
@@ -292,7 +293,6 @@
             this.btnClearLog.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.btnClearLog.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnClearLog.BackgroundImage")));
             this.btnClearLog.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnClearLog.Enabled = false;
             this.btnClearLog.Location = new System.Drawing.Point(71, 10);
             this.btnClearLog.Name = "btnClearLog";
             this.btnClearLog.Size = new System.Drawing.Size(26, 26);
