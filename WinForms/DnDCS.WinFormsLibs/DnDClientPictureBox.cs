@@ -112,9 +112,8 @@ namespace DnDCS.WinFormsLibs
                     PaintGrid(transformedGraphics);
                     PaintFog(transformedGraphics);
                 }
-
-                PaintZoomFactorText(g);
             }
+            PaintZoomFactorText(g);
         }
 
         private void PaintBlackout(Graphics g)
