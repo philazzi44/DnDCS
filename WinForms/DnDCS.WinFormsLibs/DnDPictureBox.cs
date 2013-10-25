@@ -207,8 +207,6 @@ namespace DnDCS.WinFormsLibs
                 this.LoadedMapSize = newMap.Size;
                 this.Fog = newFog;
                 OnNewMapAndFogSet();
-                SetScroll(0, 0);
-                this.RefreshAll();
 
                 if (oldMap != null)
                     oldMap.Dispose();
@@ -218,6 +216,9 @@ namespace DnDCS.WinFormsLibs
 
             if (OnNewMapSet != null)
                 OnNewMapSet(this.LoadedMap);
+
+            SetScroll(0, 0);
+            this.RefreshAll();
         }
 
         protected virtual void OnNewMapAndFogSet()
