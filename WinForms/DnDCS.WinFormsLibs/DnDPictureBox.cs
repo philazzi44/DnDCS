@@ -82,7 +82,16 @@ namespace DnDCS.WinFormsLibs
         private Cursor dragMapOldCursor = Cursors.Default;
 
         // Flipped View Values
-        public bool IsFlippedView { get; set; }
+        private bool isFlippedView;
+        public bool IsFlippedView
+        {
+            get { return isFlippedView; }
+            set
+            {
+                // TODO: If changing, flip the scroll position.
+                isFlippedView = value;
+            }
+        }
 
         // Paint Values
         protected ImageAttributes FogAttributes { get; set; }
@@ -222,8 +231,22 @@ namespace DnDCS.WinFormsLibs
             // Take the point that we want to show, and center it on the client's UI.
             this.BeginInvoke(new Action(() =>
             {
-                // The point that came in is raw on the map, so we need to account for the client's zoom factor.
-                SetScroll((int)(centerMap.X * AssignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * AssignedZoomFactor) - this.Height / 2);
+                // The point that came in is raw on the map...
+                var x = centerMap.X;
+                var y = centerMap.Y;
+
+                // If the view is Flipped, then we also need to flip the centering point so it's where it actually is on our map.
+                if (IsFlippedView)
+                {
+                    x = this.LoadedMapSize.Width - x;
+                    y = this.LoadedMapSize.Height - y;
+                }
+
+                // We also need to account for the client's zoom factor.
+                x = (int)(x * AssignedZoomFactor) - this.Width / 2;
+                y = (int)(y * AssignedZoomFactor) - this.Height / 2;
+
+                SetScroll(x, y);
             }));
         }
 
