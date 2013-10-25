@@ -20,17 +20,6 @@ namespace DnDCS.Server
         public Action<bool> ToggleFullScreen { get; set; }
         private string initialParentFormText;
 
-        // Settings
-        private bool realTimeFogUpdates;
-        private DnDMapConstants.Tool currentTool;
-        private bool isBlackOutSet;
-
-        // Cosmetic values
-        private Color initialSelectToolColor;
-        private Color initialFogRemoveToolColor;
-        private Color initialFogAddToolColor;
-        private Color initialBlackoutColor;
-
         private string mapUrl;
 
         // Menu References
@@ -50,15 +39,7 @@ namespace DnDCS.Server
         
         private void ServerControl_Load(object sender, EventArgs e)
         {
-            initialSelectToolColor = btnSelectTool.BackColor;
-            initialFogRemoveToolColor = btnFogRemoveTool.BackColor;
-            initialFogAddToolColor = btnFogAddTool.BackColor;
-            initialBlackoutColor = btnToggleBlackout.BackColor;
             initialParentFormText = this.ParentForm.Text;
-
-            btnSelectTool.Tag = DnDMapConstants.Tool.SelectTool;
-            btnFogRemoveTool.Tag = DnDMapConstants.Tool.FogRemoveTool;
-            btnFogAddTool.Tag = DnDMapConstants.Tool.FogAddTool;
 
             this.Disposed += new EventHandler(ServerControl_Disposed);
 
@@ -73,15 +54,7 @@ namespace DnDCS.Server
             this.ctlDnDMap.Init();
 
             var serverData = Persistence.LoadServerData();
-            realTimeFogUpdates = serverData.RealTimeFogUpdates;
-            btnSyncFog.Visible = !realTimeFogUpdates;
-            gbxLog.Visible = serverData.ShowLog;
             this.ctlDnDMap.UseFogAlphaEffect = serverData.UseFogAlphaEffect;
-            gbxGridSize.Visible = serverData.ShowGridValues;
-            chkShowGrid.Checked = serverData.ShowGrid;
-            nudGridSize.Minimum = ConfigValues.MinimumGridSize;
-            nudGridSize.Maximum = ConfigValues.MaximumGridSize;
-            nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
             if (serverData.IsGridColorSet)
                 this.ctlDnDMap.GridPen = new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB));
 
@@ -89,6 +62,13 @@ namespace DnDCS.Server
             connection.OnClientConnected += connection_OnClientConnected;
             connection.OnClientCountChanged += new Action<int>(connection_OnClientCountChanged);
             connection.OnSocketEvent += new Action<ServerEvent>(connection_OnSocketEvent);
+
+            this.ctlControlPanel.Connection = connection;
+            this.ctlControlPanel.DnDMapControl = this.ctlDnDMap;
+            this.ctlControlPanel.LoadImageMenuItem = this.loadImage;
+            this.ctlControlPanel.UndoLastFogActionMenuItem = this.undoLastFogAction;
+            this.ctlControlPanel.RedoLastFogActionMenuItem = this.redoLastFogAction;
+            this.ctlControlPanel.Init();
         }
 
         private void ctlDnDMap_TryToggleFullScreen(Keys keyCode)
@@ -126,7 +106,7 @@ namespace DnDCS.Server
 
         private void connection_OnSocketEvent(ServerEvent socketEvent)
         {
-            AppendToUILog(socketEvent.ToString());
+            this.ctlControlPanel.AppendToUILog(socketEvent.ToString());
         }
 
         private void SendAll(bool sendBlackout)
@@ -137,8 +117,8 @@ namespace DnDCS.Server
                 return;
             }
 
-            if (!this.isBlackOutSet)
-                this.btnToggleBlackout.PerformClick();
+            if (!this.ctlControlPanel.IsBlackOutSet)
+                this.ctlControlPanel.ToggleBlackout();
             else
                 connection.WriteBlackout(true);
 
@@ -147,7 +127,7 @@ namespace DnDCS.Server
             if (this.ctlDnDMap.Fog != null)
                 connection.WriteFog(this.ctlDnDMap.Fog);
             connection.WriteUseFogAlphaEffect(this.ctlDnDMap.UseFogAlphaEffect);
-            connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
+            connection.WriteGridSize(this.ctlControlPanel.ShowGrid, this.ctlControlPanel.ShowGrid ? this.ctlControlPanel.GridSize : 0);
             connection.WriteGridColor(this.ctlDnDMap.GridPen.Color.ToSocketColor());
         }
 
@@ -201,7 +181,7 @@ namespace DnDCS.Server
                 {
                     var log = string.Format("Loaded image url '{0}'.", loadImage.LoadedImageUrl);
                     Logger.LogInfo(log);
-                    AppendToUILog(log);
+                    this.ctlControlPanel.AppendToUILog(log);
                     SetMapImage(loadImage.LoadedImageUrl, loadImage.LoadedImage);
 
                     var hasFogData = Persistence.PeekServerFogData(loadImage.LoadedImageUrl);
@@ -256,7 +236,7 @@ namespace DnDCS.Server
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if (lastFogAction != null && realTimeFogUpdates)
+            if (lastFogAction != null && this.ctlControlPanel.RealTimeFogUpdates)
                 connection.WriteFogUpdate(lastFogAction);
         }
 
@@ -266,7 +246,7 @@ namespace DnDCS.Server
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if (lastFogAction != null && realTimeFogUpdates)
+            if (lastFogAction != null && this.ctlControlPanel.RealTimeFogUpdates)
                 connection.WriteFogUpdate(lastFogAction);
         }
 
@@ -286,35 +266,35 @@ namespace DnDCS.Server
 
         private void OnRealTimeFogUpdates_Click(object sender, EventArgs e)
         {
-            ToggleTools(DnDMapConstants.Tool.SelectTool);
+            this.ctlControlPanel.EnableControlPanel();
 
-            var menuItem = sender as MenuItem;
-            realTimeFogUpdates = menuItem.Checked = !menuItem.Checked;
+            var menuItem = (MenuItem)sender;
+            this.ctlControlPanel.RealTimeFogUpdates = menuItem.Checked = !menuItem.Checked;
 
             var serverData = Persistence.LoadServerData();
-            serverData.RealTimeFogUpdates = realTimeFogUpdates;
+            serverData.RealTimeFogUpdates = this.ctlControlPanel.RealTimeFogUpdates;
             Persistence.SaveServerData(serverData);
-
-            btnSyncFog.Visible = !realTimeFogUpdates;
         }
 
         private void OnShowGridValues_Click(object sender, EventArgs e)
         {
-            var menuItem = sender as MenuItem;
-            this.gbxGridSize.Visible = menuItem.Checked = !menuItem.Checked;
+            var menuItem = (MenuItem)sender;
+            var showGridValues = menuItem.Checked = !menuItem.Checked;
+            this.ctlControlPanel.ShowGridValues = showGridValues;
 
             var serverData = Persistence.LoadServerData();
-            serverData.ShowGridValues = this.gbxGridSize.Visible;
+            serverData.ShowGridValues = showGridValues;
             Persistence.SaveServerData(serverData);
         }
 
         private void OnShowLog_Click(object sender, EventArgs e)
         {
-            var menuItem = sender as MenuItem;
-            this.gbxLog.Visible = menuItem.Checked = !menuItem.Checked;
+            var menuItem = (MenuItem)sender;
+            var showLogValues = menuItem.Checked = !menuItem.Checked;
+            this.ctlControlPanel.ShowLogValues = showLogValues;
 
             var serverData = Persistence.LoadServerData();
-            serverData.ShowLog = this.gbxLog.Visible;
+            serverData.ShowLog = showLogValues;
             Persistence.SaveServerData(serverData);
         }
 
@@ -347,127 +327,6 @@ namespace DnDCS.Server
 
         #endregion Menu and Menu Callbacks
 
-        #region Control and Tool Events
-        
-        private void flpControls_SizeChanged(object sender, EventArgs e)
-        {
-            this.gbxCommands.Width = flpControls.Width - gbxCommands.Margin.Right;
-        }
-
-        private void btnSelectTool_Click(object sender, EventArgs e)
-        {
-            if (currentTool != (DnDMapConstants.Tool)btnSelectTool.Tag)
-                ToggleTools((DnDMapConstants.Tool)btnSelectTool.Tag);
-        }
-
-        private void btnFogAddTool_Click(object sender, EventArgs e)
-        {
-            if (currentTool != (DnDMapConstants.Tool)btnFogAddTool.Tag)
-                ToggleTools((DnDMapConstants.Tool)btnFogAddTool.Tag);
-        }
-        
-        private void btnFogRemoveTool_Click(object sender, EventArgs e)
-        {
-            if (currentTool != (DnDMapConstants.Tool)btnFogRemoveTool.Tag)
-                ToggleTools((DnDMapConstants.Tool)btnFogRemoveTool.Tag);
-        }
-
-        private void btnToggleBlackout_Click(object sender, EventArgs e)
-        {
-            if (isBlackOutSet)
-            {
-                // Send message to client to stop doing full blackouts, and obey the fog of war map being sent over
-                isBlackOutSet = false;
-                btnToggleBlackout.BackColor = initialBlackoutColor;
-            }
-            else
-            {
-                // Send message to client to do a full blackout, ignoring any fog of war map that may exist
-                isBlackOutSet = true;
-                btnToggleBlackout.BackColor = Color.Black;
-            }
-
-            // Map and Fog Updates would have been sent to the client in real-time but masked on their end, so we can simply inform them of the change.
-            connection.WriteBlackout(isBlackOutSet);
-        }
-        
-        private void btnFogAll_Click(object sender, EventArgs e)
-        {
-            FogOrRevealAll(false);
-        }
-        
-        private void btnRevealAll_Click(object sender, EventArgs e)
-        {
-            FogOrRevealAll(true);
-        }
-
-        private void FogOrRevealAll(bool revealAll)
-        {
-            var message = (revealAll) ? "This will reveal the entire map. Are you sure? This cannot be undone." : "This will fog the entire map. Are you sure? This cannot be undone.";
-            var title = (revealAll) ? "Reveal Entire Map?" : "Fog Entire Map?";
-            if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
-            {
-                var fogOrRevealFogUpdate = this.ctlDnDMap.FogOrRevealAll(revealAll);
-
-                undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
-                redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
-
-                if (realTimeFogUpdates)
-                    connection.WriteFogUpdate(fogOrRevealFogUpdate);
-            }
-        }
-
-        private void btnSyncFog_Click(object sender, EventArgs e)
-        {
-            connection.WriteFog(this.ctlDnDMap.Fog);
-        }
-
-        private void btnLoadImage_Click(object sender, EventArgs e)
-        {
-            this.loadImage.PerformClick();
-        }
-
-        private void chkShowGrid_CheckedChanged(object sender, EventArgs e)
-        {
-            lblGridSize.Enabled = nudGridSize.Enabled = chkShowGrid.Checked;
-
-            var serverData = Persistence.LoadServerData();
-            serverData.ShowGrid = this.chkShowGrid.Checked;
-            Persistence.SaveServerData(serverData);
-
-            if (connection != null)
-                connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
-
-            this.ctlDnDMap.RefreshAll();
-        }
-
-        private void nudGridSize_ValueChanged(object sender, EventArgs e)
-        {
-            if (connection != null)
-                connection.WriteGridSize(chkShowGrid.Checked, chkShowGrid.Checked ? (int)nudGridSize.Value : 0);
-
-            this.ctlDnDMap.RefreshAll();
-        }
-
-        private void nudGridSize_Leave(object sender, EventArgs e)
-        {
-            var serverData = Persistence.LoadServerData();
-            serverData.GridSize = (chkShowGrid.Checked) ? (int)this.nudGridSize.Value : 0;
-            Persistence.SaveServerData(serverData);
-        }
-
-        private void btnClearLog_Click(object sender, EventArgs e)
-        {
-            tboLog.Clear();
-        }
-        
-        private void tboLog_TextChanged(object sender, EventArgs e)
-        {
-            this.btnClearLog.Enabled = (this.tboLog.TextLength > 0);
-        }
-
-        #endregion Control and Tool Events
-
         #region DnD Map Events
 
         private void ctlDnDMap_PerformCenterMap(SimplePoint centerMap)
@@ -480,7 +339,7 @@ namespace DnDCS.Server
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
-            if (realTimeFogUpdates)
+            if (this.ctlControlPanel.RealTimeFogUpdates)
                 connection.WriteFogUpdate(fogUpdate);
         }
         
@@ -494,32 +353,6 @@ namespace DnDCS.Server
 
         #endregion DnD Map Events
 
-        private void AppendToUILog(string text)
-        {
-            try
-            {
-                tboLog.BeginInvoke(new Action(() =>
-                {
-                    try
-                    {
-                        if (gbxLog.Visible)
-                        {
-                            if (tboLog.TextLength == 0)
-                                tboLog.Text = text;
-                            else
-                                tboLog.Text = tboLog.Text + "\r\n" + text;
-                        }
-                    }
-                    catch
-                    {
-                    }
-                }));
-            }
-            catch
-            {
-            }
-        }
-
         private void TryPurgeMapData(string imageUrl)
         {
             var purgeMapData = MessageBox.Show(this, "Would you like to purge the previously stored fog? Otherwise, when drawing on the map, you will overwrite it.", "Purge Map Data", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes;
@@ -528,54 +361,7 @@ namespace DnDCS.Server
                 Persistence.SaveServerFogData(imageUrl, null);
             }
         }
-
-        private void ToggleTools(DnDMapConstants.Tool newTool)
-        {
-            // Ignore any tool toggling if we're not even allowing commands yet.
-            if (!gbxCommands.Enabled)
-                return;
-
-            this.ctlDnDMap.CurrentTool = newTool;
-
-            // Change the enabledness & colors as needed.
-            if (newTool == DnDMapConstants.Tool.SelectTool)
-            {
-                btnSelectTool.Enabled = false;
-                btnSelectTool.BackColor = Color.White;
-
-                btnFogRemoveTool.Enabled = true;
-                btnFogRemoveTool.BackColor = initialFogRemoveToolColor;
-                btnFogAddTool.Enabled = true;
-                btnFogAddTool.BackColor = initialFogAddToolColor;
-            }
-            else if (newTool == DnDMapConstants.Tool.FogRemoveTool)
-            {
-                btnFogRemoveTool.Enabled = false;
-                btnFogRemoveTool.BackColor = Color.White;
-
-                btnSelectTool.Enabled = true;
-                btnSelectTool.BackColor = initialSelectToolColor;
-                btnFogAddTool.Enabled = true;
-                btnFogAddTool.BackColor = initialFogAddToolColor;
-            }
-            else if (newTool == DnDMapConstants.Tool.FogAddTool)
-            {
-                btnFogAddTool.Enabled = false;
-                btnFogAddTool.BackColor = Color.White;
-
-                btnSelectTool.Enabled = true;
-                btnSelectTool.BackColor = initialSelectToolColor;
-                btnFogRemoveTool.Enabled = true;
-                btnFogRemoveTool.BackColor = initialFogRemoveToolColor;
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-
-            currentTool = newTool;
-        }
-
+        
         private void SetMapImage(string imageUrl, Image mapImage)
         {
             if (mapImage == null)
@@ -583,9 +369,8 @@ namespace DnDCS.Server
 
             mapUrl = imageUrl;
             this.ctlDnDMap.SetMapAsync(mapImage);
-            
-            gbxCommands.Enabled = true;
-            ToggleTools(DnDMapConstants.Tool.SelectTool);
+
+            this.ctlControlPanel.EnableControlPanel();
 
             // Re-send everything since we've just re-created the Map and Fog. This will also force a Blackout of the new image.
             SendAll(true);

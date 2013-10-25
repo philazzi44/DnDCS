@@ -46,8 +46,20 @@
   <ItemGroup>
     <Compile Include="Assets\AssetsLoader.cs" />
     <Compile Include="DnDMapConstants.cs" />
+    <Compile Include="DnDMiniMap.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DnDMiniMap.Designer.cs">
+      <DependentUpon>DnDMiniMap.cs</DependentUpon>
+    </Compile>
     <Compile Include="DnDPictureBox.Designer.cs">
       <DependentUpon>DnDPictureBox.cs</DependentUpon>
+    </Compile>
+    <Compile Include="DnDServerControlPanel.cs">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Include="DnDServerControlPanel.Designer.cs">
+      <DependentUpon>DnDServerControlPanel.cs</DependentUpon>
     </Compile>
     <Compile Include="DnDServerPictureBox.cs">
       <SubType>UserControl</SubType>
@@ -88,8 +100,14 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="DnDMiniMap.resx">
+      <DependentUpon>DnDMiniMap.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="DnDPictureBox.resx">
       <DependentUpon>DnDPictureBox.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DnDServerControlPanel.resx">
+      <DependentUpon>DnDServerControlPanel.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

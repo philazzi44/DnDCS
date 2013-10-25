@@ -21,6 +21,12 @@ namespace DnDCS.WinFormsLibs
         protected Size LoadedMapSize { get; set; }
         private int LogicalMapWidth { get { return (int)(LoadedMapSize.Width * AssignedZoomFactor); } }
         private int LogicalMapHeight { get { return (int)(LoadedMapSize.Height * AssignedZoomFactor); } }
+        public event Action<Image> OnNewMapSet;
+        /// <summary> Gets the size that is visible to the user. </summary>
+        public Size VisibleSize
+        {
+            get { return this.Size; }
+        }
 
         // Grid Values
         private int? gridSize;
@@ -72,6 +78,8 @@ namespace DnDCS.WinFormsLibs
         private double keyboardScrollAccel = 1.0d;
         private bool useHighQuality = true;
         private readonly Timer scrollHighQualityTimer = new Timer();
+        public event Action<Point> OnScrollStep;
+        private Cursor dragMapOldCursor = Cursors.Default;
 
         // Flipped View Values
         public bool IsFlippedView { get; set; }
@@ -177,18 +185,20 @@ namespace DnDCS.WinFormsLibs
                 this.LoadedMap = newMap;
                 this.LoadedMapSize = newMap.Size;
                 this.Fog = newFog;
-                OnNewMapSet();
+                OnNewMapAndFogSet();
                 this.RefreshAll();
 
                 if (oldMap != null)
                     oldMap.Dispose();
                 if (oldFog != null)
                     oldFog.Dispose();
-
             }));
+
+            if (OnNewMapSet != null)
+                OnNewMapSet(this.LoadedMap);
         }
-        
-        protected virtual void OnNewMapSet()
+
+        protected virtual void OnNewMapAndFogSet()
         {
         }
 
@@ -205,6 +215,16 @@ namespace DnDCS.WinFormsLibs
             gridPen = new Pen(Color.FromArgb(gridColor.A, gridColor.R, gridColor.G, gridColor.B));
 
             RefreshAll();
+        }
+
+        public void SetCenterMap(SimplePoint centerMap)
+        {
+            // Take the point that we want to show, and center it on the client's UI.
+            this.BeginInvoke(new Action(() =>
+            {
+                // The point that came in is raw on the map, so we need to account for the client's zoom factor.
+                SetScroll((int)(centerMap.X * AssignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * AssignedZoomFactor) - this.Height / 2);
+            }));
         }
 
         #endregion Setters
@@ -346,6 +366,7 @@ namespace DnDCS.WinFormsLibs
         protected void HandleMouseDown_DragMap(MouseEventArgs e)
         {
             lastScrollDragPosition = e.Location;
+            dragMapOldCursor = this.Cursor;
             this.Cursor = Cursors.SizeAll;
         }
 
@@ -413,7 +434,7 @@ namespace DnDCS.WinFormsLibs
 
         protected void HandleMouseUp_Drag(MouseEventArgs e)
         {
-            this.Cursor = Cursors.Default;
+            this.Cursor = dragMapOldCursor;
         }
 
         #endregion Map Events
@@ -509,6 +530,9 @@ namespace DnDCS.WinFormsLibs
             scrollHighQualityTimer.Start();
 
             RefreshAll();
+
+            if (OnScrollStep != null)
+                OnScrollStep(this.ScrollPosition);
         }
 
         private void scrollHighQualityTimer_Tick(object sender, EventArgs e)

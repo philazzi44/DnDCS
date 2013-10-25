@@ -94,16 +94,6 @@ namespace DnDCS.WinFormsLibs
             RefreshAll();
         }
 
-        public void SetCenterMap(SimplePoint centerMap)
-        {
-            // Take the point that we want to show, and center it on the client's UI.
-            this.BeginInvoke(new Action(() =>
-            {
-                // The point that came in is raw on the map, so we need to account for the client's zoom factor.
-                SetScroll((int)(centerMap.X * AssignedZoomFactor) - this.Width / 2, (int)(centerMap.Y * AssignedZoomFactor) - this.Height / 2);
-            }));
-        }
-
         #endregion Setters
 
         #region Painting

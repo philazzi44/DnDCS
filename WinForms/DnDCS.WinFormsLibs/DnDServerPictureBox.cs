@@ -116,7 +116,7 @@ namespace DnDCS.WinFormsLibs
 
         #region Setters
 
-        protected override void OnNewMapSet()
+        protected override void OnNewMapAndFogSet()
         {
             allFogUpdates.Clear();
 
