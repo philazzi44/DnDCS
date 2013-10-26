@@ -48,7 +48,7 @@
     <XnaCompressContent>false</XnaCompressContent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>none</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\x86\Release</OutputPath>
     <DefineConstants>TRACE;WINDOWS</DefineConstants>
@@ -88,6 +88,22 @@
     <ProjectReference Include="..\..\DnDCS.Libs\DnDCS.Libs.csproj">
       <Project>{EAB1B144-0E8B-4BA2-958A-42B1E70B32AB}</Project>
       <Name>DnDCS.Libs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDCS.Win.Client\DnDCS.Win.Client.csproj">
+      <Project>{57A96DDF-61D3-4286-AE00-8AC6F218BA4E}</Project>
+      <Name>DnDCS.Win.Client</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDCS.Win.Libs\DnDCS.Win.Libs.csproj">
+      <Project>{70F6B07C-0D5E-4373-A21F-1D446A59B33F}</Project>
+      <Name>DnDCS.Win.Libs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDCS.Win.Server\DnDCS.Win.Server.csproj">
+      <Project>{E306AAE7-51E4-442A-ACBB-793F496FA80B}</Project>
+      <Name>DnDCS.Win.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\DnDCS.Win\DnDCS.Win.csproj">
+      <Project>{2E48D8C6-99CC-4EF6-9200-DA7080809B23}</Project>
+      <Name>DnDCS.Win</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\DnDCS.XNA.Client\DnDCS.XNA.Client.csproj">
       <Project>{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}</Project>

@@ -8,7 +8,7 @@ namespace DnDCS.XNA.Libs
 
         static ConfigValues()
         {
-            WinFormsApp = ConfigurationManager.AppSettings["WinFormsApp"] ?? "DnDCS.exe";
+            WinFormsApp = ConfigurationManager.AppSettings["WinFormsApp"] ?? "DnDCS.Win.exe";
         }
     }
 }

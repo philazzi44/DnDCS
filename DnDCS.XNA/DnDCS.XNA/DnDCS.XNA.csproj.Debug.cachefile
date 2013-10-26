@@ -1,9 +1,8 @@
-Content\Debug.xnb
 Content\GenericMessage.xnb
+Content\Debug.xnb
 Content\MenuItem.xnb
-Content\BlackoutImage.xnb
-Content\NoMapImage.xnb
 Content\MenuSelector.xnb
+Content\NoMapImage.xnb
 Content\Menu Selector\Enter1.xnb
 Content\Menu Selector\Enter2.xnb
 Content\Menu Selector\Enter3.xnb
@@ -23,3 +22,9 @@ Content\Menu Selector\SelectorIntro4.xnb
 Content\Menu Selector\SelectorIntro5.xnb
 Content\Menu Selector\SelectorIntro6.xnb
 Content\Menu Selector\SelectorIntro7.xnb
+Content\BlackoutImage.xnb
+Assets\BlackoutImage.png
+Assets\CenterMapOverlayIcon.png
+Assets\ClientIcon.ico
+Assets\LauncherIcon.ico
+Assets\ServerIcon.ico
