@@ -19,11 +19,31 @@ namespace DnDCS
 
         private IDnDCSControl control;
 
+        private Constants.RunMode? runMode;
+        private SimpleServerAddress ClientStartupServerAddress;
+
         public Launcher()
         {
             InitializeComponent();
         }
-        
+
+        public static Launcher CreateClient(SimpleServerAddress clientStartupServerAddress)
+        {
+            return new Launcher()
+            {
+                runMode = Constants.RunMode.Client,
+                ClientStartupServerAddress = clientStartupServerAddress,
+            };
+        }
+
+        public static Launcher CreateServer()
+        {
+            return new Launcher()
+            {
+                runMode = Constants.RunMode.Server,
+            };
+        }
+
         private void Launcher_Load(object sender, EventArgs e)
         {
             this.Icon = DnDCS.WinFormsLibs.Assets.AssetsLoader.LauncherIcon;
@@ -31,6 +51,23 @@ namespace DnDCS
             initialFormTopMost = this.TopMost;
             initialFormBorderStyle = this.FormBorderStyle;
             initialFormWindowState = this.WindowState;
+
+            if (this.runMode.HasValue)
+            {
+                switch (this.runMode.Value)
+                {
+                    case Constants.RunMode.Client:
+                        this.btnClient.PerformClick();
+                        break;
+
+                    case Constants.RunMode.Server:
+                        this.btnServer.PerformClick();
+                        break;
+
+                    default:
+                        break;
+                }
+            }
         }
 
         private void Launcher_FormClosed(object sender, FormClosedEventArgs e)
@@ -40,7 +77,10 @@ namespace DnDCS
         
         private void btnClient_Click(object sender, EventArgs e)
         {
-            SetMode("Client", DnDCS.WinFormsLibs.Assets.AssetsLoader.ClientIcon, new ClientControl());
+            SetMode("Client", DnDCS.WinFormsLibs.Assets.AssetsLoader.ClientIcon, new ClientControl()
+                {
+                    StartupServerAddress = ClientStartupServerAddress,
+                });
         }
 
         private void btnServer_Click(object sender, EventArgs e)

@@ -25,6 +25,9 @@ namespace DnDCS.Client
         // Client Connection
         private ClientSocketConnection connection;
 
+        /// <summary> The Server IP and Port to use at startup. </summary>
+        public SimpleServerAddress StartupServerAddress { get; set; }
+
         #region Init and Cleanup
 
         public ClientControl()
@@ -42,6 +45,10 @@ namespace DnDCS.Client
             this.ctlDnDMap.AllowZoom = true;
             this.ctlDnDMap.Init();
 
+            // Use the Name/IP address we had at startup, if any.
+            if (StartupServerAddress != null)
+                Connect(StartupServerAddress.Address, StartupServerAddress.Port);
+            else
             Connect();
         }
 
