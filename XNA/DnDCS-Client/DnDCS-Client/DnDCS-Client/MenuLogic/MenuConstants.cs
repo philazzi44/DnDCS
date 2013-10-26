@@ -11,13 +11,15 @@ namespace DnDCS_Client.MenuLogic
         /// <summary> Position in this enum dictates the position shown on screen. </summary>
         public enum MenuOption
         {
-            Connect = 0,
+            Server = 0,
+            Client,
             Exit,
         };
 
         public static readonly IDictionary<MenuOption, string> MenuOptions = new Dictionary<MenuOption, string>
         {
-            { MenuOption.Connect, "Connect" },
+            { MenuOption.Server, "Server" },
+            { MenuOption.Client, "Client" },
             { MenuOption.Exit, "Exit" },
         };
 

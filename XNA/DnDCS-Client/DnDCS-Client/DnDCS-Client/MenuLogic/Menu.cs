@@ -17,8 +17,10 @@ namespace DnDCS_Client.MenuLogic
 {
     public class Menu : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        /// <summary> Event raised when Connect is invoked. </summary>
-        public event Action<SimpleServerAddress> OnConnect;
+        /// <summary> Event raised when Client is invoked. </summary>
+        public event Action<SimpleServerAddress> OnClient;
+        /// <summary> Event raised when Server is invoked. </summary>
+        public event Action OnServer;
         /// <summary> Event raised when Exit is invoked. </summary>
         public event Action OnExit;
 
@@ -219,16 +221,23 @@ namespace DnDCS_Client.MenuLogic
             {
                 switch (selectedMenuOption)
                 {
-                    case MenuConstants.MenuOption.Connect:
+                    case MenuConstants.MenuOption.Server:
+                        DoEnter(gameTime, () =>
+                        {
+                            if (OnServer != null)
+                                OnServer();
+                        });
+                        break;
+                    case MenuConstants.MenuOption.Client:
                         DoEnter(gameTime, () =>
                                               {
                                                   // TODO: Prompt for connection information
-                                                  if (OnConnect != null)
+                                                  if (OnClient != null)
                                                   {
                                                       var address = "desktop-win7";
                                                       var port = 11000;
 
-                                                      OnConnect(new SimpleServerAddress() { Address = address, Port = port });
+                                                      OnClient(new SimpleServerAddress() { Address = address, Port = port });
                                                   }
                                               });
                         break;
@@ -308,7 +317,7 @@ namespace DnDCS_Client.MenuLogic
                                                                           {
                                                                               this.menuEnterAnimation.Translation = null;
                                                                               this.menuEnterAnimation.Frame.Stop(true);
-                                                                              //onComplete();
+                                                                              onComplete();
                                                                           }
                                                      };
 

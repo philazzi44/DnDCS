@@ -6,6 +6,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Graphics;
 using DnDCS.Libs;
 using DnDCS_Client.Shared;
+using DnDCS.Libs.SimpleObjects;
 
 namespace DnDCS_Client.ClientLogic
 {

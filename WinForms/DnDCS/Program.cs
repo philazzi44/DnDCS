@@ -33,7 +33,7 @@ namespace DnDCS
                                 var address = args[1];
                                 var portString = args[2];
                                 int port;
-                                if (Utils.IsIPAddress(address) && int.TryParse(portString, out port))
+                                if (int.TryParse(portString, out port))
                                 {
                                     launcher = Launcher.CreateClient(new SimpleServerAddress()
                                     {

@@ -67,19 +67,30 @@ namespace DnDCS_Client
         private void ShowMenuComponent()
         {
             var menuComponent = new Menu();
-            menuComponent.OnConnect += new System.Action<DnDCS.Libs.SimpleObjects.SimpleServerAddress>(menu_OnConnect);
+            menuComponent.OnServer += new System.Action(menu_OnServer);
+            menuComponent.OnClient += new System.Action<DnDCS.Libs.SimpleObjects.SimpleServerAddress>(menu_OnClient);
             menuComponent.OnExit += new System.Action(menuComponent_OnExit);
             this.SwitchGameComponent(menuComponent);
         }
 
+        private void ShowServerComponent()
+        {
+            // TODO: For now, the Server is a Win Forms app that is run in Server mode.
+            System.Diagnostics.Process.Start(Shared.ConfigValues.WinFormsApp, ((int)DnDCS.Libs.Constants.RunMode.Server).ToString());
+            this.Exit();
+        }
 
         private void ShowClientComponent(DnDCS.Libs.SimpleObjects.SimpleServerAddress serverAddress)
         {
-            var clientComponent = new Client(serverAddress.Address, serverAddress.Port);
-            clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
-            clientComponent.Initialize();
+            // TODO: For now, the Client is a Win Forms app that is run in Client mode.
+            System.Diagnostics.Process.Start(Shared.ConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
+            this.Exit();
 
-            this.SwitchGameComponent(clientComponent);
+            // var clientComponent = new Client(serverAddress.Address, serverAddress.Port);
+            // clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            // clientComponent.Initialize();
+
+            // this.SwitchGameComponent(clientComponent);
         }
 
         private void SwitchGameComponent(GameComponent newGameComponent)
@@ -94,7 +105,12 @@ namespace DnDCS_Client
             this.Components.Add(this.activeGameComponent = newGameComponent);
         }
 
-        private void menu_OnConnect(DnDCS.Libs.SimpleObjects.SimpleServerAddress serverAddress)
+        private void menu_OnServer()
+        {
+            ShowServerComponent();
+        }
+
+        private void menu_OnClient(DnDCS.Libs.SimpleObjects.SimpleServerAddress serverAddress)
         {
             ShowClientComponent(serverAddress);
         }
