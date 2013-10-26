@@ -1,16 +1,19 @@
-﻿using DnDCS.Libs.SimpleObjects;
+﻿using System.Collections.Generic;
+using System.Linq;
+using DnDCS.Libs.SimpleObjects;
 using DnDCS.XNA.Client;
 using DnDCS.XNA.Libs;
 using DnDCS.XNA.Libs.Shared;
 using DnDCS.XNA.MenuLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.GamerServices;
 
 namespace DnDCS.XNA
 {
     public partial class Game : Microsoft.Xna.Framework.Game
     {
-        private GameComponent activeGameComponent;
+        private readonly List<GameComponent> activeGameComponents = new List<GameComponent>();
 
         public Game()
         {
@@ -54,11 +57,11 @@ namespace DnDCS.XNA
         {
             var menuComponent = new Menu();
             menuComponent.OnServer += new System.Action(menu_OnServer);
-            menuComponent.OnClient += new System.Action<SimpleServerAddress>(menu_OnClient);
-            menuComponent.OnExit += new System.Action(menuComponent_OnExit);
-            this.SwitchGameComponent(menuComponent);
+            menuComponent.OnClientConnect += new System.Action<SimpleServerAddress>(menu_OnClientConnect);
+            menuComponent.OnExit += new System.Action(menu_OnExit);
+            this.SwitchGameComponent(menuComponent, new GamerServicesComponent(SharedResources.Game));
         }
-
+        
         private void ShowServerComponent()
         {
             // TODO: For now, the Server is a Win Forms app that is run in Server mode.
@@ -80,16 +83,23 @@ namespace DnDCS.XNA
             this.SwitchGameComponent(clientComponent);
         }
 
-        private void SwitchGameComponent(GameComponent newGameComponent)
+        private void SwitchGameComponent(params GameComponent[] newGameComponents)
         {
-            if (this.activeGameComponent != null)
+            if (activeGameComponents.Any())
             {
-                this.Components.Remove(this.activeGameComponent);
-                this.activeGameComponent.Dispose();
-                this.activeGameComponent = null;
+                foreach (var c in activeGameComponents)
+                {
+                    this.Components.Remove(c);
+                    c.Dispose();
+                }
+                activeGameComponents.Clear();
             }
 
-            this.Components.Add(this.activeGameComponent = newGameComponent);
+            foreach (var c in newGameComponents)
+            {
+                activeGameComponents.Add(c);
+                this.Components.Add(c);
+            }
         }
 
         private void menu_OnServer()
@@ -97,14 +107,24 @@ namespace DnDCS.XNA
             ShowServerComponent();
         }
 
-        private void menu_OnClient(SimpleServerAddress serverAddress)
+        private void menu_OnClientConnect(SimpleServerAddress serverAddress)
         {
             ShowClientComponent(serverAddress);
         }
 
-        private void menuComponent_OnExit()
+        private void menu_OnExit()
         {
             this.Exit();
+        }
+
+        private void menuConnect_OnEnter(SimpleServerAddress serverAddress)
+        {
+            ShowClientComponent(serverAddress);
+        }
+
+        private void menuConnect_OnExit()
+        {
+            ShowMenuComponent();
         }
 
         private void clientComponent_OnEscape()
@@ -115,8 +135,6 @@ namespace DnDCS.XNA
         protected override void Update(GameTime gameTime)
         {
             Debug.Clear();
-
-            // TODO: Add Keyboard state and other global state things to here to be captured.
 
             base.Update(gameTime);
         }

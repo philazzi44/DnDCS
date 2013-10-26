@@ -6,13 +6,14 @@ using DnDCS.XNA.Libs.Shared;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.GamerServices;
 
 namespace DnDCS.XNA.MenuLogic
 {
     public class Menu : Microsoft.Xna.Framework.DrawableGameComponent
     {
-        /// <summary> Event raised when Client is invoked. </summary>
-        public event Action<SimpleServerAddress> OnClient;
+        /// <summary> Event raised when Client Connect is invoked. </summary>
+        public event Action<SimpleServerAddress> OnClientConnect;
         /// <summary> Event raised when Server is invoked. </summary>
         public event Action OnServer;
         /// <summary> Event raised when Exit is invoked. </summary>
@@ -35,9 +36,10 @@ namespace DnDCS.XNA.MenuLogic
         /// <summary> If true, we should use the Enter animation for the selector instead of the Idle animation. </summary>
         private bool UseSelectorEnterAnimation { get; set; }
 
+        #region Init and Cleanup
+
         public Menu() : base(SharedResources.Game)
         {
-            // TODO: Construct any child components here
         }
 
         /// <summary>
@@ -164,6 +166,10 @@ namespace DnDCS.XNA.MenuLogic
             menuEnterAnimation.Frame.LogName = "Enter Frame Animation";
         }
 
+        #endregion Init and Cleanup
+
+        #region Update
+
         public override void Update(GameTime gameTime)
         {
             // Regardless of any input-blocking animations happening, this animation needs to be updated.
@@ -225,14 +231,7 @@ namespace DnDCS.XNA.MenuLogic
                     case MenuConstants.MenuOption.Client:
                         DoEnter(gameTime, () =>
                                               {
-                                                  // TODO: Prompt for connection information
-                                                  if (OnClient != null)
-                                                  {
-                                                      var address = "desktop-win7";
-                                                      var port = 11000;
-
-                                                      OnClient(new SimpleServerAddress() { Address = address, Port = port });
-                                                  }
+                                                  Microsoft.Xna.Framework.GamerServices.Guide.BeginShowKeyboardInput(PlayerIndex.One, "Connect To", "Enter IP/Name:Port", "127.0.0.1:11000", OnConnectValueComplete, null);
                                               });
                         break;
                     case MenuConstants.MenuOption.Exit:
@@ -244,6 +243,38 @@ namespace DnDCS.XNA.MenuLogic
             {
                 TryRaiseOnExit();
             }
+        }
+
+        private void OnConnectValueComplete(IAsyncResult result)
+        {
+            var connectValue = Guide.EndShowKeyboardInput(result);
+
+            if (connectValue.Contains(":"))
+            {
+                var split = connectValue.Split(':');
+                if (split.Length == 2)
+                {
+                    var address = split[0];
+                    var portString = split[1];
+                    int port;
+                    if (int.TryParse(portString, out port))
+                    {
+                        var serverAddress = new SimpleServerAddress()
+                        {
+                            Address = address,
+                            Port = port,
+                        };
+
+                        if (OnClientConnect != null)
+                        {
+                            OnClientConnect(serverAddress);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // TODO: Some kind of error saying there's a problem with the format should be shown here.
         }
 
         private void SelectUp(GameTime gameTime)
@@ -327,33 +358,9 @@ namespace DnDCS.XNA.MenuLogic
                 OnExit();
         }
 
-        /// <summary> Top-Left of the Menu Text Entry. </summary>
-        private Vector2 GetMenuTextPosition(MenuConstants.MenuOption menuOption)
-        {
-            return new Vector2(MenuConstants.MenuStartX, MenuConstants.MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
-        }
+        #endregion Update
 
-        /// <summary>
-        ///     Returns the top left of the specified Frame Animation to allow for the center of the image to be vertically centered with the text, but with some pixels between the right of the image and the left of the text.
-        ///     If the Frame Animation specified is null, then the Idle or Enter frame will be used based on the UseIdleAnimation and UseEnteranimation flags.
-        /// </summary>
-        private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption, Frame2DAnimation menuSelectorFrameAnimation = null)
-        {
-            var frame = (menuSelectorFrameAnimation == null) ? this.menuSelectorFrameAnimation.Animation.CurrentFrame : menuSelectorFrameAnimation.CurrentFrame;
-            var menuTextPosition = GetMenuTextPosition(menuOption);
-            return new Vector2(menuTextPosition.X - frame.Width - 25, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - frame.Height / 2);
-        }
-
-        /// <summary> Returns the top left of the Enter Animation to allow for the center of the image to be vertically centered with the Selector's arm cannon, as well as the top left of where it should end. </summary>
-        private Vector2[] GetMenuSelectorEnterPositions(MenuConstants.MenuOption menuOption)
-        {
-            var menuSelectorPosition = GetMenuSelectorPosition(menuOption);
-            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.menuSelectorFrameAnimation.Animation.CurrentFrame.Width - 8, menuSelectorPosition.Y);
-            // It ends all the way beyond the screen boundaries
-            var menuSelectorEnterPositionEnd = new Vector2(SharedResources.GameWindow.ClientBounds.Width, menuSelectorEnterPositionStart.Y);
-
-            return new Vector2[] { menuSelectorEnterPositionStart, menuSelectorEnterPositionEnd };
-        }
+        #region Draw
 
         public override void Draw(GameTime gameTime)
         {
@@ -394,5 +401,37 @@ namespace DnDCS.XNA.MenuLogic
 
             base.Draw(gameTime);
         }
+
+        #endregion Draw
+
+        /// <summary> Top-Left of the Menu Text Entry. </summary>
+        private Vector2 GetMenuTextPosition(MenuConstants.MenuOption menuOption)
+        {
+            return new Vector2(MenuConstants.MenuStartX, MenuConstants.MenuStartY + (MenuConstants.MenuItemFont.LineSpacing * (int)menuOption));
+        }
+
+        /// <summary>
+        ///     Returns the top left of the specified Frame Animation to allow for the center of the image to be vertically centered with the text, but with some pixels between the right of the image and the left of the text.
+        ///     If the Frame Animation specified is null, then the Idle or Enter frame will be used based on the UseIdleAnimation and UseEnteranimation flags.
+        /// </summary>
+        private Vector2 GetMenuSelectorPosition(MenuConstants.MenuOption menuOption, Frame2DAnimation menuSelectorFrameAnimation = null)
+        {
+            var frame = (menuSelectorFrameAnimation == null) ? this.menuSelectorFrameAnimation.Animation.CurrentFrame : menuSelectorFrameAnimation.CurrentFrame;
+            var menuTextPosition = GetMenuTextPosition(menuOption);
+            return new Vector2(menuTextPosition.X - frame.Width - 25, menuTextPosition.Y + (MenuConstants.MenuItemFont.LineSpacing / 2) - frame.Height / 2);
+        }
+
+        /// <summary> Returns the top left of the Enter Animation to allow for the center of the image to be vertically centered with the Selector's arm cannon, as well as the top left of where it should end. </summary>
+        private Vector2[] GetMenuSelectorEnterPositions(MenuConstants.MenuOption menuOption)
+        {
+            var menuSelectorPosition = GetMenuSelectorPosition(menuOption);
+            var menuSelectorEnterPositionStart = new Vector2(menuSelectorPosition.X + this.menuSelectorFrameAnimation.Animation.CurrentFrame.Width - 8, menuSelectorPosition.Y);
+            // It ends all the way beyond the screen boundaries
+            var menuSelectorEnterPositionEnd = new Vector2(SharedResources.GameWindow.ClientBounds.Width, menuSelectorEnterPositionStart.Y);
+
+            return new Vector2[] { menuSelectorEnterPositionStart, menuSelectorEnterPositionEnd };
+        }
+
+
     }
 }

@@ -23,6 +23,9 @@ namespace DnDCS.XNA.MenuLogic
 
         public static SpriteFont MenuItemFont { get; set; }
 
+        public static SpriteFont MenuConnectTitleFont { get; set; }
+        public static SpriteFont MenuConnectFont { get; set; }
+
         public static Texture2D[] MenuSelectorIntroImages { get; set; }
         public static Texture2D[] MenuSelectorIdleImages { get; set; }
         public static Texture2D[] MenuSelectorEnterImages { get; set; }
