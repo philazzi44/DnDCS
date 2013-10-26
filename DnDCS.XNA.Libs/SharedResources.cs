@@ -2,7 +2,7 @@
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client
+namespace DnDCS.XNA.Libs
 {
     public static class SharedResources
     {

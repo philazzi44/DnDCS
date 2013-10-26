@@ -3,7 +3,7 @@ using System.Linq;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.Shared.Animations
+namespace DnDCS.XNA.Libs.Shared.Animations
 {
     public class Frame2DAnimation : BaseAnimation
     {

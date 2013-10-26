@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
     public static class ClientConstants
     {

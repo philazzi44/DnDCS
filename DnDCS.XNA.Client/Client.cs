@@ -2,12 +2,13 @@ using System;
 using System.Collections.Generic;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
+using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
-    public partial class Client : Microsoft.Xna.Framework.DrawableGameComponent
+    public partial class ClientComponent : Microsoft.Xna.Framework.DrawableGameComponent
     {
         private readonly ClientState gameState;
 
@@ -19,7 +20,7 @@ namespace DnDCS.XNA.Client.ClientLogic
         private readonly object fogUpdatesLock = new object();
         private readonly IList<FogUpdate> fogUpdates = new List<FogUpdate>();
 
-        public Client(string address, int port) : base(SharedResources.Game)
+        public ClientComponent(string address, int port) : base(SharedResources.Game)
         {
             this.gameState = new ClientState(address, port);
         }
@@ -32,6 +33,11 @@ namespace DnDCS.XNA.Client.ClientLogic
         /// </summary>
         public override void Initialize()
         {
+            // TODO: This is how we could switch the icon at runtime... But depends on WinForms libraries, which I don't like.
+            // ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(this.Window.Handle)).Icon
+
+            Logger.FileSuffix = "Client";
+
             SharedResources.GameWindow.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
 
             gameState.Connection = new ClientSocketConnection(gameState.Address, gameState.Port);

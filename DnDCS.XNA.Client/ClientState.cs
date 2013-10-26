@@ -1,9 +1,10 @@
 ﻿using System;
 using DnDCS.Libs;
+using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
     public class ClientState : IDisposable
     {

@@ -2,7 +2,7 @@
 using System.Linq;
 using Microsoft.Xna.Framework;
 
-namespace DnDCS.XNA.Client.Shared.Animations
+namespace DnDCS.XNA.Libs.Shared.Animations
 {
     public class TranslationAnimation : BaseAnimation
     {

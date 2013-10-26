@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace DnDCS.XNA.Client.Shared.Animations
+namespace DnDCS.XNA.Libs.Shared.Animations
 {
     public class ConditionalAnimation<T> where T : BaseAnimation
     {

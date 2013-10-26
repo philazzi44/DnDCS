@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.Shared
+namespace DnDCS.XNA.Libs.Shared
 {
     public static class Debug
     {

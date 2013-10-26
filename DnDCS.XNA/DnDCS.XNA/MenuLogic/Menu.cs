@@ -1,13 +1,13 @@
 using System;
 using DnDCS.Libs.SimpleObjects;
-using DnDCS.XNA.Client.Shared;
-using DnDCS.XNA.Client.Shared.Animations;
+using DnDCS.XNA.Libs.Shared.Animations;
+using DnDCS.XNA.Libs;
+using DnDCS.XNA.Libs.Shared;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-
-namespace DnDCS.XNA.Client.MenuLogic
+namespace DnDCS.XNA.MenuLogic
 {
     public class Menu : Microsoft.Xna.Framework.DrawableGameComponent
     {

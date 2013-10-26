@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Linq;
 using DnDCS.Libs.SimpleObjects;
-using DnDCS.XNA.Client.Shared;
+using DnDCS.XNA.Libs;
+using DnDCS.XNA.Libs.Shared;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
-    public partial class Client
+    public partial class ClientComponent
     {
         public event Action OnEscape;
 

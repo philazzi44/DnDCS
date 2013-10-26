@@ -1,8 +1,8 @@
-﻿using DnDCS.Libs;
-using DnDCS.Libs.SimpleObjects;
+﻿using DnDCS.Libs.SimpleObjects;
 using DnDCS.XNA.Client;
-using DnDCS.XNA.Client.MenuLogic;
-using DnDCS.XNA.Client.Shared;
+using DnDCS.XNA.Libs;
+using DnDCS.XNA.Libs.Shared;
+using DnDCS.XNA.MenuLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
@@ -14,9 +14,6 @@ namespace DnDCS.XNA
 
         public Game()
         {
-            // TODO: This is how we could switch the icon at runtime...
-            // ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(this.Window.Handle)).Icon
-
             SharedResources.Game = this;
             SharedResources.GraphicsDeviceManager = new GraphicsDeviceManager(this)
             {
@@ -30,26 +27,15 @@ namespace DnDCS.XNA
             SharedResources.GameWindow.AllowUserResizing = true;
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
         protected override void Initialize()
         {
-            Logger.FileSuffix = "Client";
             SharedResources.GraphicsDevice = this.GraphicsDevice;
 
             ShowMenuComponent();
 
             base.Initialize();
         }
-        
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
+
         protected override void LoadContent()
         {
             // Create a new SpriteBatch, which can be used to draw textures.
@@ -60,10 +46,6 @@ namespace DnDCS.XNA
             base.LoadContent();
         }
 
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
         protected override void UnloadContent()
         {
         }
@@ -89,12 +71,13 @@ namespace DnDCS.XNA
             // TODO: For now, the Client is a Win Forms app that is run in Client mode.
             System.Diagnostics.Process.Start(DnDCS.XNA.Libs.ConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
             this.Exit();
+            return;
 
-            // var clientComponent = new Client(serverAddress.Address, serverAddress.Port);
-            // clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
-            // clientComponent.Initialize();
+            var clientComponent = new ClientComponent(serverAddress.Address, serverAddress.Port);
+            clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            clientComponent.Initialize();
 
-            // this.SwitchGameComponent(clientComponent);
+            this.SwitchGameComponent(clientComponent);
         }
 
         private void SwitchGameComponent(GameComponent newGameComponent)

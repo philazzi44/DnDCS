@@ -1,6 +1,6 @@
 ﻿using Microsoft.Xna.Framework.Content;
 
-namespace DnDCS.XNA.Client.Shared
+namespace DnDCS.XNA.Libs.Shared
 {
     public static class Extensions
     {

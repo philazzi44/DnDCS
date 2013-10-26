@@ -1,10 +1,11 @@
 ﻿using System;
+using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
-    public partial class Client
+    public partial class ClientComponent
     {
         private void Draw_Init()
         {

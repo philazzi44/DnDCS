@@ -61,28 +61,22 @@
     <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ClientLogic\ClientConstants.cs" />
-    <Compile Include="ClientLogic\ClientState.cs" />
-    <Compile Include="ClientLogic\Client_ConnectionLogic.cs" />
-    <Compile Include="ClientLogic\Client_DrawLogic.cs" />
-    <Compile Include="ClientLogic\Client_InitLogic.cs" />
-    <Compile Include="ClientLogic\Client_UpdateLogic.cs" />
-    <Compile Include="MenuLogic\Menu.cs" />
-    <Compile Include="MenuLogic\MenuConstants.cs" />
+    <Compile Include="ClientConstants.cs" />
+    <Compile Include="ClientState.cs" />
+    <Compile Include="Client_ConnectionLogic.cs" />
+    <Compile Include="Client_DrawLogic.cs" />
+    <Compile Include="Client.cs" />
+    <Compile Include="Client_UpdateLogic.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SharedResources.cs" />
-    <Compile Include="Shared\Animations\BaseAnimation.cs" />
-    <Compile Include="Shared\Animations\ConditionalAnimation.cs" />
-    <Compile Include="Shared\Animations\Frame2DAnimation.cs" />
-    <Compile Include="Shared\Animations\Frame2DTranslationAnimation.cs" />
-    <Compile Include="Shared\Animations\TranslationAnimation.cs" />
-    <Compile Include="Shared\Debug.cs" />
-    <Compile Include="Shared\Extensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DnDCS.Libs\DnDCS.Libs.csproj">
       <Project>{EAB1B144-0E8B-4BA2-958A-42B1E70B32AB}</Project>
       <Name>DnDCS.Libs</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\DnDCS.XNA.Libs\DnDCS.XNA.Libs.csproj">
+      <Project>{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}</Project>
+      <Name>DnDCS.XNA.Libs</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />

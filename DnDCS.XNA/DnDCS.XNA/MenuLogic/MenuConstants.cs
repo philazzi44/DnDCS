@@ -1,7 +1,8 @@
 ﻿using System.Collections.Generic;
+using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.MenuLogic
+namespace DnDCS.XNA.MenuLogic
 {
     public static class MenuConstants
     {

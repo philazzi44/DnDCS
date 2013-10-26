@@ -5,9 +5,9 @@ using DnDCS.Libs.SimpleObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client.ClientLogic
+namespace DnDCS.XNA.Client
 {
-    public partial class Client
+    public partial class ClientComponent
     {
         private void connection_OnFogUpdateReceived(FogUpdate fogUpdate)
         {
