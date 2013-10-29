@@ -32,5 +32,7 @@ namespace DnDCS.Win.Libs
 
         /// <summary> The duration (in ms) between performing a scroll action and going back to using high quality graphics. </summary>
         public const int OnScrollHighQualityTimerInterval = 1000;
+
+        public static readonly Color SelectedToolColor = Color.DarkRed;
     }
 }

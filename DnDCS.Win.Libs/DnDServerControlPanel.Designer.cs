@@ -81,7 +81,6 @@
             this.gbxCommands.Controls.Add(this.btnRevealAll);
             this.gbxCommands.Controls.Add(this.btnFogAll);
             this.gbxCommands.Controls.Add(this.btnToggleBlackout);
-            this.gbxCommands.Enabled = false;
             this.gbxCommands.Location = new System.Drawing.Point(1, 3);
             this.gbxCommands.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxCommands.Name = "gbxCommands";
@@ -94,7 +93,7 @@
             // 
             this.btnFogAddTool.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogAddTool.BackgroundImage")));
             this.btnFogAddTool.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogAddTool.Location = new System.Drawing.Point(6, 133);
+            this.btnFogAddTool.Location = new System.Drawing.Point(6, 127);
             this.btnFogAddTool.Name = "btnFogAddTool";
             this.btnFogAddTool.Size = new System.Drawing.Size(42, 42);
             this.btnFogAddTool.TabIndex = 5;
@@ -162,7 +161,7 @@
             // 
             this.btnFogAll.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnFogAll.BackgroundImage")));
             this.btnFogAll.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
-            this.btnFogAll.Location = new System.Drawing.Point(53, 133);
+            this.btnFogAll.Location = new System.Drawing.Point(53, 127);
             this.btnFogAll.Name = "btnFogAll";
             this.btnFogAll.Size = new System.Drawing.Size(42, 42);
             this.btnFogAll.TabIndex = 3;
@@ -243,7 +242,6 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxLog.Controls.Add(this.tboLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
-            this.gbxLog.Enabled = false;
             this.gbxLog.Location = new System.Drawing.Point(1, 295);
             this.gbxLog.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxLog.Name = "gbxLog";

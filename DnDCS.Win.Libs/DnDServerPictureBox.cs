@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS.Win.Libs.Assets;
+using System.ComponentModel;
 
 namespace DnDCS.Win.Libs
 {
@@ -19,6 +20,7 @@ namespace DnDCS.Win.Libs
         public event Action OnManyFogUpdatesChanged;
 
         private DnDMapConstants.Tool currentTool;
+        [Browsable(false)]
         public DnDMapConstants.Tool CurrentTool
         {
             get { return this.currentTool; }
@@ -57,6 +59,7 @@ namespace DnDCS.Win.Libs
         }
 
         private readonly List<FogUpdate> allFogUpdates = new List<FogUpdate>();
+        [Browsable(false)]
         public IEnumerable<FogUpdate> AllFogUpdates { get { return this.allFogUpdates.ToArray(); } }
 
         private bool drawNewFog;
@@ -66,9 +69,12 @@ namespace DnDCS.Win.Libs
         private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
+        [Browsable(false)]
         public bool AnyUndoFogUpdates { get { return this.undoFogUpdates.Any(); } }
+        [Browsable(false)]
         public bool AnyRedoFogUpdates { get { return this.redoFogUpdates.Any(); } }
 
+        [Browsable(false)]
         public bool? IsRemovingFog { get; set; }
 
         /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
@@ -76,6 +82,7 @@ namespace DnDCS.Win.Libs
         private Point? lastCenterMapPoint;
         private Timer centerMapPointDrawTimer;
         private Image centerMapImage;
+        [Browsable(false)]
         public event Action<SimplePoint> PerformCenterMap;
 
         #region Init and Cleanup
@@ -238,7 +245,8 @@ namespace DnDCS.Win.Libs
             if (this.LoadedMap == null)
                 return;
 
-            if (e.Button == MouseButtons.Left && e.Clicks >= 2)
+            // If we only want Left or Right, then comment one of these out.
+            if ((e.Button == MouseButtons.Left || e.Button == MouseButtons.Right) && e.Clicks >= 2)
             {
                 if (PerformCenterMap != null)
                 {

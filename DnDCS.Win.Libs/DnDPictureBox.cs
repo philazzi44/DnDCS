@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
+using System.ComponentModel;
 
 namespace DnDCS.Win.Libs
 {
@@ -15,12 +16,16 @@ namespace DnDCS.Win.Libs
         private bool isInitialized;
 
         // Map Values
+        [Browsable(false)]
         public Image LoadedMap { get; protected set; }
+        [Browsable(false)]
         protected Size LoadedMapSize { get; set; }
         private int LogicalMapWidth { get { return (int)(LoadedMapSize.Width * AssignedZoomFactor); } }
         private int LogicalMapHeight { get { return (int)(LoadedMapSize.Height * AssignedZoomFactor); } }
+        [Browsable(false)]
         public event Action<Image> OnNewMapSet;
         /// <summary> Gets the size that is visible to the user. </summary>
+        [Browsable(false)]
         public Size VisibleSize
         {
             get { return this.Size; }
@@ -29,6 +34,7 @@ namespace DnDCS.Win.Libs
         // Grid Values
         private int? gridSize;
         private Pen gridPen = new Pen(Color.Aqua);
+        [Browsable(false)]
         public Pen GridPen
         {
             get { return this.gridPen; }
@@ -42,6 +48,7 @@ namespace DnDCS.Win.Libs
 
         // Fog Values
         private byte fogAlpha = 255;
+        [Browsable(false)]
         public byte FogAlpha
         {
             get { return this.fogAlpha; }
@@ -53,16 +60,22 @@ namespace DnDCS.Win.Libs
             }
         }
 
+        [Browsable(false)]
         public bool UseFogAlphaEffect { get; set; }
+        [Browsable(false)]
         public Bitmap Fog { get; protected set; }
 
         // Zoom Values
+        [Browsable(false)]
         public bool AllowZoom { get; set; }
         private float assignedZoomFactor = 1.0f;
+        [Browsable(false)]
         protected float AssignedZoomFactor { get { return this.assignedZoomFactor; } private set { this.assignedZoomFactor = value; } }
         private float variableZoomFactor = 1.0f;
+        [Browsable(false)]
         protected bool IsZoomFactorInProgress { get; private set; }
         private Font zoomFactorFont;
+        [Browsable(false)]
         protected virtual int ZoomFactorTextYOffset { get { return 0; } }
         private static readonly string[] ZoomInstructionMessages = new[] {
                                                                             "Press Enter or Left Click to commit the zoom factor.",
@@ -71,16 +84,19 @@ namespace DnDCS.Win.Libs
 
 
         // Scroll Values
+        [Browsable(false)]
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
         private double keyboardScrollAccel = 1.0d;
         private bool useHighQuality = true;
         private readonly Timer scrollHighQualityTimer = new Timer();
+        [Browsable(false)]
         public event Action<Point> OnScrollStep;
         private Cursor dragMapOldCursor = Cursors.Default;
 
         // Flipped View Values
         private bool isFlippedView;
+        [Browsable(false)]
         public bool IsFlippedView
         {
             get { return isFlippedView; }
@@ -104,9 +120,11 @@ namespace DnDCS.Win.Libs
         }
 
         // Paint Values
+        [Browsable(false)]
         protected ImageAttributes FogAttributes { get; set; }
 
         // Callbacks
+        [Browsable(false)]
         public event Action<Keys> TryToggleFullScreen;
 
         #region Init and Cleanup
@@ -423,7 +441,8 @@ namespace DnDCS.Win.Libs
 
         protected void HandleMouseMove_DragMap(MouseEventArgs e)
         {
-            const int MoveThreshold = 3;
+            // If we need to cause a minimum-threshold for dragging, we can put it here.
+            const int MoveThreshold = 0;
 
             if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Right)
                 return;

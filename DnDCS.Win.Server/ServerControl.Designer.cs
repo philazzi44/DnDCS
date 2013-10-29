@@ -83,7 +83,6 @@
             this.ctlControlPanel.Location = new System.Drawing.Point(0, 0);
             this.ctlControlPanel.MinimumSize = new System.Drawing.Size(127, 0);
             this.ctlControlPanel.Name = "ctlControlPanel";
-            this.ctlControlPanel.RealTimeFogUpdates = false;
             this.ctlControlPanel.RedoLastFogActionMenuItem = null;
             this.ctlControlPanel.ShowGridValues = true;
             this.ctlControlPanel.ShowLogValues = true;

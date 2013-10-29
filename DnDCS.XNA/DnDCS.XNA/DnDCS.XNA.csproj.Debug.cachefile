@@ -1,6 +1,8 @@
 Content\GenericMessage.xnb
 Content\Debug.xnb
 Content\MenuItem.xnb
+Content\MenuConnect.xnb
+Content\MenuConnectTitle.xnb
 Content\MenuSelector.xnb
 Content\NoMapImage.xnb
 Content\Menu Selector\Enter1.xnb
@@ -23,8 +25,6 @@ Content\Menu Selector\SelectorIntro5.xnb
 Content\Menu Selector\SelectorIntro6.xnb
 Content\Menu Selector\SelectorIntro7.xnb
 Content\BlackoutImage.xnb
-Content\MenuConnect.xnb
-Content\MenuConnectTitle.xnb
 Assets\BlackoutImage.png
 Assets\CenterMapOverlayIcon.png
 Assets\ClientIcon.ico

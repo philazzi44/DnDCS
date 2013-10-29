@@ -4,18 +4,23 @@ using System.Linq;
 using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
+using System.ComponentModel;
 
 namespace DnDCS.Win.Libs
 {
     public partial class DnDServerControlPanel : UserControl
     {
         // Menu References
+        [Browsable(false)]
         public MenuItem LoadImageMenuItem { get; set; }
+        [Browsable(false)]
         public MenuItem UndoLastFogActionMenuItem { get; set; }
+        [Browsable(false)]
         public MenuItem RedoLastFogActionMenuItem { get; set; }
 
         // Settings
         private bool realTimeFogUpdates;
+        [Browsable(false)]
         public bool RealTimeFogUpdates
         {
             get { return this.realTimeFogUpdates; }
@@ -30,25 +35,32 @@ namespace DnDCS.Win.Libs
             }
         }
         private DnDMapConstants.Tool currentTool;
+        [Browsable(false)]
         public bool IsBlackOutSet { get; private set; }
 
         // Cosmetic values
-        private int initialCommandsRightBuffer;
+        private readonly int initialCommandsRightBuffer;
         private Color initialSelectToolColor;
         private Color initialFogRemoveToolColor;
         private Color initialFogAddToolColor;
         private Color initialBlackoutColor;
 
         // Server Connection
+        [Browsable(false)]
         public ServerSocketConnection Connection { get; set; }
 
         // Related DnD Server Map
+        [Browsable(false)]
         public DnDServerPictureBox DnDMapControl { get; set; }
 
         // Control Exposure
+        [Browsable(false)]
         public bool ShowGridValues { get { return this.gbxGridSize.Visible; } set { this.gbxGridSize.Visible = value; } }
+        [Browsable(false)]
         public bool ShowGrid { get { return this.chkShowGrid.Checked; } }
+        [Browsable(false)]
         public int GridSize { get { return (int)this.nudGridSize.Value; } }
+        [Browsable(false)]
         public bool ShowLogValues { get { return this.gbxLog.Visible; } set { this.gbxLog.Visible = value; } }
 
         #region Init and Cleanup
@@ -85,6 +97,11 @@ namespace DnDCS.Win.Libs
             nudGridSize.Value = Math.Min(nudGridSize.Maximum, Math.Max(nudGridSize.Minimum, serverData.GridSize));
 
             gbxLog.Visible = serverData.ShowLog;
+
+            // The only command that can be done at the start is Load Image.
+            foreach (var c in gbxCommands.Controls.OfType<Control>().Concat(gbxGridSize.Controls.OfType<Control>()).Concat(gbxLog.Controls.OfType<Control>()))
+                c.Enabled = false;
+            this.btnLoadImage.Enabled = true;
 
             this.flpTop.Height = GetTopFlowPanelHeight();
 
@@ -257,9 +274,9 @@ namespace DnDCS.Win.Libs
 
         public void EnableControlPanel(DnDMapConstants.Tool initialTool = DnDMapConstants.Tool.SelectTool)
         {
-            gbxCommands.Enabled = true;
-            gbxGridSize.Enabled = true;
-            gbxLog.Enabled = true;
+            foreach (var c in gbxCommands.Controls.OfType<Control>().Concat(gbxGridSize.Controls.OfType<Control>()).Concat(gbxLog.Controls.OfType<Control>()))
+                c.Enabled = true;
+
             ToggleTools(initialTool);
         }
 
@@ -280,7 +297,7 @@ namespace DnDCS.Win.Libs
             if (newTool == DnDMapConstants.Tool.SelectTool)
             {
                 btnSelectTool.Enabled = false;
-                btnSelectTool.BackColor = Color.White;
+                btnSelectTool.BackColor = DnDMapConstants.SelectedToolColor;
 
                 btnFogRemoveTool.Enabled = true;
                 btnFogRemoveTool.BackColor = initialFogRemoveToolColor;
@@ -290,7 +307,7 @@ namespace DnDCS.Win.Libs
             else if (newTool == DnDMapConstants.Tool.FogRemoveTool)
             {
                 btnFogRemoveTool.Enabled = false;
-                btnFogRemoveTool.BackColor = Color.White;
+                btnFogRemoveTool.BackColor = DnDMapConstants.SelectedToolColor;
 
                 btnSelectTool.Enabled = true;
                 btnSelectTool.BackColor = initialSelectToolColor;
@@ -300,7 +317,7 @@ namespace DnDCS.Win.Libs
             else if (newTool == DnDMapConstants.Tool.FogAddTool)
             {
                 btnFogAddTool.Enabled = false;
-                btnFogAddTool.BackColor = Color.White;
+                btnFogAddTool.BackColor = DnDMapConstants.SelectedToolColor;
 
                 btnSelectTool.Enabled = true;
                 btnSelectTool.BackColor = initialSelectToolColor;
