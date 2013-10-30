@@ -83,6 +83,8 @@ namespace DnDCS.Win.Server
 
         private void ServerControl_Disposed(object sender, EventArgs e)
         {
+            this.SaveBackupFogImage();
+
             if (connection != null)
                 connection.Stop();
         }
