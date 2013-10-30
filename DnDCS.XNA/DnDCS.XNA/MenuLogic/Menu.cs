@@ -6,7 +6,6 @@ using DnDCS.XNA.Libs.Shared;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using Microsoft.Xna.Framework.GamerServices;
 
 namespace DnDCS.XNA.MenuLogic
 {
@@ -35,6 +34,8 @@ namespace DnDCS.XNA.MenuLogic
 
         /// <summary> If true, we should use the Enter animation for the selector instead of the Idle animation. </summary>
         private bool UseSelectorEnterAnimation { get; set; }
+
+        private bool isShowingConnectDialog;
 
         #region Init and Cleanup
 
@@ -208,6 +209,9 @@ namespace DnDCS.XNA.MenuLogic
 
         private void Update_Keyboard(GameTime gameTime)
         {
+            if (isShowingConnectDialog)
+                return;
+
             var keyboardState = Keyboard.GetState();
             if (keyboardState.IsKeyDown(Keys.Up))
             {
@@ -229,9 +233,39 @@ namespace DnDCS.XNA.MenuLogic
                         });
                         break;
                     case MenuConstants.MenuOption.Client:
+                        // This wonky code is to allow the Windows Forms libraries to be side-loaded while our animation runs, so the user doesn't notice the delay. Crazy, but works.
+                        var dialogReadyEvent = new System.Threading.AutoResetEvent(false);
+                        object getConnectIPObject = null;
+                        System.Threading.ThreadPool.QueueUserWorkItem(new System.Threading.WaitCallback((o) =>
+                            {
+                                getConnectIPObject = new Win.Libs.GetConnectIPDialog();
+                                dialogReadyEvent.Set();
+                            }));
                         DoEnter(gameTime, () =>
                                               {
-                                                  Microsoft.Xna.Framework.GamerServices.Guide.BeginShowKeyboardInput(PlayerIndex.One, "Connect To", "Enter IP/Name:Port", "127.0.0.1:11000", OnConnectValueComplete, null);
+                                                  isShowingConnectDialog = true;
+                                                  using (dialogReadyEvent)
+                                                  {
+                                                      // In case the dialog isn't created yet, we'll wait for it.
+                                                      dialogReadyEvent.WaitOne();
+                                                      using (var getConnectIP = (Win.Libs.GetConnectIPDialog)getConnectIPObject)
+                                                      {
+                                                          if (getConnectIP.ShowDialog(System.Windows.Forms.Form.FromHandle(SharedResources.GameWindow.Handle)) == System.Windows.Forms.DialogResult.OK)
+                                                          {
+                                                              OnClientConnect(new SimpleServerAddress()
+                                                              {
+                                                                  Address = getConnectIP.Address,
+                                                                  Port = getConnectIP.Port
+                                                              });
+                                                              isShowingConnectDialog = false;
+                                                          }
+                                                          else
+                                                          {
+                                                              TryRaiseOnExit();
+                                                              isShowingConnectDialog = false;
+                                                          }
+                                                      }
+                                                  }
                                               });
                         break;
                     case MenuConstants.MenuOption.Exit:
@@ -244,39 +278,7 @@ namespace DnDCS.XNA.MenuLogic
                 TryRaiseOnExit();
             }
         }
-
-        private void OnConnectValueComplete(IAsyncResult result)
-        {
-            var connectValue = Guide.EndShowKeyboardInput(result);
-
-            if (connectValue.Contains(":"))
-            {
-                var split = connectValue.Split(':');
-                if (split.Length == 2)
-                {
-                    var address = split[0];
-                    var portString = split[1];
-                    int port;
-                    if (int.TryParse(portString, out port))
-                    {
-                        var serverAddress = new SimpleServerAddress()
-                        {
-                            Address = address,
-                            Port = port,
-                        };
-
-                        if (OnClientConnect != null)
-                        {
-                            OnClientConnect(serverAddress);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            // TODO: Some kind of error saying there's a problem with the format should be shown here.
-        }
-
+        
         private void SelectUp(GameTime gameTime)
         {
             var newMenuItem = (MenuConstants.MenuOption)Math.Max((int)this.selectedMenuOption - 1, 0);

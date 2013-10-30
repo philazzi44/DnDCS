@@ -4,7 +4,7 @@ using System.Windows.Forms;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
 
-namespace DnDCS.Win.Client
+namespace DnDCS.Win.Libs
 {
     public partial class GetConnectIPDialog : Form
     {

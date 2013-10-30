@@ -69,6 +69,12 @@
     <Compile Include="DnDPictureBox.cs">
       <SubType>UserControl</SubType>
     </Compile>
+    <Compile Include="GetConnectIPDialog.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="GetConnectIPDialog.Designer.cs">
+      <DependentUpon>GetConnectIPDialog.cs</DependentUpon>
+    </Compile>
     <Compile Include="IDnDCSControl.cs" />
     <Compile Include="ImageProcessing.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -107,6 +113,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="DnDServerControlPanel.resx">
       <DependentUpon>DnDServerControlPanel.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="GetConnectIPDialog.resx">
+      <DependentUpon>GetConnectIPDialog.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

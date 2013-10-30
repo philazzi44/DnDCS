@@ -1,4 +1,4 @@
-﻿namespace DnDCS.Win.Client
+﻿namespace DnDCS.Win.Libs
 {
     partial class GetConnectIPDialog
     {

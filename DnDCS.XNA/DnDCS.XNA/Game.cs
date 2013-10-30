@@ -7,7 +7,6 @@ using DnDCS.XNA.Libs.Shared;
 using DnDCS.XNA.MenuLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Microsoft.Xna.Framework.GamerServices;
 
 namespace DnDCS.XNA
 {
@@ -59,7 +58,7 @@ namespace DnDCS.XNA
             menuComponent.OnServer += new System.Action(menu_OnServer);
             menuComponent.OnClientConnect += new System.Action<SimpleServerAddress>(menu_OnClientConnect);
             menuComponent.OnExit += new System.Action(menu_OnExit);
-            this.SwitchGameComponent(menuComponent, new GamerServicesComponent(SharedResources.Game));
+            this.SwitchGameComponent(menuComponent);
         }
         
         private void ShowServerComponent()
