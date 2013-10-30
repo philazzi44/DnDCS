@@ -2,11 +2,11 @@
 
 namespace DnDCS.XNA.Libs
 {
-    public static class ConfigValues
+    public static class XNAConfigValues
     {
         public static readonly string WinFormsApp;
 
-        static ConfigValues()
+        static XNAConfigValues()
         {
             WinFormsApp = ConfigurationManager.AppSettings["WinFormsApp"] ?? "DnDCS.Win.exe";
         }

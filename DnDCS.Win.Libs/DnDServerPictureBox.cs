@@ -21,6 +21,7 @@ namespace DnDCS.Win.Libs
 
         private DnDMapConstants.Tool currentTool;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public DnDMapConstants.Tool CurrentTool
         {
             get { return this.currentTool; }
@@ -60,6 +61,7 @@ namespace DnDCS.Win.Libs
 
         private readonly List<FogUpdate> allFogUpdates = new List<FogUpdate>();
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable<FogUpdate> AllFogUpdates { get { return this.allFogUpdates.ToArray(); } }
 
         private bool drawNewFog;
@@ -70,11 +72,14 @@ namespace DnDCS.Win.Libs
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AnyUndoFogUpdates { get { return this.undoFogUpdates.Any(); } }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AnyRedoFogUpdates { get { return this.redoFogUpdates.Any(); } }
 
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool? IsRemovingFog { get; set; }
 
         /// <summary> When set, the Center Map Image will be shown at the location for a brief period of time. </summary>
@@ -83,6 +88,7 @@ namespace DnDCS.Win.Libs
         private Timer centerMapPointDrawTimer;
         private Image centerMapImage;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<SimplePoint> PerformCenterMap;
 
         #region Init and Cleanup

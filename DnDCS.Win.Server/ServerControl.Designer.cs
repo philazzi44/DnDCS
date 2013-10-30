@@ -76,19 +76,13 @@
             // 
             // ctlControlPanel
             // 
-            this.ctlControlPanel.Connection = null;
-            this.ctlControlPanel.DnDMapControl = null;
             this.ctlControlPanel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ctlControlPanel.LoadImageMenuItem = null;
             this.ctlControlPanel.Location = new System.Drawing.Point(0, 0);
+            this.ctlControlPanel.Margin = new System.Windows.Forms.Padding(0);
             this.ctlControlPanel.MinimumSize = new System.Drawing.Size(127, 0);
             this.ctlControlPanel.Name = "ctlControlPanel";
-            this.ctlControlPanel.RedoLastFogActionMenuItem = null;
-            this.ctlControlPanel.ShowGridValues = true;
-            this.ctlControlPanel.ShowLogValues = true;
             this.ctlControlPanel.Size = new System.Drawing.Size(127, 485);
             this.ctlControlPanel.TabIndex = 0;
-            this.ctlControlPanel.UndoLastFogActionMenuItem = null;
             // 
             // ServerControl
             // 

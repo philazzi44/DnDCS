@@ -12,15 +12,19 @@ namespace DnDCS.Win.Libs
     {
         // Menu References
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public MenuItem LoadImageMenuItem { get; set; }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public MenuItem UndoLastFogActionMenuItem { get; set; }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public MenuItem RedoLastFogActionMenuItem { get; set; }
 
         // Settings
         private bool realTimeFogUpdates;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool RealTimeFogUpdates
         {
             get { return this.realTimeFogUpdates; }
@@ -36,6 +40,7 @@ namespace DnDCS.Win.Libs
         }
         private DnDMapConstants.Tool currentTool;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsBlackOutSet { get; private set; }
 
         // Cosmetic values
@@ -47,20 +52,26 @@ namespace DnDCS.Win.Libs
 
         // Server Connection
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ServerSocketConnection Connection { get; set; }
 
         // Related DnD Server Map
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public DnDServerPictureBox DnDMapControl { get; set; }
 
         // Control Exposure
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ShowGridValues { get { return this.gbxGridSize.Visible; } set { this.gbxGridSize.Visible = value; } }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ShowGrid { get { return this.chkShowGrid.Checked; } }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int GridSize { get { return (int)this.nudGridSize.Value; } }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool ShowLogValues { get { return this.gbxLog.Visible; } set { this.gbxLog.Visible = value; } }
 
         #region Init and Cleanup

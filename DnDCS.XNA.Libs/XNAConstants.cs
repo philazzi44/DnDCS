@@ -1,8 +1,8 @@
 ﻿using Microsoft.Xna.Framework.Graphics;
 
-namespace DnDCS.XNA.Client
+namespace DnDCS.XNA.Libs
 {
-    public static class ClientConstants
+    public static class XNAConstants
     {
         public const float ScrollDeltaPercent = 0.1f;
 

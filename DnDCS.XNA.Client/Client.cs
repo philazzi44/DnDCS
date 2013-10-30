@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using DnDCS.Libs;
 using DnDCS.Libs.SimpleObjects;
-using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using DnDCS.XNA.Libs;
 
 namespace DnDCS.XNA.Client
 {
@@ -33,9 +33,8 @@ namespace DnDCS.XNA.Client
         /// </summary>
         public override void Initialize()
         {
-            // TODO: This is how we could switch the icon at runtime... But depends on WinForms libraries, which I don't like.
-            // ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(this.Window.Handle)).Icon
-
+            ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(SharedResources.GameWindow.Handle)).Icon = DnDCS.Win.Libs.Assets.AssetsLoader.ClientIcon;
+            ((System.Windows.Forms.Form)System.Windows.Forms.Form.FromHandle(SharedResources.GameWindow.Handle)).Text = "DnDCS - Client";
             Logger.FileSuffix = "Client";
 
             SharedResources.GameWindow.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
@@ -67,12 +66,6 @@ namespace DnDCS.XNA.Client
         /// </summary>
         protected override void LoadContent()
         {
-            ClientConstants.BlackoutImage = SharedResources.ContentManager.Load<Texture2D>("BlackoutImage");
-            ClientConstants.NoMapImage = SharedResources.ContentManager.Load<Texture2D>("NoMapImage");
-
-            ClientConstants.GenericMessageFont = SharedResources.ContentManager.Load<SpriteFont>("GenericMessage");
-            ClientConstants.GridTileImage = new Texture2D(GraphicsDevice, 1, 1, false, SurfaceFormat.Color);
-            ClientConstants.GridTileImage.SetData<Color>(new[] { Color.White });
         }
 
         /// <summary>
@@ -83,10 +76,6 @@ namespace DnDCS.XNA.Client
         {
             if (this.gameState != null)
                 this.gameState.Dispose();
-            if (ClientConstants.BlackoutImage != null)
-                ClientConstants.BlackoutImage.Dispose();
-            if (ClientConstants.NoMapImage != null)
-                ClientConstants.NoMapImage.Dispose();
         }
 
         private void Window_ClientSizeChanged(object sender, EventArgs e)

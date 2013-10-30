@@ -2,11 +2,14 @@
 using System.Drawing;
 using System.Windows.Forms;
 using DnDCS.Libs.SimpleObjects;
+using System.ComponentModel;
 
 namespace DnDCS.Win.Libs
 {
     public partial class DnDMiniMap : UserControl
     {
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public DnDServerPictureBox DnDMapControl { get; set; }
 
         private bool isDraggingMap;
@@ -26,6 +29,8 @@ namespace DnDCS.Win.Libs
         }
 
         /// <summary> Event raised when the user a new Center Map location is set via the minimap. </summary>
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<SimplePoint> OnNewCenterMap;
 
         private int penIndex = 0;

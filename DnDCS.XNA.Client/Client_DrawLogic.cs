@@ -63,11 +63,11 @@ namespace DnDCS.XNA.Client
                         var gridSizeStep = (int)(gridSize.Value * gameState.ZoomFactor);
                         for (var x = -gameState.HorizontalScrollPosition; x < gameState.LogicalMapWidth; x += gridSizeStep)
                         {
-                            spriteBatch.Draw(ClientConstants.GridTileImage, new Rectangle(x, 0, 1, Math.Min(gameState.LogicalMapHeight, gameState.ActualClientHeight + gameState.VerticalScrollPosition)), gridTileColor);
+                            spriteBatch.Draw(XNAConstants.GridTileImage, new Rectangle(x, 0, 1, Math.Min(gameState.LogicalMapHeight, gameState.ActualClientHeight + gameState.VerticalScrollPosition)), gridTileColor);
                         }
                         for (var y = -gameState.VerticalScrollPosition; y < gameState.LogicalMapHeight; y += gridSizeStep)
                         {
-                            spriteBatch.Draw(ClientConstants.GridTileImage, new Rectangle(0, y, Math.Min(gameState.LogicalMapWidth, gameState.ActualClientWidth + gameState.HorizontalScrollPosition), 1), gridTileColor);
+                            spriteBatch.Draw(XNAConstants.GridTileImage, new Rectangle(0, y, Math.Min(gameState.LogicalMapWidth, gameState.ActualClientWidth + gameState.HorizontalScrollPosition), 1), gridTileColor);
                         }
                     }
 
@@ -107,19 +107,19 @@ namespace DnDCS.XNA.Client
         private void Draw_Blackout(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            SharedResources.SpriteBatch.Draw(ClientConstants.BlackoutImage, new Vector2(gameState.ActualClientWidth / 2 - ClientConstants.BlackoutImage.Width / 2, gameState.ActualClientHeight / 2 - ClientConstants.BlackoutImage.Height / 2), color);
+            SharedResources.SpriteBatch.Draw(XNAConstants.BlackoutImage, new Vector2(gameState.ActualClientWidth / 2 - XNAConstants.BlackoutImage.Width / 2, gameState.ActualClientHeight / 2 - XNAConstants.BlackoutImage.Height / 2), color);
         }
 
         private void Draw_NoMap(GameTime gameTime)
         {
             var color = (gameTime.TotalGameTime.Seconds % 2 == 0) ? Color.White : Color.Wheat;
-            SharedResources.SpriteBatch.Draw(ClientConstants.NoMapImage, new Vector2(gameState.ActualClientWidth / 2 - ClientConstants.NoMapImage.Width / 2, gameState.ActualClientHeight / 2 - ClientConstants.NoMapImage.Height / 2), color);
+            SharedResources.SpriteBatch.Draw(XNAConstants.NoMapImage, new Vector2(gameState.ActualClientWidth / 2 - XNAConstants.NoMapImage.Width / 2, gameState.ActualClientHeight / 2 - XNAConstants.NoMapImage.Height / 2), color);
         }
 
         private void DrawCenteredMessage(string msg)
         {
-            var msgSize = ClientConstants.GenericMessageFont.MeasureString(msg);
-            SharedResources.SpriteBatch.DrawString(ClientConstants.GenericMessageFont, msg, new Vector2((int)((gameState.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((gameState.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
+            var msgSize = XNAConstants.GenericMessageFont.MeasureString(msg);
+            SharedResources.SpriteBatch.DrawString(XNAConstants.GenericMessageFont, msg, new Vector2((int)((gameState.ActualClientWidth / 2) - (msgSize.X / 2)), (int)((gameState.ActualClientHeight / 2) - (msgSize.Y / 2))), Color.Aqua);
         }
     }
 }

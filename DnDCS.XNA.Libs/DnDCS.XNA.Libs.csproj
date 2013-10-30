@@ -60,7 +60,10 @@
     <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ConfigValues.cs" />
+    <Compile Include="AssetsLoader.cs" />
+    <Compile Include="XNAConstants.cs" />
+    <Compile Include="GameState.cs" />
+    <Compile Include="XNAConfigValues.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SharedResources.cs" />
     <Compile Include="Shared\Animations\BaseAnimation.cs" />

@@ -7,6 +7,7 @@ using DnDCS.XNA.Libs.Shared;
 using DnDCS.XNA.MenuLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using DnDCS.XNA.Server;
 
 namespace DnDCS.XNA
 {
@@ -64,16 +65,22 @@ namespace DnDCS.XNA
         private void ShowServerComponent()
         {
             // TODO: For now, the Server is a Win Forms app that is run in Server mode.
-            System.Diagnostics.Process.Start(DnDCS.XNA.Libs.ConfigValues.WinFormsApp, ((int)DnDCS.Libs.Constants.RunMode.Server).ToString());
+            System.Diagnostics.Process.Start(DnDCS.XNA.Libs.XNAConfigValues.WinFormsApp, ((int)DnDCS.Libs.Constants.RunMode.Server).ToString());
             this.Exit();
+
+            var serverComponent = new ServerComponent();
+            serverComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            serverComponent.Initialize();
+
+            this.SwitchGameComponent(serverComponent);
         }
 
         private void ShowClientComponent(SimpleServerAddress serverAddress)
         {
             // TODO: For now, the Client is a Win Forms app that is run in Client mode.
-            System.Diagnostics.Process.Start(DnDCS.XNA.Libs.ConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
-            this.Exit();
-            return;
+            //System.Diagnostics.Process.Start(DnDCS.XNA.Libs.ConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
+            //this.Exit();
+            //return;
 
             var clientComponent = new ClientComponent(serverAddress.Address, serverAddress.Port);
             clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);

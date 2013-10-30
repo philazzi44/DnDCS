@@ -146,12 +146,12 @@ namespace DnDCS.XNA.Client
                 if (wheelDelta > 0)
                 {
                     // Up
-                    gameState.VerticalScrollPosition = Math.Max(0, gameState.VerticalScrollPosition - (int)Math.Abs(gameState.ActualMapHeight * ClientConstants.ScrollDeltaPercent));
+                    gameState.VerticalScrollPosition = Math.Max(0, gameState.VerticalScrollPosition - (int)Math.Abs(gameState.ActualMapHeight * XNAConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Down
-                    gameState.VerticalScrollPosition = Math.Min(gameState.VerticalScrollPosition + (int)Math.Abs(gameState.ActualMapHeight * ClientConstants.ScrollDeltaPercent), gameState.LogicalMapHeight - gameState.ActualClientHeight);
+                    gameState.VerticalScrollPosition = Math.Min(gameState.VerticalScrollPosition + (int)Math.Abs(gameState.ActualMapHeight * XNAConstants.ScrollDeltaPercent), gameState.LogicalMapHeight - gameState.ActualClientHeight);
                 }
             }
 
@@ -165,12 +165,12 @@ namespace DnDCS.XNA.Client
                 if (wheelDelta > 0)
                 {
                     // Left
-                    gameState.HorizontalScrollPosition = Math.Max(0, gameState.HorizontalScrollPosition - (int)Math.Abs(gameState.ActualMapWidth * ClientConstants.ScrollDeltaPercent));
+                    gameState.HorizontalScrollPosition = Math.Max(0, gameState.HorizontalScrollPosition - (int)Math.Abs(gameState.ActualMapWidth * XNAConstants.ScrollDeltaPercent));
                 }
                 else if (wheelDelta < 0)
                 {
                     // Right
-                    gameState.HorizontalScrollPosition = Math.Min(gameState.HorizontalScrollPosition + (int)Math.Abs(gameState.ActualMapWidth * ClientConstants.ScrollDeltaPercent), gameState.LogicalMapWidth - gameState.ActualClientWidth);
+                    gameState.HorizontalScrollPosition = Math.Min(gameState.HorizontalScrollPosition + (int)Math.Abs(gameState.ActualMapWidth * XNAConstants.ScrollDeltaPercent), gameState.LogicalMapWidth - gameState.ActualClientWidth);
                 }
             }
 
@@ -185,12 +185,12 @@ namespace DnDCS.XNA.Client
                 if (wheelDelta > 0)
                 {
                     // In
-                    gameState.ZoomFactor = Math.Min((float)Math.Round(gameState.ZoomFactor + ClientConstants.ZoomFactorDelta, 1), ClientConstants.ZoomMaximumFactor);
+                    gameState.ZoomFactor = Math.Min((float)Math.Round(gameState.ZoomFactor + XNAConstants.ZoomFactorDelta, 1), XNAConstants.ZoomMaximumFactor);
                 }
                 else if (wheelDelta < 0)
                 {
                     // Out
-                    gameState.ZoomFactor = Math.Max((float)Math.Round(gameState.ZoomFactor - ClientConstants.ZoomFactorDelta, 1), ClientConstants.ZoomMinimumFactor);
+                    gameState.ZoomFactor = Math.Max((float)Math.Round(gameState.ZoomFactor - XNAConstants.ZoomFactorDelta, 1), XNAConstants.ZoomMinimumFactor);
                 }
                 else
                 {

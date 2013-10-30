@@ -10,6 +10,7 @@ namespace DnDCS.Win.Libs
     {
         private bool isBlackoutOn;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsBlackoutOn
         {
             get { return this.isBlackoutOn; }
@@ -22,6 +23,7 @@ namespace DnDCS.Win.Libs
 
         // If we're also showing the Blackout image, then show the text beneath it.
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected override int ZoomFactorTextYOffset { get { return (IsBlackoutOn) ? AssetsLoader.BlackoutImage.Height : 0; } }
 
         #region Init and Cleanup

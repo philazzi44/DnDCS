@@ -1,12 +1,11 @@
-﻿using System;
-using DnDCS.Libs;
+﻿using DnDCS.Libs;
 using DnDCS.XNA.Libs;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 
 namespace DnDCS.XNA.Client
 {
-    public class ClientState : IDisposable
+    public class ClientState : GameState
     {
         public string Address { get; private set; }
         public int Port { get; private set; }
@@ -21,9 +20,6 @@ namespace DnDCS.XNA.Client
 
         public int VerticalScrollPosition { get; set; }
         public int HorizontalScrollPosition { get; set; }
-
-        public KeyboardState CurrentKeyboardState { get; set; }
-        public MouseState CurrentMouseState { get; set; }
 
         public ClientSocketConnection Connection { get; set; }
 
@@ -89,10 +85,9 @@ namespace DnDCS.XNA.Client
             this.CreateEffect = true;
         }
 
-        public void Update()
+        public override void Update()
         {
-            CurrentKeyboardState = Keyboard.GetState();
-            CurrentMouseState = Mouse.GetState();
+            base.Update();
 
             if (this.nextFrameMap != null)
             {
@@ -131,6 +126,7 @@ namespace DnDCS.XNA.Client
                 this.nextFrameFog.Dispose();
             if (this.Connection != null)
                 this.Connection.Stop();
+            base.Dispose();
         }
     }
 }

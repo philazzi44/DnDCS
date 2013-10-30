@@ -127,6 +127,10 @@
       <Project>{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}</Project>
       <Name>DnDCS.XNA.Libs</Name>
     </ProjectReference>
+    <ProjectReference Include="..\..\DnDCS.XNA.Server\DnDCS.XNA.Server.csproj">
+      <Project>{F0F1E980-14E7-4038-A0D4-358AC00392AB}</Project>
+      <Name>DnDCS.XNA.Server</Name>
+    </ProjectReference>
     <ProjectReference Include="..\DnDCS.XNAContent\DnDCS.XNAContent.contentproj">
       <Name>DnDCS.XNAContent %28Content%29</Name>
       <XnaReferenceType>Content</XnaReferenceType>
