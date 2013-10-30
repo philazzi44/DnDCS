@@ -76,14 +76,10 @@
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
-    <Reference Include="Microsoft.Xna.Framework.GamerServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="mscorlib" />
     <Reference Include="System" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Game.cs" />
@@ -119,17 +115,9 @@
       <Project>{2E48D8C6-99CC-4EF6-9200-DA7080809B23}</Project>
       <Name>DnDCS.Win</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\DnDCS.XNA.Client\DnDCS.XNA.Client.csproj">
-      <Project>{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}</Project>
-      <Name>DnDCS.XNA.Client</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\DnDCS.XNA.Libs\DnDCS.XNA.Libs.csproj">
       <Project>{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}</Project>
       <Name>DnDCS.XNA.Libs</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\DnDCS.XNA.Server\DnDCS.XNA.Server.csproj">
-      <Project>{F0F1E980-14E7-4038-A0D4-358AC00392AB}</Project>
-      <Name>DnDCS.XNA.Server</Name>
     </ProjectReference>
     <ProjectReference Include="..\DnDCS.XNAContent\DnDCS.XNAContent.contentproj">
       <Name>DnDCS.XNAContent %28Content%29</Name>
