@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace DnDCS.Win.Win.Properties {
+namespace DnDCS.Win.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
