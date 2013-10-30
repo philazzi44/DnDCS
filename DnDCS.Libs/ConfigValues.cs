@@ -19,6 +19,7 @@ namespace DnDCS.Libs
         public static readonly float MaximumGridZoomFactor;
         public static readonly float MinimumGridZoomFactor;
         public static readonly bool LogPings;
+        public static readonly int FogSaveInterval;
 
         static ConfigValues()
         {
@@ -50,6 +51,9 @@ namespace DnDCS.Libs
 
             bool logPings;
             LogPings = bool.TryParse(ConfigurationManager.AppSettings["LogPings"], out logPings) ? LogPings : false;
+
+            int fogSaveInterval;
+            FogSaveInterval = int.TryParse(ConfigurationManager.AppSettings["FogSaveInterval"], out fogSaveInterval) ? fogSaveInterval : 60000;
         }
 
     }

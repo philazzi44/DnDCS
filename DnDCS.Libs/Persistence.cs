@@ -75,7 +75,7 @@ namespace DnDCS.Libs
         {
             foreach (var c in Path.GetInvalidFileNameChars())
                 imageUrl = imageUrl.Replace(c, '-');
-            return Path.ChangeExtension(Path.Combine(ConfigValues.ServerFogDataFolder, imageUrl), "txt");
+            return Path.ChangeExtension(Path.Combine(ConfigValues.ServerFogDataFolder, imageUrl), "png");
         }
 
         public static bool PeekServerFogData(string imageUrl)
@@ -83,22 +83,44 @@ namespace DnDCS.Libs
             return File.Exists(GetFogDataFileName(imageUrl));
         }
 
-        public static ServerFogData LoadServerFogData(string imageUrl)
+        public static byte[] LoadServerFogData(string imageUrl)
         {
-            return LoadData<ServerFogData>(GetFogDataFileName(imageUrl));
+            var fileName = GetFogDataFileName(imageUrl);
+            if (File.Exists(fileName))
+            {
+                using (var sourceStream = new FileStream(fileName, FileMode.Open))
+                {
+                    using(var memoryStream = new MemoryStream())
+                    {
+                      sourceStream.CopyTo(memoryStream);
+                      return memoryStream.ToArray();
+                    }
+                }
+            }
+
+            return null;
         }
 
-        public static void SaveServerFogData(string imageUrl, ServerFogData fogData)
+        public static void SaveServerFogData(string imageUrl, byte[] fogData)
         {
             try
             {
+                var fileName = GetFogDataFileName(imageUrl);
                 if (fogData == null)
                 {
-                    File.Delete(GetFogDataFileName(imageUrl));
+                    File.Delete(fileName);
                 }
                 else
                 {
-                    SaveData(GetFogDataFileName(imageUrl), fogData);
+                    // Ensure the full directory structure exists for the path.
+                    var dirName = Path.GetDirectoryName(fileName);
+                    if (!string.IsNullOrWhiteSpace(dirName))
+                        Directory.CreateDirectory(dirName);
+
+                    using (var stream = new FileStream(fileName, FileMode.Create))
+                    {
+                        stream.Write(fogData, 0, fogData.Length);
+                    }
                 }
             }
             catch (Exception e)

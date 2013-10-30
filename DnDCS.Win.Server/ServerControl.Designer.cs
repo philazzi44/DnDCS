@@ -61,18 +61,12 @@
             // 
             // ctlDnDMap
             // 
-            this.ctlDnDMap.AllowZoom = false;
             this.ctlDnDMap.BackColor = System.Drawing.Color.Black;
-            this.ctlDnDMap.CurrentTool = DnDCS.Win.Libs.DnDMapConstants.Tool.SelectTool;
             this.ctlDnDMap.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.ctlDnDMap.FogAlpha = ((byte)(255));
-            this.ctlDnDMap.IsFlippedView = false;
-            this.ctlDnDMap.IsRemovingFog = null;
             this.ctlDnDMap.Location = new System.Drawing.Point(0, 0);
             this.ctlDnDMap.Name = "ctlDnDMap";
             this.ctlDnDMap.Size = new System.Drawing.Size(666, 485);
             this.ctlDnDMap.TabIndex = 0;
-            this.ctlDnDMap.UseFogAlphaEffect = false;
             // 
             // ctlControlPanel
             // 

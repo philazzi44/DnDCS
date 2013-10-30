@@ -38,23 +38,7 @@ namespace DnDCS.Win.Libs
         #endregion Init and Cleanup
 
         #region Setters
-
-        public void SetFogAsync(Image newFog)
-        {
-            var newFogBitmap = newFog as Bitmap;
-            if (newFogBitmap == null)
-            {
-                newFogBitmap = new Bitmap(newFogBitmap);
-                newFog.Dispose();
-            }
-
-            this.BeginInvoke(new Action(() =>
-            {
-                this.Fog = newFogBitmap;
-                RefreshAll();
-            }));
-        }
-
+        
         public void SetFogUpdateAsync(FogUpdate fogUpdate)
         {
             Bitmap fogImageToUpdate;

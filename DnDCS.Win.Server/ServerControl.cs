@@ -27,6 +27,9 @@ namespace DnDCS.Win.Server
         // Server Connection
         private ServerSocketConnection connection;
 
+        private Timer saveFogTimer;
+        private bool anyFogChanges;
+
         #region Init and Cleanup
 
         public ServerControl()
@@ -66,6 +69,10 @@ namespace DnDCS.Win.Server
             this.ctlControlPanel.UndoLastFogActionMenuItem = this.undoLastFogAction;
             this.ctlControlPanel.RedoLastFogActionMenuItem = this.redoLastFogAction;
             this.ctlControlPanel.Init();
+
+            saveFogTimer = new Timer();
+            saveFogTimer.Interval = ConfigValues.FogSaveInterval;
+            saveFogTimer.Tick += new EventHandler(saveFogTimer_Tick);
         }
 
         private void ctlDnDMap_TryToggleFullScreen(Keys keyCode)
@@ -194,10 +201,17 @@ namespace DnDCS.Win.Server
                             }
                             else
                             {
-                                var fogUpdates = fogData.Data.ToFogUpdate();
-                                this.ctlDnDMap.SetFogUpdates(fogUpdates);
-                                // Seems easier to just blast out the full fog, rather than a series of Fog Updates.
-                                connection.WriteFog(this.ctlDnDMap.Fog);
+                                var fog = fogData.ToImage();
+                                if (fog != null && fog.Width == loadImage.LoadedImage.Width && fog.Height == loadImage.LoadedImage.Height)
+                                {
+                                    this.ctlDnDMap.SetFogAsync(fog);
+                                    connection.WriteFog(fog);
+                                }
+                                else
+                                {
+                                    MessageBox.Show(this, "Fog image failed to load or its width/height doesn't match the loaded Map's width/height and cannot be used.", "Invalid Fog Data", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                    TryPurgeMapData(loadImage.LoadedImageUrl);
+                                }
                             }
                         }
                         else
@@ -334,40 +348,50 @@ namespace DnDCS.Win.Server
 
         private void ctlDnDMap_OnOneFogUpdatesChanged(FogUpdate fogUpdate)
         {
+            anyFogChanges = true;
+
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
             if (this.ctlControlPanel.RealTimeFogUpdates)
                 connection.WriteFogUpdate(fogUpdate);
-
-            Persistence.SaveServerFogData(this.mapUrl, new ServerFogData()
-            {
-                Data = this.ctlDnDMap.AllFogUpdates.Select(f => new FogData()
-                                                           {
-                                                               IsClearing = f.IsClearing,
-                                                               Points = f.Points
-                                                           }).ToArray()
-            });
         }
 
         private void ctlDnDMap_OnManyFogUpdatesChanged()
         {
+            anyFogChanges = true;
+
             undoLastFogAction.Enabled = this.ctlDnDMap.AnyUndoFogUpdates;
             redoLastFogAction.Enabled = this.ctlDnDMap.AnyRedoFogUpdates;
 
             connection.WriteFog(this.ctlDnDMap.Fog);
-
-            Persistence.SaveServerFogData(this.mapUrl, new ServerFogData()
-            {
-                Data = this.ctlDnDMap.AllFogUpdates.Select(f => new FogData()
-                                                           {
-                                                               IsClearing = f.IsClearing,
-                                                               Points = f.Points
-                                                           }).ToArray()
-            });
         }
 
         #endregion DnD Map Events
+        
+        private void saveFogTimer_Tick(object sender, EventArgs e)
+        {
+            SaveBackupFogImage();
+        }
+
+        private void SaveBackupFogImage()
+        {
+            if (!anyFogChanges)
+                return;
+
+            try
+            {
+                if (this.ctlDnDMap.Fog != null)
+                {
+                    Persistence.SaveServerFogData(this.mapUrl, this.ctlDnDMap.Fog.ToBytes());
+                    anyFogChanges = false;
+                }
+            }
+            catch (Exception e1)
+            {
+                Logger.LogError("Failed to save backup Fog Image.", e1);
+            }
+        }
 
         private void TryPurgeMapData(string imageUrl)
         {
@@ -383,6 +407,10 @@ namespace DnDCS.Win.Server
             if (mapImage == null)
                 return;
 
+            // Before switching maps, let's be sure to save a backup of the previous fog.
+            if (!string.IsNullOrWhiteSpace(mapUrl))
+                SaveBackupFogImage();
+
             mapUrl = imageUrl;
             this.ctlDnDMap.SetMapAsync(mapImage);
 
@@ -390,6 +418,8 @@ namespace DnDCS.Win.Server
 
             // Re-send everything since we've just re-created the Map and Fog. This will also force a Blackout of the new image.
             SendAll(true);
+
+            saveFogTimer.Enabled = true;
         }
     }
 }

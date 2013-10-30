@@ -17,15 +17,19 @@ namespace DnDCS.Win.Libs
 
         // Map Values
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Image LoadedMap { get; protected set; }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected Size LoadedMapSize { get; set; }
         private int LogicalMapWidth { get { return (int)(LoadedMapSize.Width * AssignedZoomFactor); } }
         private int LogicalMapHeight { get { return (int)(LoadedMapSize.Height * AssignedZoomFactor); } }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<Image> OnNewMapSet;
         /// <summary> Gets the size that is visible to the user. </summary>
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Size VisibleSize
         {
             get { return this.Size; }
@@ -35,6 +39,7 @@ namespace DnDCS.Win.Libs
         private int? gridSize;
         private Pen gridPen = new Pen(Color.Aqua);
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Pen GridPen
         {
             get { return this.gridPen; }
@@ -49,6 +54,7 @@ namespace DnDCS.Win.Libs
         // Fog Values
         private byte fogAlpha = 255;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public byte FogAlpha
         {
             get { return this.fogAlpha; }
@@ -61,21 +67,27 @@ namespace DnDCS.Win.Libs
         }
 
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool UseFogAlphaEffect { get; set; }
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public Bitmap Fog { get; protected set; }
 
         // Zoom Values
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AllowZoom { get; set; }
         private float assignedZoomFactor = 1.0f;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected float AssignedZoomFactor { get { return this.assignedZoomFactor; } private set { this.assignedZoomFactor = value; } }
         private float variableZoomFactor = 1.0f;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected bool IsZoomFactorInProgress { get; private set; }
         private Font zoomFactorFont;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected virtual int ZoomFactorTextYOffset { get { return 0; } }
         private static readonly string[] ZoomInstructionMessages = new[] {
                                                                             "Press Enter or Left Click to commit the zoom factor.",
@@ -85,18 +97,21 @@ namespace DnDCS.Win.Libs
 
         // Scroll Values
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
         private double keyboardScrollAccel = 1.0d;
         private bool useHighQuality = true;
         private readonly Timer scrollHighQualityTimer = new Timer();
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<Point> OnScrollStep;
         private Cursor dragMapOldCursor = Cursors.Default;
 
         // Flipped View Values
         private bool isFlippedView;
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsFlippedView
         {
             get { return isFlippedView; }
@@ -121,10 +136,12 @@ namespace DnDCS.Win.Libs
 
         // Paint Values
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected ImageAttributes FogAttributes { get; set; }
 
         // Callbacks
         [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<Keys> TryToggleFullScreen;
 
         #region Init and Cleanup
@@ -235,6 +252,22 @@ namespace DnDCS.Win.Libs
 
             SetScroll(0, 0);
             this.RefreshAll();
+        }
+
+        public virtual void SetFogAsync(Image newFog)
+        {
+            var newFogBitmap = newFog as Bitmap;
+            if (newFogBitmap == null)
+            {
+                newFogBitmap = new Bitmap(newFogBitmap);
+                newFog.Dispose();
+            }
+
+            this.BeginInvoke(new Action(() =>
+            {
+                this.Fog = newFogBitmap;
+                RefreshAll();
+            }));
         }
 
         protected virtual void OnNewMapAndFogSet()

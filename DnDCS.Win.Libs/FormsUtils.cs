@@ -5,6 +5,7 @@ using System.Linq;
 using DnDCS.Libs;
 using DnDCS.Libs.PersistenceObjects;
 using DnDCS.Libs.SimpleObjects;
+using System;
 
 namespace DnDCS.Win.Libs
 {
@@ -21,9 +22,17 @@ namespace DnDCS.Win.Libs
 
         public static Image ToImage(this byte[] dataBytes)
         {
-            using (var ms = new MemoryStream(dataBytes))
+            try
             {
-                return Image.FromStream(ms);
+                using (var ms = new MemoryStream(dataBytes))
+                {
+                    return Image.FromStream(ms);
+                }
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Failed to convert byte[] to Image. Bytes length: " + dataBytes.Length, e);
+                return null;
             }
         }
 
@@ -61,31 +70,7 @@ namespace DnDCS.Win.Libs
         {
             return new SimpleColor(color.A, color.R, color.G, color.B);
         }
-
-        public static FogUpdate ToFogUpdate(this FogData fogData)
-        {
-            return new FogUpdate(fogData.Points, fogData.IsClearing);
-        }
-
-        public static FogUpdate[] ToFogUpdate(this FogData[] fogDatas)
-        {
-            return fogDatas.Select(ToFogUpdate).ToArray();
-        }
-
-        public static FogData ToFogData(this FogUpdate fogUpdate)
-        {
-            return new FogData()
-            {
-                Points = fogUpdate.Points.ToArray(),
-                IsClearing = fogUpdate.IsClearing
-            };
-        }
-
-        public static FogData[] ToFogData(this IEnumerable<FogUpdate> fogUpdates)
-        {
-            return fogUpdates.Select(ToFogData).ToArray();
-        }
-
+        
         public static void WriteMap(this ServerSocketConnection connection, Image map)
         {
             if (connection.ClientsCount == 0)

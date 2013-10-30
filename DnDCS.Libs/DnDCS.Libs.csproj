@@ -44,9 +44,7 @@
     <Compile Include="SocketObjects\UseFogAlphaEffectSocketObject.cs" />
     <Compile Include="Persistence.cs" />
     <Compile Include="PersistenceObjects\ClientData.cs" />
-    <Compile Include="PersistenceObjects\FogData.cs" />
     <Compile Include="PersistenceObjects\ServerData.cs" />
-    <Compile Include="PersistenceObjects\ServerFogData.cs" />
     <Compile Include="SimpleObjects\FogUpdate.cs" />
     <Compile Include="SimpleObjects\ServerAddress.cs" />
     <Compile Include="ServerEvents\SocketEvent.cs" />
