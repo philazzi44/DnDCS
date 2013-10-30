@@ -101,7 +101,9 @@ namespace DnDCS.Win.Libs
         protected Point ScrollPosition { get; set; }
         private Point lastScrollDragPosition;
         private double keyboardScrollAccel = 1.0d;
-        private bool useHighQuality = true;
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected bool UseHighQuality { get; set; }
         private readonly Timer scrollHighQualityTimer = new Timer();
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -154,6 +156,7 @@ namespace DnDCS.Win.Libs
         public void Init()
         {
             this.BackColor = Color.Black;
+            this.UseHighQuality = true;
 
             this.zoomFactorFont = new Font(SystemFonts.DefaultFont.FontFamily, 24.0f);
 
@@ -613,7 +616,7 @@ namespace DnDCS.Win.Libs
 
             this.ScrollPosition = new Point(desiredX.Value, desiredY.Value);
 
-            useHighQuality = false;
+            UseHighQuality = false;
             scrollHighQualityTimer.Start();
 
             RefreshAll();
@@ -624,7 +627,7 @@ namespace DnDCS.Win.Libs
 
         private void scrollHighQualityTimer_Tick(object sender, EventArgs e)
         {
-            useHighQuality = true;
+            UseHighQuality = true;
             scrollHighQualityTimer.Stop();
             this.RefreshAll();
         }
@@ -638,7 +641,7 @@ namespace DnDCS.Win.Libs
         {
             try
             {
-                if (!useHighQuality)
+                if (!UseHighQuality)
                 {
                     e.Graphics.PixelOffsetMode = PixelOffsetMode.Half;
                     e.Graphics.SmoothingMode = SmoothingMode.None;

@@ -285,6 +285,7 @@ namespace DnDCS.Win.Libs
                 }
                 else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
                 {
+                    UseHighQuality = false;
                     currentFogUpdate = new FogUpdate(this.IsRemovingFog.Value);
                     currentFogUpdate.Add(e.Location.Translate(base.ScrollPosition).ToSimplePoint());
                 }
@@ -326,7 +327,8 @@ namespace DnDCS.Win.Libs
                     // Turn on drawing the New Fog image now that we have something to draw from the New Fog Image.
                     drawNewFog = true;
 
-                    this.RefreshAll();
+                    // Because MouseMove events happen very often, we need to ensure the Repaint happens every time.
+                    this.RefreshAll(true);
                 }
             }
         }
@@ -362,6 +364,7 @@ namespace DnDCS.Win.Libs
 
                     currentFogUpdate = null;
                 }
+                UseHighQuality = true;
             }
             else
             {
