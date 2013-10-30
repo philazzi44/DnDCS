@@ -42,7 +42,7 @@ namespace DnDCS.Win.Client
             if (StartupServerAddress != null)
                 Connect(StartupServerAddress.Address, StartupServerAddress.Port);
             else
-            Connect();
+                Connect();
         }
 
         private void ctlDnDMap_TryToggleFullScreen(Keys keyCode)
@@ -71,6 +71,8 @@ namespace DnDCS.Win.Client
                 new MenuItem("-"),
                 new MenuItem("Flip View", OnFlipView_Click) { Checked = false },
                 new MenuItem("-"),
+                new MenuItem("Reconnect", OnReconnect_Click),
+                new MenuItem("-"),
                 new MenuItem("Exit", OnExit_Click),
             });
             menu.MenuItems.Add(fileMenu);
@@ -94,6 +96,12 @@ namespace DnDCS.Win.Client
 
             var goFullScreen = (menuItem.Checked = !menuItem.Checked);
             ToggleFullScreen(goFullScreen);
+        }
+
+        private void OnReconnect_Click(object sender, EventArgs e)
+        {
+            if (this.connection != null)
+                this.Connect(this.connection.Address, this.connection.Port);
         }
 
         private void OnExit_Click(object sender, EventArgs e)
