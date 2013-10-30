@@ -1,13 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using DnDCS.Libs.SimpleObjects;
-using DnDCS.XNA.Client;
 using DnDCS.XNA.Libs;
 using DnDCS.XNA.Libs.Shared;
 using DnDCS.XNA.MenuLogic;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using DnDCS.XNA.Server;
 
 namespace DnDCS.XNA
 {
@@ -68,25 +66,24 @@ namespace DnDCS.XNA
             System.Diagnostics.Process.Start(DnDCS.XNA.Libs.XNAConfigValues.WinFormsApp, ((int)DnDCS.Libs.Constants.RunMode.Server).ToString());
             this.Exit();
 
-            var serverComponent = new ServerComponent();
-            serverComponent.OnEscape += new System.Action(clientComponent_OnEscape);
-            serverComponent.Initialize();
+            //var serverComponent = new ServerComponent();
+            //serverComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            //serverComponent.Initialize();
 
-            this.SwitchGameComponent(serverComponent);
+            //this.SwitchGameComponent(serverComponent);
         }
 
         private void ShowClientComponent(SimpleServerAddress serverAddress)
         {
             // TODO: For now, the Client is a Win Forms app that is run in Client mode.
-            //System.Diagnostics.Process.Start(DnDCS.XNA.Libs.ConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
-            //this.Exit();
-            //return;
+            System.Diagnostics.Process.Start(DnDCS.XNA.Libs.XNAConfigValues.WinFormsApp, string.Join(" ", ((int)DnDCS.Libs.Constants.RunMode.Client).ToString(), serverAddress.Address, serverAddress.Port.ToString()));
+            this.Exit();
 
-            var clientComponent = new ClientComponent(serverAddress.Address, serverAddress.Port);
-            clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
-            clientComponent.Initialize();
+            //var clientComponent = new ClientComponent(serverAddress.Address, serverAddress.Port);
+            //clientComponent.OnEscape += new System.Action(clientComponent_OnEscape);
+            //clientComponent.Initialize();
 
-            this.SwitchGameComponent(clientComponent);
+            //this.SwitchGameComponent(clientComponent);
         }
 
         private void SwitchGameComponent(params GameComponent[] newGameComponents)
@@ -149,9 +146,12 @@ namespace DnDCS.XNA
         {
             base.Draw(gameTime);
 
-            SharedResources.SpriteBatch.Begin();
-            SharedResources.SpriteBatch.DrawString(Debug.Font, Debug.FullDebugText, Vector2.Zero, Color.Red);
-            SharedResources.SpriteBatch.End();
+            if (XNAConfigValues.ShowDebug)
+            {
+                SharedResources.SpriteBatch.Begin();
+                SharedResources.SpriteBatch.DrawString(Debug.Font, Debug.FullDebugText, Vector2.Zero, Color.Red);
+                SharedResources.SpriteBatch.End();
+            }
         }
     }
 }

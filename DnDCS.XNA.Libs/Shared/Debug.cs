@@ -12,14 +12,20 @@ namespace DnDCS.XNA.Libs.Shared
 
         public static void Clear()
         {
-            debugText.Clear();
+            if (XNAConfigValues.ShowDebug)
+            {
+                debugText.Clear();
+            }
         }
 
         public static void Add(string msg)
         {
-            lock (debugText)
+            if (XNAConfigValues.ShowDebug)
             {
-                debugText.Add(msg);
+                lock (debugText)
+                {
+                    debugText.Add(msg);
+                }
             }
         }
     }
