@@ -89,7 +89,7 @@ namespace DnDCS.Win.Libs
                 var boundingBox = GetBoundingBox(fog, points, 0);
 
                 var bmd = fog.LockBits(boundingBoxBuffered, ImageLockMode.ReadWrite, PixelFormat.Format32bppArgb);
-                const int pixelSize = 4;
+                int pixelSize = 4;
                 Parallel.For(0, bmd.Height, (y) =>
                 {
                     var row = (byte*)bmd.Scan0 + (y * bmd.Stride);
@@ -98,9 +98,17 @@ namespace DnDCS.Win.Libs
                         var offsetX = x + boundingBoxBuffered.X;
                         var offsetY = y + boundingBoxBuffered.Y;
 
-                        if (isAddingFog && row[x * pixelSize + 3] == 255)
+                        if (isAddingFog)
                         {
-                            continue;
+                            // If the pixel is already opaque, then we'll skip it
+                            if (row[x * pixelSize + 3] == 255)
+                                continue;
+                        }
+                        else
+                        {
+                            // If the pixel is already transparent, then we'll hide it
+                            if (row[x * pixelSize + 3] == 0)
+                                continue;
                         }
 
                         // When going outwards, we reveal everything in the points (the actual drawn polygon)
