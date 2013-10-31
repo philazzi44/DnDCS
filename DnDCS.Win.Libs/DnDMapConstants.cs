@@ -22,8 +22,8 @@ namespace DnDCS.Win.Libs
 
         public static readonly Brush FOG_BRUSH = Brushes.Black;
         public static readonly Color FOG_BRUSH_COLOR = Color.Black;
-        public static readonly Brush NEW_FOG_CLEAR_BRUSH = Brushes.Red;
-        public static readonly Brush NEW_FOG_BRUSH = Brushes.Gray;
+        public static readonly Brush NEW_FOG_CLEAR_BRUSH = new SolidBrush(Color.FromArgb(DEFAULT_FOG_BRUSH_ALPHA, Color.Red));
+        public static readonly Brush NEW_FOG_BRUSH = new SolidBrush(Color.FromArgb(DEFAULT_FOG_BRUSH_ALPHA, Color.Gray));
 
         // For some reason, using Brushes.White doesn't end up with the desired result. TODO: Confirm this
         public static readonly SolidBrush FOG_CLEAR_BRUSH = new SolidBrush(Color.White);

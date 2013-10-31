@@ -15,8 +15,6 @@ namespace DnDCS.Win.Libs
     {
         private bool IsToolFogAddOrRemove { get { return (this.CurrentTool == DnDMapConstants.Tool.FogAddTool || this.CurrentTool == DnDMapConstants.Tool.FogRemoveTool); } }
 
-        private DateTime lastMouseMoveNewFogPointTime = DateTime.MinValue;
-
         public event Action<FogUpdate> OnOneFogUpdatesChanged;
         public event Action OnManyFogUpdatesChanged;
 
@@ -65,10 +63,10 @@ namespace DnDCS.Win.Libs
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public IEnumerable<FogUpdate> AllFogUpdates { get { return this.allFogUpdates.ToArray(); } }
 
-        private bool drawNewFog;
-        private Bitmap newFog;
+        private bool isNewFogClearing;
+        private readonly List<Point> newFogUpdatePoints = new List<Point>();
+        private DateTime lastMouseMoveNewFogPointTime = DateTime.MinValue;
 
-        private FogUpdate currentFogUpdate;
         private readonly LinkedList<FogUpdate> undoFogUpdates = new LinkedList<FogUpdate>();
         private readonly LinkedList<FogUpdate> redoFogUpdates = new LinkedList<FogUpdate>();
 
@@ -134,11 +132,6 @@ namespace DnDCS.Win.Libs
         protected override void OnNewMapAndFogSet()
         {
             allFogUpdates.Clear();
-
-            // When we have a new map, we'll re-create the newFog image to match the size.
-            if (this.newFog != null)
-                this.newFog.Dispose();
-            this.newFog = new Bitmap(base.LoadedMapSize.Width, base.LoadedMapSize.Height);
         }
 
         #endregion Setters
@@ -197,15 +190,6 @@ namespace DnDCS.Win.Libs
 
         #region Fog Updates
 
-        private void UpdateNewFogImage(FogUpdate fogUpdate)
-        {
-            using (var g = Graphics.FromImage(newFog))
-            {
-                g.Clear(Color.Transparent);
-                g.FillPolygon((fogUpdate.IsClearing) ? DnDMapConstants.NEW_FOG_CLEAR_BRUSH : DnDMapConstants.NEW_FOG_BRUSH, fogUpdate.Points.Select(p => p.ToPoint()).ToArray());
-            }
-        }
-
         private void UpdateFogImage(FogUpdate fogUpdate, bool ignoreFogAlphaEffect = false)
         {
             UpdateFogImage(new[] { fogUpdate }, ignoreFogAlphaEffect);
@@ -251,6 +235,9 @@ namespace DnDCS.Win.Libs
         {
             if (this.LoadedMap == null)
                 return;
+            // If we're currently dealing with drawing New Fog, we'll suck all Mouse Double Click events into oblivion.
+            if (newFogUpdatePoints.Count > 0)
+                return;
 
             // If we only want Left or Right, then comment one of these out.
             if ((e.Button == MouseButtons.Left || e.Button == MouseButtons.Right) && e.Clicks >= 2)
@@ -269,6 +256,10 @@ namespace DnDCS.Win.Libs
 
         protected override void HandleMouseDown(MouseEventArgs e)
         {
+            // If we're currently dealing with drawing New Fog, we'll suck all Mouse Down events into oblivion.
+            if (newFogUpdatePoints.Count > 0)
+                return;
+
             // Anything this override cannot handle will delegate to the base implementation.
             if (base.LoadedMap == null ||
                 IsZoomFactorInProgress
@@ -287,8 +278,10 @@ namespace DnDCS.Win.Libs
                 else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
                 {
                     UseHighQuality = false;
-                    currentFogUpdate = new FogUpdate(this.IsRemovingFog.Value);
-                    currentFogUpdate.Add(e.Location.Translate(base.ScrollPosition).ToSimplePoint());
+                    base.SuppressScroll = true;
+                    newFogUpdatePoints.Clear();
+                    isNewFogClearing = IsRemovingFog.Value;
+                    newFogUpdatePoints.Add(e.Location.Translate(base.ScrollPosition));
                 }
             }
         }
@@ -310,10 +303,8 @@ namespace DnDCS.Win.Libs
                 {
                     HandleMouseMove_DragMap(e);
                 }
-                else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
+                else if (IsToolFogAddOrRemove && IsRemovingFog.HasValue && newFogUpdatePoints.Count > 0)
                 {
-                    if (currentFogUpdate == null)
-                        return;
                     var now = DateTime.Now;
 
                     // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
@@ -321,14 +312,9 @@ namespace DnDCS.Win.Libs
                         return;
                     lastMouseMoveNewFogPointTime = now;
 
-                    // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
-                    currentFogUpdate.Add(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
-
-                    UpdateNewFogImage(currentFogUpdate);
-
-                    // Turn on drawing the New Fog image now that we have something to draw from the New Fog Image.
-                    drawNewFog = true;
-
+                    // Add the new location to the list of points for the new fog, so it can be drawn on the screen in real time.
+                    newFogUpdatePoints.Add(e.Location.Translate(this.ScrollPosition));
+                    
                     // Because MouseMove events happen very often, we need to ensure the Repaint happens every time.
                     this.RefreshAll(true);
                 }
@@ -337,36 +323,34 @@ namespace DnDCS.Win.Libs
 
         protected override void HandleMouseUp(MouseEventArgs e)
         {
+            // If we're currently dealing with drawing New Fog, we'll suck all Mouse Up events into oblivion that aren't Left Click.
+            if (newFogUpdatePoints.Count > 0 && e.Button != System.Windows.Forms.MouseButtons.Left)
+                return;
+
             // Anything this override cannot handle will delegate to the base implementation.
             if (base.LoadedMap == null || 
                 IsZoomFactorInProgress || 
-                currentFogUpdate == null
+                newFogUpdatePoints.Count < 2
                 || e.Button != System.Windows.Forms.MouseButtons.Left)
             {
                 base.HandleMouseUp(e);
                 return;
             }
 
-            if (IsToolFogAddOrRemove && IsRemovingFog.HasValue)
+            if (IsToolFogAddOrRemove)
             {
-                // Turn off the NewFog image from being drawn and then clear it out for the next drawing.
-                drawNewFog = false;
-                using (var g = Graphics.FromImage(this.newFog))
-                    g.Clear(Color.Transparent);
-
-                // Commit the last point onto the main Fog Image then clear out the 'New Fog' temporary image altogether. Note that if we don't have
-                // at least 3 points, then we don't have a shape that can be used.
-
-                currentFogUpdate.Add(e.Location.Translate(this.ScrollPosition).ToSimplePoint());
-                if (currentFogUpdate.Length >= 3)
+                // Commit the last point onto the main Fog Image. Note that if we don't have at least 3 points, then we don't have a shape that can be used.
+                newFogUpdatePoints.Add(e.Location.Translate(this.ScrollPosition));
+                if (newFogUpdatePoints.Count >= 3)
                 {
-                    undoFogUpdates.AddLast(currentFogUpdate);
-                    UpdateFogImage(currentFogUpdate);
-                    base.RefreshAll();
-
-                    currentFogUpdate = null;
+                    var fogUpdate = new FogUpdate(newFogUpdatePoints.Select(p => p.ToSimplePoint()), isNewFogClearing);
+                    undoFogUpdates.AddLast(fogUpdate);
+                    UpdateFogImage(fogUpdate);
                 }
+                newFogUpdatePoints.Clear();
+                base.SuppressScroll = false;
                 UseHighQuality = true;
+                base.RefreshAll();
             }
             else
             {
@@ -385,37 +369,20 @@ namespace DnDCS.Win.Libs
                 PaintMap(transformedGraphics);
                 PaintGrid(transformedGraphics);
                 PaintFog(transformedGraphics);
-                PaintNewFog(transformedGraphics);
             }
 
+            PaintNewFog(g);
             PaintCenterMapOverlayIcon(g);
             PaintZoomFactorText(g);
         }
 
-        private void PaintNewFog(TransformedGraphics g)
+        private void PaintNewFog(Graphics graphics)
         {
-            if (this.newFog != null && this.drawNewFog)
+            if (newFogUpdatePoints.Count >= 3)
             {
-                if (useNewLogic)
+                using (var g = Translate(graphics))
                 {
-                    // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
-                    // take from the New Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
-                    // to source from off the image.
-                    var sourceX = Math.Max(0, this.ScrollPosition.X);
-                    var sourceY = Math.Max(0, this.ScrollPosition.Y);
-                    var sourceWidth = Math.Min(newFog.Width - sourceX, this.VisibleSize.Width);
-                    var sourceHeight = Math.Min(newFog.Height - sourceY, this.VisibleSize.Height);
-
-                    var destinationX = Math.Max(0, this.ScrollPosition.X);
-                    var destinationY = Math.Max(0, this.ScrollPosition.Y);
-                    var destinationWidth = Math.Min(newFog.Width - sourceX, this.VisibleSize.Width);
-                    var destinationHeight = Math.Min(newFog.Height - sourceY, this.VisibleSize.Height);
-
-                    g.Graphics.DrawImage(newFog, new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight), sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, base.FogAttributes);
-                }
-                else
-                {
-                    g.Graphics.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, base.FogAttributes);
+                    g.Graphics.FillPolygon((isNewFogClearing) ? DnDMapConstants.NEW_FOG_CLEAR_BRUSH : DnDMapConstants.NEW_FOG_BRUSH, newFogUpdatePoints.ToArray());
                 }
             }
         }

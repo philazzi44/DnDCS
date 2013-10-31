@@ -109,6 +109,9 @@ namespace DnDCS.Win.Libs
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public event Action<Point> OnScrollStep;
         private Cursor dragMapOldCursor = Cursors.Default;
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected bool SuppressScroll { get; set; }
 
         // Flipped View Values
         private bool isFlippedView;
@@ -140,6 +143,9 @@ namespace DnDCS.Win.Libs
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected ImageAttributes FogAttributes { get; set; }
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected bool UseNewPaintLogic = true;
 
         // Callbacks
         [Browsable(false)]
@@ -467,6 +473,9 @@ namespace DnDCS.Win.Libs
 
         protected void HandleMouseDown_DragMap(MouseEventArgs e)
         {
+            if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Right)
+                return;
+
             lastScrollDragPosition = e.Location;
             dragMapOldCursor = this.Cursor;
             this.Cursor = Cursors.SizeAll;
@@ -540,6 +549,9 @@ namespace DnDCS.Win.Libs
 
         protected void HandleMouseUp_Drag(MouseEventArgs e)
         {
+            if (e.Button != MouseButtons.Left && e.Button != MouseButtons.Right)
+                return;
+
             this.Cursor = dragMapOldCursor;
         }
 
@@ -607,6 +619,9 @@ namespace DnDCS.Win.Libs
 
         protected void SetScroll(int? desiredX, int? desiredY)
         {
+            if (SuppressScroll)
+                return;
+
             if (!desiredX.HasValue)
                 desiredX = this.ScrollPosition.X;
             if (!desiredY.HasValue)
@@ -686,13 +701,11 @@ namespace DnDCS.Win.Libs
             throw new NotImplementedException("Must be overridden.");
         }
 
-        protected bool useNewLogic = true;
-
         protected void PaintMap(TransformedGraphics g)
         {
             if (this.LoadedMap != null)
             {
-                if (useNewLogic)
+                if (UseNewPaintLogic)
                 {
                     // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
                     // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
@@ -724,7 +737,7 @@ namespace DnDCS.Win.Libs
             if (!gridSize.HasValue)
                 return;
 
-            if (useNewLogic)
+            if (UseNewPaintLogic)
             {
                 // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
                 // start at the Translated location, and go the full width of our client view only. Note that because our scroll
@@ -781,7 +794,7 @@ namespace DnDCS.Win.Libs
         {
             if (Fog != null)
             {
-                if (useNewLogic)
+                if (UseNewPaintLogic)
                 {
                     // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
                     // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
