@@ -188,7 +188,6 @@
             this.gbxGridSize.Controls.Add(this.lblGridSize);
             this.gbxGridSize.Controls.Add(this.chkShowGrid);
             this.gbxGridSize.Controls.Add(this.nudGridSize);
-            this.gbxGridSize.Enabled = false;
             this.gbxGridSize.Location = new System.Drawing.Point(1, 242);
             this.gbxGridSize.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.gbxGridSize.Name = "gbxGridSize";
@@ -293,7 +292,6 @@
             // 
             // ctlMiniMap
             // 
-            this.ctlMiniMap.DnDMapControl = null;
             this.ctlMiniMap.Location = new System.Drawing.Point(1, 409);
             this.ctlMiniMap.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
             this.ctlMiniMap.MaximumSize = new System.Drawing.Size(125, 125);

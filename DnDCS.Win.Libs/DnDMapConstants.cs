@@ -28,7 +28,7 @@ namespace DnDCS.Win.Libs
         // For some reason, using Brushes.White doesn't end up with the desired result. TODO: Confirm this
         public static readonly SolidBrush FOG_CLEAR_BRUSH = new SolidBrush(Color.White);
 
-        public static readonly TimeSpan MouseMoveDrawFogInterval = TimeSpan.FromMilliseconds(25d);
+        public static readonly TimeSpan MouseMoveNewFogPointIgnoreInterval = TimeSpan.FromMilliseconds(25d);
 
         /// <summary> The duration (in ms) between performing a scroll action and going back to using high quality graphics. </summary>
         public const int OnScrollHighQualityTimerInterval = 1000;

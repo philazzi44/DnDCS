@@ -17,8 +17,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDCS.Win.Libs", "DnDCS.Win
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDCS.XNA.Libs", "DnDCS.XNA.Libs\DnDCS.XNA.Libs.csproj", "{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DnDCS.XNA.Client", "DnDCS.XNA.Client\DnDCS.XNA.Client.csproj", "{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -125,18 +123,6 @@ Global
 		{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}.Release|x64.ActiveCfg = Release|x86
 		{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}.Release|x86.ActiveCfg = Release|x86
 		{7BFCF5AC-A7D5-475C-8688-6DA4DBFA4B14}.Release|x86.Build.0 = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|Mixed Platforms.Build.0 = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|x64.ActiveCfg = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|x86.ActiveCfg = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Debug|x86.Build.0 = Debug|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|Any CPU.ActiveCfg = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|Mixed Platforms.ActiveCfg = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|Mixed Platforms.Build.0 = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|x64.ActiveCfg = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|x86.ActiveCfg = Release|x86
-		{D3DA8383-10AF-4F10-A5C3-0BF7A5D90528}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

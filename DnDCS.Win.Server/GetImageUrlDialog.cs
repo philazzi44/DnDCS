@@ -38,7 +38,8 @@ namespace DnDCS.Win.Server
         private void GetImageUrlDialog_Closed(object sender, EventArgs e)
         {
             var serverData = Persistence.LoadServerData();
-            serverData.ServerImageUrlHistory = lboHistory.Items.OfType<string>().ToArray();
+            // Put the recently chosen one at the top. If none was chosen, then they will all be ordered by 'false' and be in the same order they were.
+            serverData.ServerImageUrlHistory = lboHistory.Items.OfType<string>().OrderBy(i => i == LoadedImageUrl).ToArray();
             Persistence.SaveServerData(serverData);
         }
 

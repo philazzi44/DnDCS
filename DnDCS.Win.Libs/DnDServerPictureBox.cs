@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace DnDCS.Win.Libs
     {
         private bool IsToolFogAddOrRemove { get { return (this.CurrentTool == DnDMapConstants.Tool.FogAddTool || this.CurrentTool == DnDMapConstants.Tool.FogRemoveTool); } }
 
-        private DateTime lastMouseMoveDrawFogTime = DateTime.MinValue;
+        private DateTime lastMouseMoveNewFogPointTime = DateTime.MinValue;
 
         public event Action<FogUpdate> OnOneFogUpdatesChanged;
         public event Action OnManyFogUpdatesChanged;
@@ -302,7 +303,7 @@ namespace DnDCS.Win.Libs
                 base.HandleMouseMove(e);
                 return;
             }
-            
+
             if (e.Button == MouseButtons.Left)
             {
                 if (this.CurrentTool == DnDMapConstants.Tool.SelectTool)
@@ -313,11 +314,12 @@ namespace DnDCS.Win.Libs
                 {
                     if (currentFogUpdate == null)
                         return;
+                    var now = DateTime.Now;
 
                     // We ignore events firing too fast so that we don't end up with several points that are simply too close to each other to matter.
-                    if (DateTime.Now - lastMouseMoveDrawFogTime < DnDMapConstants.MouseMoveDrawFogInterval)
+                    if (now - lastMouseMoveNewFogPointTime < DnDMapConstants.MouseMoveNewFogPointIgnoreInterval)
                         return;
-                    lastMouseMoveDrawFogTime = DateTime.Now;
+                    lastMouseMoveNewFogPointTime = now;
 
                     // Update the New Fog image with the newly added point, so it can be drawn on the screen in real time.
                     currentFogUpdate.Add(e.Location.Translate(this.ScrollPosition).ToSimplePoint());

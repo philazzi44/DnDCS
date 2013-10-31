@@ -277,9 +277,22 @@ namespace DnDCS.Win.Libs
         {
         }
 
-        public void SetGridSize(bool showGrid, int gridSize)
+        public void SetGridSize(bool showGrid, int? newGridSize)
         {
-            this.gridSize = (showGrid) ? gridSize : new Nullable<int>();
+            if (showGrid && newGridSize.HasValue)
+            {
+                // Show the grid, but if the grid is already shown at that size, do nothing.
+                if (this.gridSize.HasValue && this.gridSize.Value == newGridSize.Value)
+                    return;
+                this.gridSize = newGridSize.Value;
+            }
+            else
+            {
+                // Hide the grid, but if the grid was already hidden, do nothing.
+                if (!this.gridSize.HasValue)
+                    return;
+                this.gridSize = null;
+            }
             RefreshAll();
         }
 
@@ -505,6 +518,9 @@ namespace DnDCS.Win.Libs
             }
 
             lastScrollDragPosition = e.Location;
+
+            // Because MouseMove events happen very often, we need to ensure the Repaint happens every time.
+            this.RefreshAll(true);
         }
 
         private void HandleMouseUpEvent(object sender, MouseEventArgs e)
@@ -639,6 +655,7 @@ namespace DnDCS.Win.Libs
         /// <summary> Repaint event occurs every time we request it, or when the user scrolls. </summary>
         private void HandlePaintEvent(object sender, PaintEventArgs e)
         {
+            var watch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 if (!UseHighQuality)
@@ -653,6 +670,14 @@ namespace DnDCS.Win.Libs
             catch (Exception e1)
             {
                 Logger.LogError("Painting Failure", e1);
+            }
+            finally
+            {
+                watch.Stop();
+                var str = watch.ElapsedMilliseconds + "ms";
+                if (UseHighQuality)
+                    str += " HQ";
+                Console.WriteLine(str);
             }
         }
 
@@ -671,17 +696,47 @@ namespace DnDCS.Win.Libs
 
         protected void PaintGrid(TransformedGraphics g)
         {
-            // Because Paint events are sometimes scattered, we'll just draw the whole Grid rather than only part of it so there are no gaps.
-            // Since our Grid Size is usually pretty big, this will never end up with more than maybe a hundred iterations.
-            if (gridSize.HasValue)
+            if (!gridSize.HasValue)
+                return;
+
+            // This commented block draws the full Grid.
+            // for (var x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
+            // {
+            //     g.Graphics.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
+            // }
+            // for (var y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
+            // {
+            //     g.Graphics.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
+            // }
+
+            // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+            // start at the Translated location, and go the full width of our client view only. Note that because our scroll
+            // may be in between two grid lines, we'll need to pull back (or go forward) one full step in all directions to ensure
+            // the client view is fully grid lined. The end result is that we'll only draw as many grid lines as we need, starting 
+            // and ending just beyond what the user can actually see.
+            var startX = this.ScrollPosition.X;
+            startX = startX - (startX % gridSize.Value);
+            var endX = this.ScrollPosition.X + this.VisibleSize.Width;
+            endX = endX + (gridSize.Value - (endX % gridSize.Value));
+
+            var startY = this.ScrollPosition.Y;
+            startY = startY - (startY % gridSize.Value);
+            var endY = this.ScrollPosition.Y + this.VisibleSize.Height;
+            endY = endY + (gridSize.Value - (endY % gridSize.Value));
+            
+            var x = startX;
+            var y = startY;
+            while (x < endX || y < endY)
             {
-                for (int x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
+                if (x < endX)
                 {
-                    g.Graphics.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
+                    g.Graphics.DrawLine(gridPen, x, startY, x, endY);
+                    x += gridSize.Value;
                 }
-                for (int y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
+                if (y < endY)
                 {
-                    g.Graphics.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
+                    g.Graphics.DrawLine(gridPen, startX, y, endX, y);
+                    y += gridSize.Value;
                 }
             }
         }

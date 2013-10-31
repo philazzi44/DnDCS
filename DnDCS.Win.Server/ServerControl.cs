@@ -56,7 +56,12 @@ namespace DnDCS.Win.Server
             var serverData = Persistence.LoadServerData();
             this.ctlDnDMap.UseFogAlphaEffect = serverData.UseFogAlphaEffect;
             if (serverData.IsGridColorSet)
-                this.ctlDnDMap.GridPen = new Pen(Color.FromArgb(serverData.GridColorA, serverData.GridColorR, serverData.GridColorG, serverData.GridColorB));
+                this.ctlDnDMap.SetGridColor(new SimpleColor((byte)serverData.GridColorA, (byte)serverData.GridColorR, (byte)serverData.GridColorG, (byte)serverData.GridColorB));
+
+            if (serverData.ShowGrid)
+                this.ctlDnDMap.SetGridSize(true, Math.Min(ConfigValues.MaximumGridSize, Math.Max(ConfigValues.MinimumGridSize, serverData.GridSize)));
+            else
+                this.ctlDnDMap.SetGridSize(false, 0);
 
             connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
             connection.OnClientConnected += connection_OnClientConnected;
