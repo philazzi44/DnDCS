@@ -396,7 +396,27 @@ namespace DnDCS.Win.Libs
         {
             if (this.newFog != null && this.drawNewFog)
             {
-                g.Graphics.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, base.FogAttributes);
+                if (useNewLogic)
+                {
+                    // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                    // take from the New Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
+                    // to source from off the image.
+                    var sourceX = Math.Max(0, this.ScrollPosition.X);
+                    var sourceY = Math.Max(0, this.ScrollPosition.Y);
+                    var sourceWidth = Math.Min(newFog.Width - sourceX, this.VisibleSize.Width);
+                    var sourceHeight = Math.Min(newFog.Height - sourceY, this.VisibleSize.Height);
+
+                    var destinationX = Math.Max(0, this.ScrollPosition.X);
+                    var destinationY = Math.Max(0, this.ScrollPosition.Y);
+                    var destinationWidth = Math.Min(newFog.Width - sourceX, this.VisibleSize.Width);
+                    var destinationHeight = Math.Min(newFog.Height - sourceY, this.VisibleSize.Height);
+
+                    g.Graphics.DrawImage(newFog, new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight), sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, base.FogAttributes);
+                }
+                else
+                {
+                    g.Graphics.DrawImage(newFog, new Rectangle(0, 0, this.newFog.Width, this.newFog.Height), 0, 0, newFog.Width, newFog.Height, GraphicsUnit.Pixel, base.FogAttributes);
+                }
             }
         }
 

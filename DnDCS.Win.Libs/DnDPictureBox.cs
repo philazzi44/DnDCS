@@ -686,11 +686,36 @@ namespace DnDCS.Win.Libs
             throw new NotImplementedException("Must be overridden.");
         }
 
+        protected bool useNewLogic = true;
+
         protected void PaintMap(TransformedGraphics g)
         {
             if (this.LoadedMap != null)
             {
-                g.Graphics.DrawImage(this.LoadedMap, Point.Empty);
+                if (useNewLogic)
+                {
+                    // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                    // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
+                    // to source from off the image.
+                    var sourceX = Math.Max(0, this.ScrollPosition.X);
+                    var sourceY = Math.Max(0, this.ScrollPosition.Y);
+                    var sourceWidth = Math.Min(this.LoadedMap.Width - sourceX, this.VisibleSize.Width);
+                    var sourceHeight = Math.Min(this.LoadedMap.Height - sourceY, this.VisibleSize.Height);
+                    var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
+
+                    var destinationX = Math.Max(0, this.ScrollPosition.X);
+                    var destinationY = Math.Max(0, this.ScrollPosition.Y);
+                    var destinationWidth = Math.Min(this.LoadedMap.Width - sourceX, this.VisibleSize.Width);
+                    var destinationHeight = Math.Min(this.LoadedMap.Height - sourceY, this.VisibleSize.Height);
+                    var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+
+                    g.Graphics.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
+                }
+                else
+                {
+                    g.Graphics.DrawImage(this.LoadedMap, Point.Empty);
+                }
+
             }
         }
 
@@ -699,44 +724,55 @@ namespace DnDCS.Win.Libs
             if (!gridSize.HasValue)
                 return;
 
-            // This commented block draws the full Grid.
-            // for (var x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
-            // {
-            //     g.Graphics.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
-            // }
-            // for (var y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
-            // {
-            //     g.Graphics.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
-            // }
-
-            // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
-            // start at the Translated location, and go the full width of our client view only. Note that because our scroll
-            // may be in between two grid lines, we'll need to pull back (or go forward) one full step in all directions to ensure
-            // the client view is fully grid lined. The end result is that we'll only draw as many grid lines as we need, starting 
-            // and ending just beyond what the user can actually see.
-            var startX = this.ScrollPosition.X;
-            startX = startX - (startX % gridSize.Value);
-            var endX = this.ScrollPosition.X + this.VisibleSize.Width;
-            endX = endX + (gridSize.Value - (endX % gridSize.Value));
-
-            var startY = this.ScrollPosition.Y;
-            startY = startY - (startY % gridSize.Value);
-            var endY = this.ScrollPosition.Y + this.VisibleSize.Height;
-            endY = endY + (gridSize.Value - (endY % gridSize.Value));
-            
-            var x = startX;
-            var y = startY;
-            while (x < endX || y < endY)
+            if (useNewLogic)
             {
-                if (x < endX)
+                // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                // start at the Translated location, and go the full width of our client view only. Note that because our scroll
+                // may be in between two grid lines, we'll need to pull back (or go forward) one full step in all directions to ensure
+                // the client view is fully grid lined. The end result is that we'll only draw as many grid lines as we need, starting 
+                // and ending just beyond what the user can actually see.
+                var startX = this.ScrollPosition.X;
+                startX = startX - (startX % gridSize.Value);
+                var endX = this.ScrollPosition.X + this.VisibleSize.Width;
+                endX = endX + (gridSize.Value - (endX % gridSize.Value));
+
+                var startY = this.ScrollPosition.Y;
+                startY = startY - (startY % gridSize.Value);
+                var endY = this.ScrollPosition.Y + this.VisibleSize.Height;
+                endY = endY + (gridSize.Value - (endY % gridSize.Value));
+
+                // Constrain our start/end to within the map itself.
+                startX = Math.Max(0, Math.Min(startX, this.LoadedMapSize.Width));
+                startY = Math.Max(0, Math.Min(startY, this.LoadedMapSize.Height));
+                endX = Math.Min(endX, this.LoadedMapSize.Width);
+                endY = Math.Min(endY, this.LoadedMapSize.Height);
+
+                var x = startX;
+                var y = startY;
+                while (x < endX || y < endY)
                 {
-                    g.Graphics.DrawLine(gridPen, x, startY, x, endY);
-                    x += gridSize.Value;
+                    if (x < endX)
+                    {
+                        g.Graphics.DrawLine(gridPen, x, startY, x, endY);
+                        x += gridSize.Value;
+                    }
+                    if (y < endY)
+                    {
+                        g.Graphics.DrawLine(gridPen, startX, y, endX, y);
+                        y += gridSize.Value;
+                    }
                 }
-                if (y < endY)
+            }
+            else
+            {
+                // This commented block draws the full Grid.
+                for (var x = 0; x < LoadedMapSize.Width; x += gridSize.Value)
                 {
-                    g.Graphics.DrawLine(gridPen, startX, y, endX, y);
-                    y += gridSize.Value;
+                    g.Graphics.DrawLine(gridPen, x, 0, x, LoadedMapSize.Height);
+                }
+                for (var y = 0; y < LoadedMapSize.Height; y += gridSize.Value)
+                {
+                    g.Graphics.DrawLine(gridPen, 0, y, LoadedMapSize.Width, y);
                 }
             }
         }
@@ -745,7 +781,27 @@ namespace DnDCS.Win.Libs
         {
             if (Fog != null)
             {
-                g.Graphics.DrawImage(Fog, new Rectangle(0, 0, Fog.Width, Fog.Height), 0, 0, Fog.Width, Fog.Height, GraphicsUnit.Pixel, this.FogAttributes);
+                if (useNewLogic)
+                {
+                    // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                    // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
+                    // to source from off the image.
+                    var sourceX = Math.Max(0, this.ScrollPosition.X);
+                    var sourceY = Math.Max(0, this.ScrollPosition.Y);
+                    var sourceWidth = Math.Min(this.Fog.Width - sourceX, this.VisibleSize.Width);
+                    var sourceHeight = Math.Min(this.Fog.Height - sourceY, this.VisibleSize.Height);
+
+                    var destinationX = Math.Max(0, this.ScrollPosition.X);
+                    var destinationY = Math.Max(0, this.ScrollPosition.Y);
+                    var destinationWidth = Math.Min(this.Fog.Width - sourceX, this.VisibleSize.Width);
+                    var destinationHeight = Math.Min(this.Fog.Height - sourceY, this.VisibleSize.Height);
+
+                    g.Graphics.DrawImage(Fog, new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight), sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
+                }
+                else
+                {
+                    g.Graphics.DrawImage(Fog, new Rectangle(0, 0, Fog.Width, Fog.Height), 0, 0, Fog.Width, Fog.Height, GraphicsUnit.Pixel, this.FogAttributes);
+                }
             }
         }
 
