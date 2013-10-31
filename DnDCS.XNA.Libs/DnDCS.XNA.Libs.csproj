@@ -68,6 +68,11 @@
     <Compile Include="Shared\Debug.cs" />
     <Compile Include="Shared\Extensions.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Prereqs\xnafx40_redist.msi">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.targets" />
   <!--

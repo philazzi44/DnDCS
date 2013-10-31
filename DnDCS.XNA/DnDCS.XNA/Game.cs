@@ -18,8 +18,8 @@ namespace DnDCS.XNA
             SharedResources.Game = this;
             SharedResources.GraphicsDeviceManager = new GraphicsDeviceManager(this)
             {
-                PreferredBackBufferWidth = 1024,
-                PreferredBackBufferHeight = 768,
+                PreferredBackBufferWidth = 640,
+                PreferredBackBufferHeight = 480,
             };
             SharedResources.ContentManager = Content;
             SharedResources.GameWindow = this.Window;
