@@ -183,6 +183,14 @@ namespace DnDCS.Libs
                 Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
         }
 
+        public void WriteFogOrRevealAll(bool fogAll)
+        {
+            if (ClientsCount == 0)
+                return;
+
+            Write(new FogOrRevealAllSocketObject(SocketConstants.SocketAction.FogOrRevealAll, fogAll));
+        }
+
         public void WriteUseFogAlphaEffect(bool useFogAlphaEffect)
         {
             if (ClientsCount == 0)

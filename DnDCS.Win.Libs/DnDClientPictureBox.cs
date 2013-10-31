@@ -39,7 +39,7 @@ namespace DnDCS.Win.Libs
 
         #region Setters
         
-        public void SetFogUpdateAsync(FogUpdate fogUpdate)
+        public void SetFogUpdateAsync(FogUpdate fogUpdate, bool ignoreFogAlphaEffect = false)
         {
             Bitmap fogImageToUpdate;
             var isNewFogImage = (this.Fog == null);
@@ -58,7 +58,7 @@ namespace DnDCS.Win.Libs
 
             var doAction = new Action(() =>
                     {
-                        if (this.UseFogAlphaEffect)
+                        if (!ignoreFogAlphaEffect && this.UseFogAlphaEffect)
                         {
                             ImageProcessing.ApplyFogInwards(fogImageToUpdate, fogUpdate);
                         }
@@ -83,6 +83,21 @@ namespace DnDCS.Win.Libs
         }
 
         #endregion Setters
+
+        #region Fog Actions
+
+        public override void FogOrRevealAll(bool fogAll)
+        {
+            var fogAllFogUpdate = new FogUpdate(!fogAll);
+            fogAllFogUpdate.Add(new SimplePoint(0, 0));
+            fogAllFogUpdate.Add(new SimplePoint(base.LoadedMapSize.Width, 0));
+            fogAllFogUpdate.Add(new SimplePoint(base.LoadedMapSize.Width, base.LoadedMapSize.Height));
+            fogAllFogUpdate.Add(new SimplePoint(0, base.LoadedMapSize.Height));
+
+            this.SetFogUpdateAsync(fogAllFogUpdate, true);
+        }
+
+        #endregion Fog Actions
 
         #region Painting
 

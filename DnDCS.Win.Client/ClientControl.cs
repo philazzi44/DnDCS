@@ -146,6 +146,7 @@ namespace DnDCS.Win.Client
             connection.OnCenterMapReceived += new Action<SimplePoint>(connection_OnCenterMapReceived);
             connection.OnFogReceived += new Action<SimpleImage>(connection_OnFogReceived);
             connection.OnFogUpdateReceived += new Action<FogUpdate>(connection_OnFogUpdateReceived);
+            connection.OnFogOrRevealAllReceived += new Action<bool>(connection_OnFogOrRevealAllReceived);
             connection.OnUseFogAlphaEffectReceived += new Action<bool>(connection_OnUseFogAlphaEffectReceived);
             connection.OnGridSizeReceived += new Action<bool, int>(connection_OnGridSizeReceived);
             connection.OnGridColorReceived += new Action<SimpleColor>(connection_OnGridColorReceived);
@@ -155,7 +156,7 @@ namespace DnDCS.Win.Client
             this.ParentForm.Text = string.Format("{0} - Connecting to {1}:{2}...", initialParentFormText, address, port);
             connection.Start();
         }
-        
+
         private void connection_OnConnectionEstablished()
         {
             this.ParentForm.BeginInvoke(new Action(() =>
@@ -216,6 +217,11 @@ namespace DnDCS.Win.Client
             this.ctlDnDMap.SetFogUpdateAsync(fogUpdate);
         }
 
+        private void connection_OnFogOrRevealAllReceived(bool fogAll)
+        {
+            this.ctlDnDMap.FogOrRevealAll(fogAll);
+        }
+        
         private void connection_OnUseFogAlphaEffectReceived(bool useFogAlphaEffect)
         {
             this.ctlDnDMap.UseFogAlphaEffect = useFogAlphaEffect;

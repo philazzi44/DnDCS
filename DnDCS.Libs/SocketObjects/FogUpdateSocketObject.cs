@@ -14,7 +14,7 @@ namespace DnDCS.Libs.SimpleObjects
             FogUpdateInstance = new FogUpdate(fogUpdate.Points, fogUpdate.IsClearing);
         }
         
-        public static FogUpdateSocketObject PointArrayObjectFromBytes(byte[] bytes)
+        public static FogUpdateSocketObject FogUpdateObjectFromBytes(byte[] bytes)
         {
             var action = (SocketConstants.SocketAction)bytes[0];
             switch (action)

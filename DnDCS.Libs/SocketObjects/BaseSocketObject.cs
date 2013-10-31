@@ -38,7 +38,9 @@ namespace DnDCS.Libs.SimpleObjects
                 case SocketConstants.SocketAction.Fog:
                     return ImageSocketObject.ImageObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.FogUpdate:
-                    return FogUpdateSocketObject.PointArrayObjectFromBytes(bytes);
+                    return FogUpdateSocketObject.FogUpdateObjectFromBytes(bytes);
+                case SocketConstants.SocketAction.FogOrRevealAll:
+                    return FogOrRevealAllSocketObject.FogOrRevealAllObjectFromBytes(bytes);
                 case SocketConstants.SocketAction.CenterMap:
                     return CenterMapSocketObject.CenterMapObjectFromBytes(bytes);
 

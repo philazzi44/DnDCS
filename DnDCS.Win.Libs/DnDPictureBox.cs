@@ -337,6 +337,15 @@ namespace DnDCS.Win.Libs
 
         #endregion Setters
 
+        #region Fog Actions
+
+        public virtual void FogOrRevealAll(bool fogAll)
+        {
+            throw new NotImplementedException("Must be overridden.");
+        }
+
+        #endregion Fog Actions
+
         #region Map Events
 
         private void HandleLostFocus(object sender, EventArgs e)

@@ -41,6 +41,7 @@
     <Compile Include="Clipper.cs" />
     <Compile Include="ConfigValues.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="SocketObjects\FogOrRevealAllSocketObject.cs" />
     <Compile Include="SocketObjects\UseFogAlphaEffectSocketObject.cs" />
     <Compile Include="Persistence.cs" />
     <Compile Include="PersistenceObjects\ClientData.cs" />

@@ -170,9 +170,9 @@ namespace DnDCS.Win.Libs
             return null;
         }
 
-        public FogUpdate FogOrRevealAll(bool revealAll)
+        public override void FogOrRevealAll(bool fogAll)
         {
-            var fogAllFogUpdate = new FogUpdate(revealAll);
+            var fogAllFogUpdate = new FogUpdate(!fogAll);
             fogAllFogUpdate.Add(new SimplePoint(0, 0));
             fogAllFogUpdate.Add(new SimplePoint(this.Fog.Width, 0));
             fogAllFogUpdate.Add(new SimplePoint(this.Fog.Width, this.Fog.Height));
@@ -182,8 +182,6 @@ namespace DnDCS.Win.Libs
             undoFogUpdates.Clear();
             redoFogUpdates.Clear();
             this.RefreshAll();
-
-            return fogAllFogUpdate;
         }
 
         #endregion Fog Actions

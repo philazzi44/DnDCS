@@ -183,27 +183,27 @@ namespace DnDCS.Win.Libs
 
         private void btnFogAll_Click(object sender, EventArgs e)
         {
-            FogOrRevealAll(false);
+            FogOrRevealAll(true);
         }
 
         private void btnRevealAll_Click(object sender, EventArgs e)
         {
-            FogOrRevealAll(true);
+            FogOrRevealAll(false);
         }
 
-        private void FogOrRevealAll(bool revealAll)
+        private void FogOrRevealAll(bool fogAll)
         {
-            var message = (revealAll) ? "This will reveal the entire map. Are you sure? This cannot be undone." : "This will fog the entire map. Are you sure? This cannot be undone.";
-            var title = (revealAll) ? "Reveal Entire Map?" : "Fog Entire Map?";
+            var message = (fogAll) ? "This will fog the entire map. Are you sure? This cannot be undone." : "This will reveal the entire map. Are you sure? This cannot be undone.";
+            var title = (fogAll) ? "Fog Entire Map?" : "Reveal Entire Map?";
             if (MessageBox.Show(this, message, title, MessageBoxButtons.YesNo, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) == DialogResult.Yes)
             {
-                var fogOrRevealFogUpdate = this.DnDMapControl.FogOrRevealAll(revealAll);
+                this.DnDMapControl.FogOrRevealAll(fogAll);
 
                 UndoLastFogActionMenuItem.Enabled = this.DnDMapControl.AnyUndoFogUpdates;
                 RedoLastFogActionMenuItem.Enabled = this.DnDMapControl.AnyRedoFogUpdates;
 
                 if (RealTimeFogUpdates)
-                    Connection.WriteFogUpdate(fogOrRevealFogUpdate);
+                    Connection.WriteFogOrRevealAll(fogAll);
             }
         }
 
