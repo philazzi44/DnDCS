@@ -1,7 +1,7 @@
 var ws;
 
 function connect() {
-	ws = new WebSocket("ws://localhost:11001/service");
+	ws = new WebSocket("ws://desktop-win7:11001/service");
 	ws.onopen = function () {
 		alert("Connection opened...");
 	};

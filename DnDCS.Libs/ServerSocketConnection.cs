@@ -7,16 +7,21 @@ using System.Threading;
 using DnDCS.Libs.ServerEvents;
 using DnDCS.Libs.SimpleObjects;
 using DnDCS.Libs.ClientSockets;
+using SuperWebSocket;
+using SuperSocket.SocketBase;
 
 namespace DnDCS.Libs
 {
     public class ServerSocketConnection
     {
         private readonly Thread serverNetSocketListenerThread;
+        private readonly Thread serverWebSocketListenerThread;
         private readonly Timer socketPollTimer;
 
-        private readonly int port;
-        private Socket server;
+        private readonly int netSocketPort;
+        private readonly int webSocketPort;
+        private Socket netSocketServer;
+        private WebSocketServer webSocketServer;
         private readonly List<ClientSocket> clients = new List<ClientSocket>();
         public bool IsStopping { get; private set; }
 
@@ -26,48 +31,64 @@ namespace DnDCS.Libs
 
         public int ClientsCount { get; private set; }
 
-        public ServerSocketConnection(int port)
+        public ServerSocketConnection(int netSocketPort, int webSocketPort)
         {
-            this.port = port;
+            this.netSocketPort = netSocketPort;
+            this.webSocketPort = webSocketPort;
 
-            serverNetSocketListenerThread = new Thread(Start);
-            serverNetSocketListenerThread.IsBackground = true;
-            serverNetSocketListenerThread.Name = "Server Socket Thread";
-            serverNetSocketListenerThread.Start();
-
-            socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
-        }
-
-        private void PollTimerCallback(object state)
-        {
-            Write(SimpleObjects.SocketConstants.PingSocketObject, false);
-        }
-
-        private void Start()
-        {
             try
             {
-                CreateServerSocket();
+                CreateServerNetSocket();
+                CreateServerWebSocket();
             }
             catch (Exception e)
             {
-                Logger.LogError("Server Socket - An error occurred on the server.", e);
+                Logger.LogError(CreateLogMessage(Constants.ServerSocketsString, "An error occurred on the server."), e);
                 this.Stop();
                 return;
             }
 
+            serverNetSocketListenerThread = new Thread(NetStart);
+            serverNetSocketListenerThread.IsBackground = true;
+            serverNetSocketListenerThread.Name = Constants.ServerNetSocketString;
+
+            serverNetSocketListenerThread.Start();
+            this.webSocketServer.Start();
+
+            socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
+        }
+
+        #region Net Logic
+
+        private void CreateServerNetSocket()
+        {
+            // Establish the local endpoint for the socket.
+            // Dns.GetHostName returns the name of the host running the application.
+            var ipHostInfo = Dns.Resolve(Dns.GetHostName());
+            var ipAddress = ipHostInfo.AddressList[0];
+            var localEndPoint = new IPEndPoint(ipAddress, netSocketPort);
+
+            netSocketServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+
+            // Bind the socket to the local endpoint and listen for an incoming connection.
+            netSocketServer.Bind(localEndPoint);
+            netSocketServer.Listen(100);
+        }
+
+        private void NetStart()
+        {
             while (!IsStopping)
             {
                 try
                 {
-                    var newClient = TryConnectClient();
+                    var newClient = TryConnectNetClient();
                     if (newClient == null)
                         continue;
 
                     lock (clients)
                     {
                         if (IsStopping)
-                            throw new InvalidOperationException("Server Socket - Server has been closed after a new connection was established.");
+                            throw new InvalidOperationException(CreateLogMessage(Constants.ServerNetSocketString, "Server has been closed after a new connection was established."));
                         clients.Add(newClient);
                         ClientsCount++;
                         if (OnClientCountChanged != null)
@@ -84,35 +105,26 @@ namespace DnDCS.Libs
                 }
                 catch (Exception e)
                 {
-                    Logger.LogError("Server Socket - An error occurred on the server.", e);
+                    Logger.LogError(CreateLogMessage(Constants.ServerNetSocketString, "An error occurred on the server."), e);
                 }
             }
         }
 
-        private void CreateServerSocket()
-        {
-            // Establish the local endpoint for the socket.
-            // Dns.GetHostName returns the name of the host running the application.
-            var ipHostInfo = Dns.Resolve(Dns.GetHostName());
-            var ipAddress = ipHostInfo.AddressList[0];
-            var localEndPoint = new IPEndPoint(ipAddress, port);
-
-            server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-
-            // Bind the socket to the local endpoint and listen for an incoming connection.
-            server.Bind(localEndPoint);
-            server.Listen(100);
-        }
-
-        private ClientNetSocket TryConnectClient()
+        private ClientNetSocket TryConnectNetClient()
         {
             try
             {
-                Logger.LogDebug("Server Socket - Waiting for a connection...");
-                var connectedSocket = server.Accept();
-                Logger.LogDebug(string.Format("Server Socket - Connection received for '{0}'.", ((IPEndPoint)connectedSocket.RemoteEndPoint).Address));
+                Logger.LogDebug(CreateLogMessage(Constants.ServerNetSocketString, "Waiting for a connection..."));
+
+                var connectedSocket = netSocketServer.Accept();
+                
+                if (IsStopping)
+                    throw new InvalidOperationException(CreateLogMessage(Constants.ServerNetSocketString, "Server has been closed after a new connection was established."));
 
                 var connectedClientNetSocket = new ClientNetSocket(connectedSocket);
+
+                Logger.LogDebug(CreateLogMessage(Constants.ServerNetSocketString, string.Format("Connection received for '{0}'.", connectedClientNetSocket.Address)));
+
                 if (WriteAcknowledge(connectedClientNetSocket))
                     return connectedClientNetSocket;
             }
@@ -120,15 +132,95 @@ namespace DnDCS.Libs
             {
                 // When stopping, we may raise an error from the blocking Accept() socket call that we want to ignore now.
                 if (!IsStopping)
-                    Logger.LogError("Server Socket - An error occurred trying to establish initial connection to client.", e1);
+                    Logger.LogError(CreateLogMessage(Constants.ServerNetSocketString, "An error occurred trying to establish initial connection to client."), e1);
             }
             catch (Exception e)
             {
-                Logger.LogError("Server Socket - An error occurred trying to establish initial connection to client.", e);
+                Logger.LogError(CreateLogMessage(Constants.ServerNetSocketString, "An error occurred trying to establish initial connection to client."), e);
             }
             return null;
         }
+
+        #endregion Net Logic
+
+        #region Web Logic
         
+        private void CreateServerWebSocket()
+        {
+            var rootConfig = new SuperSocket.SocketBase.Config.RootConfig();
+            var serverConfig = new SuperSocket.SocketBase.Config.ServerConfig
+            {
+                Name = Constants.ServerWebSocketString,
+                Ip = "Any",
+                Port = this.webSocketPort,
+                Mode = SocketMode.Tcp
+            };
+
+            this.webSocketServer = new WebSocketServer();
+            this.webSocketServer.Setup(rootConfig, serverConfig, new SuperSocket.SocketEngine.SocketServerFactory());
+            this.webSocketServer.NewSessionConnected += new SessionHandler<WebSocketSession>(ServerWebSocket_NewSessionConnected);
+            this.webSocketServer.NewMessageReceived += new SessionHandler<WebSocketSession, string>(ServerWebSocket_NewMessageReceived);
+            this.webSocketServer.NewDataReceived += new SessionHandler<WebSocketSession, byte[]>(ServerWebSocket_NewDataReceived);
+        }
+
+        private void ServerWebSocket_NewSessionConnected(WebSocketSession session)
+        {
+            var newClient = new ClientWebSocket(session);
+
+            try
+            {
+                Logger.LogDebug(CreateLogMessage(Constants.ServerWebSocketString, string.Format("Connection received for '{0}'.", newClient.Address)));
+
+                if (IsStopping)
+                {
+                    Logger.LogError(CreateLogMessage(Constants.ServerWebSocketString, "Server has been closed after a new connection was established."));
+                    SafeCloseClient(newClient);
+                    return;
+                }
+
+                if (!WriteAcknowledge(newClient))
+                {
+                    Logger.LogError(CreateLogMessage(Constants.ServerWebSocketString, "An error occurred trying to establish initial connection to client."));
+                    SafeCloseClient(newClient);
+                    return;
+                }
+
+                lock (clients)
+                {
+                    clients.Add(newClient);
+                    ClientsCount++;
+                    if (OnClientCountChanged != null)
+                        OnClientCountChanged(ClientsCount);
+                }
+                if (OnClientConnected != null)
+                    OnClientConnected();
+                if (OnSocketEvent != null)
+                    OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.ClientConnected));
+            }
+            catch (Exception e)
+            {
+                if (!IsStopping)
+                    Logger.LogError(CreateLogMessage(Constants.ServerWebSocketString, "An error occurred on the server."), e);
+                SafeCloseClient(newClient);
+            }
+        }
+
+        private void ServerWebSocket_NewMessageReceived(WebSocketSession session, string message)
+        {
+            Logger.LogError("I don't know what this does yet, but the string received is: " + message);
+            throw new InvalidOperationException();
+        }
+
+        private void ServerWebSocket_NewDataReceived(WebSocketSession session, byte[] data)
+        {
+            Logger.LogError("I don't know what this does yet, but the data received became this as UTF8 string: " + System.Text.Encoding.UTF8.GetString(data));
+            throw new InvalidOperationException();
+        }
+
+        #endregion Web Logic
+
+        #region Write Logic
+
         private bool WriteAcknowledge(ClientSocket newClient)
         {
             try
@@ -223,12 +315,6 @@ namespace DnDCS.Libs
             Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
         }
 
-        private void LogSocketObject(BaseSocketObject socketObject, string message)
-        {
-            if (socketObject.Action != SocketConstants.SocketAction.Ping || ConfigValues.LogPings)
-                Logger.LogDebug(message);
-        }
-
         private void Write(BaseSocketObject socketObject, bool raiseSocketEvent = true)
         {
             if (ClientsCount == 0)
@@ -284,6 +370,19 @@ namespace DnDCS.Libs
             }
         }
 
+        #endregion Write Logic
+
+        private void PollTimerCallback(object state)
+        {
+            Write(SimpleObjects.SocketConstants.PingSocketObject, false);
+        }
+
+        private void LogSocketObject(BaseSocketObject socketObject, string message)
+        {
+            if (socketObject.Action != SocketConstants.SocketAction.Ping || ConfigValues.LogPings)
+                Logger.LogDebug(message);
+        }
+
         private void SafeCloseClient(ClientSocket client)
         {
             try
@@ -303,15 +402,15 @@ namespace DnDCS.Libs
         public void Stop()
         {
             IsStopping = true;
-            Logger.LogDebug("Server Socket - Stopping...");
+            Logger.LogDebug("Server Sockets - Stopping...");
 
             if (ClientsCount > 0)
             {
-                Logger.LogDebug("Server Socket - Sending 'Exit' to clients...");
+                Logger.LogDebug("Server Sockets - Sending 'Exit' to clients...");
                 Write(SocketConstants.ExitSocketObject);
-                Logger.LogDebug("Server Socket - 'Exit' Sent to clients.");
+                Logger.LogDebug("Server Sockets - 'Exit' Sent to clients.");
 
-                Logger.LogDebug("Server Socket - Closing Client sockets...");
+                Logger.LogDebug("Server Sockets - Closing Client sockets...");
                 lock (clients)
                 {
                     clients.ForEach(client =>
@@ -324,21 +423,35 @@ namespace DnDCS.Libs
                         });
                     clients.Clear();
                 }
-                Logger.LogDebug("Server Socket - Client Sockets closed.");
+                Logger.LogDebug("Server Sockets - Client Sockets closed.");
             }
 
-            if (server != null)
+            if (netSocketServer != null)
             {
-                Logger.LogDebug("Server Socket - Closing Server sockets...");
-                server.Close();
-                server = null;
-                Logger.LogDebug("Server Socket - Server Sockets closed.");
+                Logger.LogDebug("Server Net Socket - Closing Server socket...");
+                netSocketServer.Close();
+                netSocketServer = null;
+                Logger.LogDebug("Server Net Socket - Server Socket closed.");
+            }
+
+            if (webSocketServer != null)
+            {
+                Logger.LogDebug("Server Web Socket - Closing Server socket...");
+                webSocketServer.Stop();
+                webSocketServer.Dispose();
+                webSocketServer = null;
+                Logger.LogDebug("Server Web Socket - Server Socket closed.");
             }
 
             if (socketPollTimer != null)
                 socketPollTimer.Dispose();
 
-            Logger.LogDebug("Server Socket - Stopped.");
+            Logger.LogDebug("Server Sockets - Stopped.");
+        }
+
+        private static string CreateLogMessage(string name, string message)
+        {
+            return string.Format("{0} - {1}", name, message);
         }
     }
 }
