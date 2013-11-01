@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Sockets;
+using DnDCS.Libs.ClientSockets;
 
 namespace DnDCS.Libs.ServerEvents
 {
@@ -33,8 +34,8 @@ namespace DnDCS.Libs.ServerEvents
             }
         }
 
-        private string _address;
-        private string _description;
+        private readonly string _address;
+        private readonly string _description;
 
         public ServerEvent(SocketEventType eventType, string description = null)
         {
@@ -49,12 +50,12 @@ namespace DnDCS.Libs.ServerEvents
             _address = address;
         }
 
-        public ServerEvent(Socket client, SocketEventType eventType, string description = null)
+        public ServerEvent(ClientSocket client, SocketEventType eventType, string description = null)
             : this(eventType, description)
         {
             try
             {
-                _address = ((IPEndPoint)client.RemoteEndPoint).Address.ToString();
+                _address = client.Address;
             }
             catch
             {

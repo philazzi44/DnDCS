@@ -30,16 +30,29 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="SuperSocket.SocketBase">
+      <HintPath>..\ExternalLibs\SuperWebSocket\Net40\Release\SuperSocket.SocketBase.dll</HintPath>
+    </Reference>
+    <Reference Include="SuperSocket.SocketEngine">
+      <HintPath>..\ExternalLibs\SuperWebSocket\Net40\Release\SuperSocket.SocketEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="SuperWebSocket">
+      <HintPath>..\ExternalLibs\SuperWebSocket\Net40\Release\SuperWebSocket.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ClientSocketConnection.cs" />
     <Compile Include="Clipper.cs" />
     <Compile Include="ConfigValues.cs" />
+    <Compile Include="ConnectedSockets\ClientNetSocket.cs" />
+    <Compile Include="ConnectedSockets\ClientSocket.cs" />
+    <Compile Include="ConnectedSockets\ClientWebSocket.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="SocketObjects\FogOrRevealAllSocketObject.cs" />
     <Compile Include="SocketObjects\UseFogAlphaEffectSocketObject.cs" />

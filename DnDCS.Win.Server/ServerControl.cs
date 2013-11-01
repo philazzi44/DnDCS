@@ -63,7 +63,7 @@ namespace DnDCS.Win.Server
             else
                 this.ctlDnDMap.SetGridSize(false, 0);
 
-            connection = new ServerSocketConnection(ConfigValues.DefaultServerPort);
+            connection = new ServerSocketConnection(ConfigValues.DefaultServerSocketPort);
             connection.OnClientConnected += connection_OnClientConnected;
             connection.OnClientCountChanged += new Action<int>(connection_OnClientCountChanged);
             connection.OnSocketEvent += new Action<ServerEvent>(connection_OnSocketEvent);

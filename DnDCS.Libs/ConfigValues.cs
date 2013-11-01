@@ -4,7 +4,8 @@ namespace DnDCS.Libs
 {
     public static class ConfigValues
     {
-        public static readonly int DefaultServerPort;
+        public static readonly int DefaultServerSocketPort;
+        public static readonly int DefaultServerWebSocketPort;
         public static readonly string DefaultServerName;
         public static readonly string DefaultServerIP1;
         public static readonly string DefaultServerIP2;
@@ -23,8 +24,11 @@ namespace DnDCS.Libs
 
         static ConfigValues()
         {
-            int defaultServerPort;
-            DefaultServerPort = int.TryParse(ConfigurationManager.AppSettings["DefaultServerPort"], out defaultServerPort) ? defaultServerPort : 11000;
+            int defaultServerSocketPort;
+            DefaultServerSocketPort = int.TryParse(ConfigurationManager.AppSettings["DefaultServerSocketPort"], out defaultServerSocketPort) ? defaultServerSocketPort : 11000;
+
+            int defaultServerWebSocketPort;
+            DefaultServerWebSocketPort = int.TryParse(ConfigurationManager.AppSettings["DefaultServerWebSocketPort"], out defaultServerWebSocketPort) ? defaultServerWebSocketPort : 11001;
 
             DefaultServerName = ConfigurationManager.AppSettings["DefaultServerName"] ?? "localhost";
             DefaultServerIP1 = ConfigurationManager.AppSettings["DefaultServerIP1"] ?? "127";

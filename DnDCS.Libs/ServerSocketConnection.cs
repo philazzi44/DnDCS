@@ -6,17 +6,18 @@ using System.Net.Sockets;
 using System.Threading;
 using DnDCS.Libs.ServerEvents;
 using DnDCS.Libs.SimpleObjects;
+using DnDCS.Libs.ClientSockets;
 
 namespace DnDCS.Libs
 {
     public class ServerSocketConnection
     {
-        private Thread serverListenerThread;
-        private Timer socketPollTimer;
+        private readonly Thread serverNetSocketListenerThread;
+        private readonly Timer socketPollTimer;
 
         private readonly int port;
         private Socket server;
-        private readonly List<Socket> clients = new List<Socket>();
+        private readonly List<ClientSocket> clients = new List<ClientSocket>();
         public bool IsStopping { get; private set; }
 
         public event Action OnClientConnected;
@@ -29,10 +30,10 @@ namespace DnDCS.Libs
         {
             this.port = port;
 
-            serverListenerThread = new Thread(Start);
-            serverListenerThread.IsBackground = true;
-            serverListenerThread.Name = "Server Socket Thread";
-            serverListenerThread.Start();
+            serverNetSocketListenerThread = new Thread(Start);
+            serverNetSocketListenerThread.IsBackground = true;
+            serverNetSocketListenerThread.Name = "Server Socket Thread";
+            serverNetSocketListenerThread.Start();
 
             socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
         }
@@ -103,7 +104,7 @@ namespace DnDCS.Libs
             server.Listen(100);
         }
 
-        private Socket TryConnectClient()
+        private ClientNetSocket TryConnectClient()
         {
             try
             {
@@ -111,10 +112,9 @@ namespace DnDCS.Libs
                 var connectedSocket = server.Accept();
                 Logger.LogDebug(string.Format("Server Socket - Connection received for '{0}'.", ((IPEndPoint)connectedSocket.RemoteEndPoint).Address));
 
-                var connectedClient = connectedSocket;
-
-                if (WriteAcknowledge(connectedClient))
-                    return connectedClient;
+                var connectedClientNetSocket = new ClientNetSocket(connectedSocket);
+                if (WriteAcknowledge(connectedClientNetSocket))
+                    return connectedClientNetSocket;
             }
             catch (SocketException e1)
             {
@@ -129,7 +129,7 @@ namespace DnDCS.Libs
             return null;
         }
         
-        private bool WriteAcknowledge(Socket newClient)
+        private bool WriteAcknowledge(ClientSocket newClient)
         {
             try
             {
@@ -248,7 +248,7 @@ namespace DnDCS.Libs
                         var client = clients[c];
                         try
                         {
-                            LogSocketObject(socketObject, string.Format("Server Socket - Writing to '{0}'.", ((IPEndPoint)client.RemoteEndPoint).Address));
+                            LogSocketObject(socketObject, string.Format("Server Socket - Writing to '{0}'.", client.Address));
                             client.Send(sendBytes);
                             if (raiseSocketEvent && OnSocketEvent != null)
                                 OnSocketEvent(new ServerEvent(client, ServerEvent.SocketEventType.DataSent, socketObject.Action.ToString()));
@@ -257,11 +257,11 @@ namespace DnDCS.Libs
                         {
                             if (e is SocketException && ((SocketException)e).SocketErrorCode != SocketError.ConnectionAborted)
                             {
-                                Logger.LogError(string.Format("Server Socket - Client socket '{0}' has been closed already. Fully disconnecting client now.", ((IPEndPoint)client.RemoteEndPoint).Address), e);
+                                Logger.LogError(string.Format("Server Socket - Client socket '{0}' has been closed already. Fully disconnecting client now.", client.Address), e);
                             }
                             else
                             {
-                                Logger.LogError(string.Format("Server Socket - Failed to write Socket Object '{0}' to Client '{1}'. Disconnecting client.", socketObject, ((IPEndPoint)client.RemoteEndPoint).Address), e);
+                                Logger.LogError(string.Format("Server Socket - Failed to write Socket Object '{0}' to Client '{1}'. Disconnecting client.", socketObject, client.Address), e);
                             }
 
                             // Remove the element from the list and repeat the index, since the subsequent items would shift down.
@@ -284,14 +284,13 @@ namespace DnDCS.Libs
             }
         }
 
-        private void SafeCloseClient(Socket client)
+        private void SafeCloseClient(ClientSocket client)
         {
             try
             {
-                var address = ((IPEndPoint)client.RemoteEndPoint).Address.ToString();
+                var address = client.Address;
 
-                client.Shutdown(SocketShutdown.Both);
-                client.Close();
+                client.Dispose();
 
                 if (OnSocketEvent != null)
                     OnSocketEvent(new ServerEvent(address, ServerEvent.SocketEventType.ClientDisconnected));
@@ -335,6 +334,9 @@ namespace DnDCS.Libs
                 server = null;
                 Logger.LogDebug("Server Socket - Server Sockets closed.");
             }
+
+            if (socketPollTimer != null)
+                socketPollTimer.Dispose();
 
             Logger.LogDebug("Server Socket - Stopped.");
         }

@@ -27,7 +27,7 @@ namespace DnDCS.Win.Libs
             tboIP2.Text = ConfigValues.DefaultServerIP2;
             tboIP3.Text = ConfigValues.DefaultServerIP3;
             tboIP4.Text = ConfigValues.DefaultServerIP4;
-            tboPort.Text = ConfigValues.DefaultServerPort.ToString();
+            tboPort.Text = ConfigValues.DefaultServerSocketPort.ToString();
 
             var clientData = Persistence.LoadClientData();
             if (clientData != null && clientData.ServerAddressHistory != null)
