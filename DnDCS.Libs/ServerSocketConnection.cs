@@ -15,7 +15,6 @@ namespace DnDCS.Libs
     public class ServerSocketConnection
     {
         private readonly Thread serverNetSocketListenerThread;
-        private readonly Thread serverWebSocketListenerThread;
         private readonly Timer socketPollTimer;
 
         private readonly int netSocketPort;
