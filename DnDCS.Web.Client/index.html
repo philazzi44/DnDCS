@@ -2,34 +2,47 @@
     "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-	<script type="text/javascript" src="jquery-2.0.3.min.js" ></script>
-	<script type="text/javascript" src="client.js" ></script>
+	<title>Client</title>
+    <script type="text/javascript" src="jquery-2.0.3.min.js" ></script>
+    <script type="text/javascript" src="client.js" ></script>
 </head>
 <body>
 
     <div id="connectValues">
-		<div>
-			Connection Values
-			<div>
-				Server Name: <input type="text" id="host" />
-			</div>
-			<div>
-				Port Number: <input type="text" id="port" />
-			</div>
-		</div>
-		<div>
-			<div>
-				<label id="lblBadValues" style="display:none">Server Name and Port must be specified.</label>
-			</div>
-			<div>
-				<button id="btnConnect">Click here to connect</button>
-			</div>
-		</div>
+        <div>
+            Connection Values
+            <div>
+                Server Name: <input type="text" id="host" />
+            </div>
+            <div>
+                Port Number: <input type="text" id="port" />
+            </div>
+        </div>
+        <div>
+            <div>
+                <label id="lblBadValues" style="display:none">Server Name and Port must be specified.</label>
+            </div>
+            <div>
+                <button id="btnConnect">Click here to connect</button>
+            </div>
+        </div>
     </div>
-	
-	<div id="connectedValues">
-		<canvas id="client">
-		</canvas>
+    
+    <div id="connectingValues" style="display:none;">
+		<div id="connectingServerInfo"></div>
+    </div>
+    <div id="connectedValues" style="display:none;">
+		<div id="connectedServerInfo"></div>
+        <canvas id="client" width="640" height="480"></canvas>
+    </div>
+	<div id="serverNotFoundValues" style="display:none;">
+		The server was not found. Client application must be refreshed.
+	</div>
+	<div id="disconnectedValues" style="display:none;">
+		The server has closed the connection. Client application must be refreshed.
+	</div>
+	<div id="errorValues" style="display:none;">
+		An error has occurred within the client's logic. Client application must be refreshed.
 	</div>
 </body>
 </html>

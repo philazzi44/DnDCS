@@ -21,7 +21,7 @@ namespace DnDCS.Libs.SimpleObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.GridSize:
-                    return new GridSizeSocketObject(BitConverter.ToBoolean(bytes, 1), BitConverter.ToInt32(bytes, 2));
+                    return new GridSizeSocketObject(bytes[1] == (byte)1, BitConverter.ToInt32(bytes, 2));
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
@@ -32,7 +32,7 @@ namespace DnDCS.Libs.SimpleObjects
         {
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
-            bytes.AddRange(BitConverter.GetBytes(ShowGrid));
+            bytes.Add(ShowGrid ? (byte)1 : (byte)0);
             bytes.AddRange(BitConverter.GetBytes(GridSize));
             return bytes.ToArray();
         }

@@ -19,7 +19,7 @@ namespace DnDCS.Libs.SimpleObjects
             switch (action)
             {
                 case SocketConstants.SocketAction.UseFogAlphaEffect:
-                    return new UseFogAlphaEffectSocketObject(BitConverter.ToBoolean(bytes, 1));
+                    return new UseFogAlphaEffectSocketObject(bytes[1] == (byte)1);
 
                 default:
                     throw new NotSupportedException(string.Format("Action '{0}' is not supported.", action));
@@ -30,7 +30,7 @@ namespace DnDCS.Libs.SimpleObjects
         {
             var bytes = new List<byte>();
             bytes.Add(ActionByte);
-            bytes.AddRange(BitConverter.GetBytes(UseFogAlphaEffect));
+            bytes.Add(UseFogAlphaEffect ? (byte)1 : (byte)0);
             return bytes.ToArray();
         }
 
