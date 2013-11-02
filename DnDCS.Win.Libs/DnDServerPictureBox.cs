@@ -178,7 +178,7 @@ namespace DnDCS.Win.Libs
             fogAllFogUpdate.Add(new SimplePoint(this.Fog.Width, this.Fog.Height));
             fogAllFogUpdate.Add(new SimplePoint(0, this.Fog.Height));
 
-            UpdateFogImage(fogAllFogUpdate, true);
+            UpdateFogImage(fogAllFogUpdate, true, true);
             undoFogUpdates.Clear();
             redoFogUpdates.Clear();
             this.RefreshAll();
@@ -188,12 +188,12 @@ namespace DnDCS.Win.Libs
 
         #region Fog Updates
 
-        private void UpdateFogImage(FogUpdate fogUpdate, bool ignoreFogAlphaEffect = false)
+        private void UpdateFogImage(FogUpdate fogUpdate, bool ignoreFogAlphaEffect = false, bool ignoreEvents = false)
         {
-            UpdateFogImage(new[] { fogUpdate }, ignoreFogAlphaEffect);
+            UpdateFogImage(new[] { fogUpdate }, ignoreFogAlphaEffect, ignoreEvents);
         }
 
-        private void UpdateFogImage(FogUpdate[] fogUpdates, bool ignoreFogAlphaEffect = false)
+        private void UpdateFogImage(FogUpdate[] fogUpdates, bool ignoreFogAlphaEffect = false, bool ignoreEvents = false)
         {
             if (!ignoreFogAlphaEffect && UseFogAlphaEffect)
             {
@@ -209,10 +209,13 @@ namespace DnDCS.Win.Libs
 
             allFogUpdates.AddRange(fogUpdates);
 
-            if (fogUpdates.Length == 1 && OnOneFogUpdatesChanged != null)
-                OnOneFogUpdatesChanged(fogUpdates[0]);
-            if (fogUpdates.Length > 1 && OnManyFogUpdatesChanged != null)
-                OnManyFogUpdatesChanged();
+            if (!ignoreEvents)
+            {
+                if (fogUpdates.Length == 1 && OnOneFogUpdatesChanged != null)
+                    OnOneFogUpdatesChanged(fogUpdates[0]);
+                if (fogUpdates.Length > 1 && OnManyFogUpdatesChanged != null)
+                    OnManyFogUpdatesChanged();
+            }
         }
 
         public void SetFogUpdates(FogUpdate[] fogUpdates)

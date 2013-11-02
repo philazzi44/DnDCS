@@ -3,20 +3,31 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<script type="text/javascript" src="jquery-2.0.3.min.js" ></script>
-    <script type="text/javascript" src="client.js" ></script>
+	<script type="text/javascript" src="client.js" ></script>
 </head>
-<body style="font-size:xx-large" >
+<body>
 
-    <div>
-        <a href="#" onclick="connect()">Click here to start</a>
-    </div>
-
-    <div id="sendArea">
-        <input type="text" id="sendText" />
-        <button onclick="sendInfo()">Click to send</button>
+    <div id="connectValues">
+		<div>
+			Connection Values
+			<div>
+				Server Name: <input type="text" id="host" />
+			</div>
+			<div>
+				Port Number: <input type="text" id="port" />
+			</div>
+		</div>
+		<div>
+			<div>
+				<label id="lblBadValues" style="display:none">Server Name and Port must be specified.</label>
+			</div>
+			<div>
+				<button id="btnConnect">Click here to connect</button>
+			</div>
+		</div>
     </div>
 	
-	<div>
+	<div id="connectedValues">
 		<canvas id="client">
 		</canvas>
 	</div>
