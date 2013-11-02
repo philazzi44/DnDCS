@@ -59,9 +59,9 @@
     <Compile Include="ClientSocketConnection.cs" />
     <Compile Include="Clipper.cs" />
     <Compile Include="ConfigValues.cs" />
-    <Compile Include="ConnectedSockets\ClientNetSocket.cs" />
-    <Compile Include="ConnectedSockets\ClientSocket.cs" />
-    <Compile Include="ConnectedSockets\ClientWebSocket.cs" />
+    <Compile Include="ClientSockets\ClientNetSocket.cs" />
+    <Compile Include="ClientSockets\ClientSocket.cs" />
+    <Compile Include="ClientSockets\ClientWebSocket.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="SocketObjects\FogOrRevealAllSocketObject.cs" />
     <Compile Include="SocketObjects\UseFogAlphaEffectSocketObject.cs" />
