@@ -1,7 +1,7 @@
 $(document).ready(function(){
 
     // TODO: Should these really be hardcoded like this?
-    var defaultServer = "desktop-win7";
+    var defaultServer = "pazzi.parse3.local";
     var defaultPort = "11001";
     
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
@@ -44,7 +44,7 @@ $(document).ready(function(){
         ShowGrid : false,
         UseFogAlphaEffect : false,
         GridSize : 0,
-        GridColor = {
+        GridColor : {
             A : 255,
             R : 0,
             G : 255,
@@ -55,6 +55,10 @@ $(document).ready(function(){
         Fog : null,
     };
     
+	// A Queue of Messages that have been received which must be processed.
+	var messageQueue = [];
+	var messageIdCounter = new Number();
+	
     function validateConnectValues(host, port) {
         // TODO: Add some real validation to the values. Port must
         // be all digits
@@ -133,86 +137,132 @@ $(document).ready(function(){
             $('#errorValues').show();
         }
     }
-        
+
     function onMessageReceived(e){
-        log("Message received (data length = " + e.data.size + ")");
+		var messageId = messageIdCounter;
+		messageIdCounter++;
+		
+        log(messageId, "Raw message received (data length = " + e.data.size + ")");
         
+		var queueValue = new Object();
+		queueValue.messageId = messageId;
+		queueValue.dataView = null;
+		messageQueue.push(queueValue);
+		
         var messageReader = new FileReader();
         messageReader.onload = function(){
-            processMessage(new DataView(messageReader.result));
+			// We now populate the previously enqueued value with the DataView for the read bytes.
+			queueValue.dataView = new DataView(messageReader.result);
+			processMessageFromQueue();
         };
-        messageReader.readAsArrayBuffer(e.data);            
+        messageReader.readAsArrayBuffer(e.data);
     }
 
-    function processMessage(messageDataView) {
+	// Called when a FileReader pulling in the bytes from a message are read in and ready.
+	// TODO: Note that this pattern only works because onMessageReceived is single-threaded behind the scenes, but
+	// we should really come up with some kind of locking mechanism or flagging or timer system instead of this.
+	function processMessageFromQueue() {
+		// If multiple messages are now available to be handled, we'll keep dealing with them.
+		while (messageQueue.length > 0)
+		{
+			var peekMessage = messageQueue[0];
+			
+			log(peekMessage.messageId, "Processing...");
+			
+			// If the DataView value isn't set, then we'll break out entirely because we're waiting on a File
+			// Reader to complete, at which point this func will be called again.
+			if (peekMessage.dataView == null)
+			{
+				log(peekMessage.messageId, "Data View not created yet.");
+				break;
+			}
+				
+			var queueValue = messageQueue.shift();
+			processMessage(queueValue.messageId, queueValue.dataView);
+			log(peekMessage.messageId, "Processed.");
+		}
+	}
+	
+    function processMessage(messageId, messageDataView) {
         var actualMessageSize = messageDataView.byteLength;
         var specifiedMessageSize = getMessageSize(messageDataView);
 
         if (actualMessageSize != (specifiedMessageSize + 4))
         {
-            log("ERROR: " + actualMessageSize + " bytes received on socket, and " + (specifiedMessageSize + 4) + " defined on received message.");
+            log(messageId, "ERROR: " + actualMessageSize + " bytes received on socket, and " + (specifiedMessageSize + 4) + " defined on received message.");
             return;
         }
         else
         {
-            log("OK: " + actualMessageSize + " bytes received on socket, and " + (specifiedMessageSize + 4) + " defined on received message.");
+            log(messageId, "OK: " + actualMessageSize + " bytes received on socket, and " + (specifiedMessageSize + 4) + " defined on received message.");
         }
 
         var socketAction = getSocketAction(messageDataView);
-        log("Socket Action Received: " + socketAction.name);
+        log(messageId, "Socket Action Received: " + socketAction.name);
         
+		// Either run the necessary func for the action, or set up the Callback to use
+		// for the Remainder data slice.
+		var onSliceCallback = null;
         switch(socketAction.value)
         {
             case SOCKET_ACTIONS.Unknown.value:
-                log("ERROR: Unexpected Socket Value 'Unknown'");
+                log(messageId, "ERROR: Unexpected Socket Value 'Unknown'");
                 break;
             case SOCKET_ACTIONS.Acknowledge.value:
                 if (ClientState.IsAcknowleged)
-                    log("ERROR: Acknowledge received when already acknowledged.");
+                    log(messageId, "ERROR: Acknowledge received when already acknowledged.");
                 else
                     ClientState.IsAcknowleged = true;
                 break;
             case SOCKET_ACTIONS.Ping.value:
                 break;
             case SOCKET_ACTIONS.Map.value:
-                processMapMessage(messageDataView);
+				onSliceCallback = processMapMessage;
                 break;
             case SOCKET_ACTIONS.CenterMap.value:
-                processCenterMapMessage(messageDataView);
+				onSliceCallback = processCenterMapMessage;
                 break;
             case SOCKET_ACTIONS.Fog.value:
-                processFogMessage(messageDataView);
+				onSliceCallback = processFogMessage;
                 break;
             case SOCKET_ACTIONS.FogUpdate.value:
-                processFogUpdateMessage(messageDataView);
+				onSliceCallback = processFogUpdateMessage;
                 break;
             case SOCKET_ACTIONS.FogOrRevealAll.value:
-                processFogOrRevealAllMessage(messageDataView);
+				onSliceCallback = processFogOrRevealAllMessage;
                 break;
             case SOCKET_ACTIONS.UseFogAlphaEffect.value:
-                processUseFogAlphaEffectMessage(messageDataView);
+				onSliceCallback = processUseFogAlphaEffectMessage;
                 break;
             case SOCKET_ACTIONS.GridSize.value:
-                processGridSizeMessage(messageDataView);
+				onSliceCallback = processGridSizeMessage;
                 break;
             case SOCKET_ACTIONS.GridColor.value:
-                processGridColorMessage(messageDataView);
+				onSliceCallback = processGridSizeMessage;
                 break;
             case SOCKET_ACTIONS.BlackoutOn.value:
-                processBlackoutOnMessage(messageDataView);
+                processBlackoutOnMessage();
                 break;
             case SOCKET_ACTIONS.BlackoutOff.value:
-                processBlackoutOffMessage(messageDataView);
+                processBlackoutOffMessage();
                 break;
             case SOCKET_ACTIONS.Exit.value:
-                processExitMessage(messageDataView);
+                processExitMessage();
                 break;
         }
+		
+		if (onSliceCallback != null)
+		    onSliceCallback(new DataView(messageDataView.buffer.slice(MESSAGE_INDEXES.Remainder)));
     }
     
     function processMapMessage(messageDataView) {
+		var width = messageDataView.getInt32(0, true);
+		var height = messageDataView.getInt32(4, true);
+		
+		var imgSlice = messageDataView.buffer.slice(8);		
+		testImg.src = "data:image/png;base64," + btoa(imgSlice.buffer);
     }
-    
+	
     function processCenterMapMessage(messageDataView) {
     }
     
@@ -224,7 +274,7 @@ $(document).ready(function(){
     
     function processFogOrRevealAllMessage(messageDataView) {
         // Next byte is the flag indicating whether to fog all or reveal all.
-        var fogAll = (messageDataView.getInt8(MESSAGE_INDEXES.Remainder) == 1);
+        var fogAll = (messageDataView.getInt8(0) == 1);
         if (fogAll)
         {
             // TODO: Push out a Fog Update that fogs everything.
@@ -237,18 +287,18 @@ $(document).ready(function(){
     
     function processUseFogAlphaEffectMessage(messageDataView) {
         // Next byte is the flag indicating whether to use the effect or not.
-        ClientState.UseFogAlphaEffect = (messageDataView.getInt8(MESSAGE_INDEXES.Remainder) == 1);
+        ClientState.UseFogAlphaEffect = (messageDataView.getInt8(0) == 1);
     }
     
     function processGridSizeMessage(messageDataView) {
         // Next byte is the flag indicating whether to use the effect or not.
-        var showGrid = (messageDataView.getInt8(MESSAGE_INDEXES.Remainder) == 1);
+        var showGrid = (messageDataView.getInt8(0) == 1);
         
         // Next Int32 is the actual grid size to use (only relevant when showing the grid)
         if (showGrid)
         {
             ClientState.ShowGrid = true;
-            ClientState.GridSize = messageDataView.getInt32(MESSAGE_INDEXES.Remainder + 1, true);
+            ClientState.GridSize = messageDataView.getInt32(1, true);
         }
         else
         {
@@ -258,10 +308,10 @@ $(document).ready(function(){
     
     function processGridColorMessage(messageDataView) {
         // Next 4 bytes are the ARGB values for the color.
-        var a = messageDataView.getInt8(MESSAGE_INDEXES.Remainder);
-        var r = messageDataView.getInt8(MESSAGE_INDEXES.Remainder + 1);
-        var g = messageDataView.getInt8(MESSAGE_INDEXES.Remainder + 2);
-        var b = messageDataView.getInt8(MESSAGE_INDEXES.Remainder + 3);
+        var a = messageDataView.getInt8(0);
+        var r = messageDataView.getInt8(1);
+        var g = messageDataView.getInt8(2);
+        var b = messageDataView.getInt8(3);
         
         ClientState.GridColor = {
             A : a,
@@ -271,11 +321,11 @@ $(document).ready(function(){
         };
     }
     
-    function processBlackoutOnMessage(messageDataView) {
+    function processBlackoutOnMessage() {
         ClientState.IsBlackoutOn = true;
     }
     
-    function processBlackoutOffMessage(messageDataView) {
+    function processBlackoutOffMessage() {
         ClientState.IsBlackoutOn = false;
     }
     
@@ -290,7 +340,6 @@ $(document).ready(function(){
     
     function getSocketAction(messageDataView) {
         var socketActionByte = messageDataView.getInt8(MESSAGE_INDEXES.SocketAction);
-        console.log("SocketActionByte: " + socketActionByte);
         
         for (var socketAction in SOCKET_ACTIONS)
         {
@@ -301,7 +350,8 @@ $(document).ready(function(){
         return SOCKET_ACTIONS.Unknown;
     }
     
-    function log(message) {
-        console.log(message);
+    function log(messageId, message) {
+		var now = new Date();
+        console.log(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds() + ":" + now.getMilliseconds() + " - " + messageId + " - " + message);
     }    
 });
