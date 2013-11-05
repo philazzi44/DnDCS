@@ -2,6 +2,7 @@ $(document).ready(function(){
 
     // TODO: Should these really be hardcoded like this?
     var defaultServer = "pazzi.parse3.local";
+    var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
@@ -259,8 +260,21 @@ $(document).ready(function(){
 		var width = messageDataView.getInt32(0, true);
 		var height = messageDataView.getInt32(4, true);
 		
-		var imgSlice = messageDataView.buffer.slice(8);		
-		testImg.src = "data:image/png;base64," + btoa(imgSlice.buffer);
+		var imgSlice = messageDataView.buffer.slice(8);
+        var imgByteArray = new Uint8Array(imgSlice);
+        
+        var imgBinary = '';
+        for (var i = 0; i < imgByteArray.length; i++) {
+            imgBinary += String.fromCharCode(imgByteArray[i]);
+        }
+        
+        // This call explodes as a stack overflow, but the For Loop above works instead.
+        // var imgBinary = String.fromCharCode.apply(window, imgByteArray);
+        var imgBase64 = btoa(imgBinary);
+        
+        testImg.width = width;
+        testImg.height = height;
+		testImg.src = "data:image/png;base64," + imgBase64;
     }
 	
     function processCenterMapMessage(messageDataView) {
