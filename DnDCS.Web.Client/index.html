@@ -3,8 +3,9 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 	<title>Client</title>
-    <script type="text/javascript" src="jquery-2.0.3.min.js"></script>
-    <script type="text/javascript" src="client.js"></script>
+    <link rel="icon" type="image/png" href="Assets/images/ClientIcon.png">
+    <script type="text/javascript" src="Assets/js/jquery-2.0.3.min.js"></script>
+    <script type="text/javascript" src="Assets/js/client.js"></script>
 </head>
 <body>
     <div id="connectValues">
@@ -32,6 +33,11 @@
     </div>
     <div id="connectedValues" style="display:none;">
 		<div id="connectedServerInfo"></div>
+    </div>
+    <div id="initializingValues" style="display:none;">
+        <div id="initializatingAnimation">Initializing...</div>
+    </div>
+    <div id="clientValues" style="display:none;">
         <canvas id="clientCanvas" width="640" height="480"></canvas>
     </div>
 	<div id="serverNotFoundValues" style="display:none;">

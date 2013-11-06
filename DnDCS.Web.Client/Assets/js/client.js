@@ -6,6 +6,8 @@ $(document).ready(function(){
     var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
+    var blackoutImagePath = "/Assets/images/BlackoutImage.png";
+    
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
     // if the C# version updates?
     var SOCKET_ACTIONS = {
@@ -66,7 +68,8 @@ $(document).ready(function(){
 	var messageIdCounter = new Number();
     var clientCanvas = $('#clientCanvas')[0];
     var clientContext = clientCanvas.getContext("2d");
-	
+	var blackoutImage;
+    
     function validateConnectValues(host, port) {
         // TODO: Add some real validation to the values. Port must
         // be all digits
@@ -85,14 +88,15 @@ $(document).ready(function(){
         if (!validateConnectValues(host, port))
             return;
             
-        $('#connectValues').hide();
-        $('#connectingValues').show();
+        var connectingMessage = 'Connecting to ' + host + ":" + port + "...";
+        document.title = connectingMessage;
         
-        var msg = 'Connecting to ' + host + ":" + port + "...";
-        document.title = msg;
-        $('#connectingServerInfo').text(msg);
-        
-        tryConnect(host, port);
+        $('#connectValues').fadeOut(function() {        
+            $('#connectingServerInfo').text(connectingMessage);            
+            $('#connectingValues').fadeIn(function() {
+                tryConnect(host, port);
+            });
+        });
     });
     
     function tryConnect(host, port) {    
@@ -109,25 +113,47 @@ $(document).ready(function(){
     function onConnectionOpened(e){
         ClientState.IsConnecting = false;
         ClientState.IsConnected = true;
-        
-        $('#connectingValues').hide();
-        $('#connectedValues').show();
-        
-        var msg = 'Connected to ' + $('#host').val() + ":" + $('#port').val();
-        document.title = msg;
-        $('#connectedServerInfo').text(msg);
-        $('#connectedServerInfo').fadeOut(2000);
+            
+        var connectedMessage = 'Connected to ' + $('#host').val() + ":" + $('#port').val();
+        document.title = connectedMessage;
+            
+        $('#connectingValues').fadeOut(function() {
+            $('#connectedServerInfo').text(connectedMessage);
+            $('#connectedValues').fadeIn(function() {
+                $('#initializingValues').fadeIn(function() {                
+                    // Set all the assets we need to load, which should also be checked in the below
+                    // connectInitWait interval.
+                    blackoutImage = new Image();
+                    blackoutImage.src = document.URL.substring(0, document.URL.lastIndexOf("/")) + blackoutImagePath;
+                    
+                    // Check all the assets being loaded before starting the actual application.
+                    var connectInitWait = window.setInterval(function() {
+                        if (blackoutImage == null)
+                            return;
+                                                
+                        $('#connectedServerInfo').fadeOut();
+                        $('#initializingValues').fadeOut(function() {
+                            // Stop the connection initialization interval and instead start the 30FPS Draw Loop.
+                            window.clearInterval(connectInitWait);
+                            window.setInterval(drawClient, 33);
+                            ClientState.NeedsRedraw = true;
+                            $('#clientValues').fadeIn("slow");
+                        });
+                    }, 33);
+                });
+            });
+        });
     }
     
     function onConnectionClosed(e){
         ClientState.IsConnected  = false;
         ClientState.IsClosed = true;
         
-        $('#connectedValues').hide();
+        $('#connectedValues').fadeOut();
             
         // If we're already Errored, then the Error message is being shown.
         if (!ClientState.IsErrored)
-            $('#disconnectedValues').show();
+            $('#disconnectedValues').fadeIn();
     }
     
     function onConnectionError(e){
@@ -137,13 +163,13 @@ $(document).ready(function(){
         if (ClientState.IsConnecting)
         {
             ClientState.IsConnecting = false;
-            $('#connectingValues').hide();
-            $('#serverNotFoundValues').show();
+            $('#connectingValues').fadeOut();
+            $('#serverNotFoundValues').fadeIn();
         }
         else
         {
-            $('#connectedValues').hide();
-            $('#errorValues').show();
+            $('#connectedValues').fadeOut();
+            $('#errorValues').fadeIn();
         }
     }
 
@@ -400,8 +426,21 @@ $(document).ready(function(){
         
         clientContext.clearRect(0, 0, clientCanvas.width, clientCanvas.height);
         
+        if (ClientState.IsBlackoutOn)
+        {
+            clientContext.fillStyle = "black";
+            clientContext.fillRect(0, 0, clientCanvas.width, clientCanvas.height);
+            clientContext.drawImage(blackoutImage, 
+                                    clientCanvas.width / 2 - blackoutImage.width / 2, 
+                                    clientCanvas.height / 2 - blackoutImage.height / 2);
+            return;
+        }
+        
         if (ClientState.Map != null)
             clientContext.drawImage(ClientState.Map, 0, 0);
+            
+        if (ClientState.Fog != null)
+            clientContext.drawImage(ClientState.Fog, 0, 0);
 	}
 	
     function getMessageSize(messageDataView) {
@@ -425,10 +464,7 @@ $(document).ready(function(){
         console.log(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds() + ":" + now.getMilliseconds() + " - " + messageId + " - " + message);
     }
     
-    
-	// Initialization logic
+    // One-time initialization logic
     $('#host').val(defaultServer);
     $('#port').val(defaultPort);
-    // Start a 30FPS timer to perform the update/draw operations.
-    var drawClientTimer = window.setInterval(drawClient, 33);
 });
