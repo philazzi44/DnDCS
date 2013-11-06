@@ -386,35 +386,9 @@ $(document).ready(function(){
             
             newFogPoints.push({x : newFogPointX, y : newFogPointY});
         }
-        
-        processNewFog(isClearing, newFogPoints);
-    }
-    
-    function processFogOrRevealAllMessage(messageDataView) {
-        // Next byte is the flag indicating whether to fog all or reveal all.
-        var fogAll = (messageDataView.getInt8(0) == 1);
                 
-        if (fogAll)
-        {
-            newFogContext.fillStyle = StaticAssets.NewFogColor;
-            newFogContext.fillRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
-        }
-        else
-        {
-            newFogContext.clearRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
-        }
-        var newFogData = newFogCanvas.toDataURL();
-        var newFogImage = new Image();
-        newFogImage.onload = function(){
-            ClientState.Fog = newFogImage;
-            ClientState.NeedsRedraw = true;
-        };
-        newFogImage.src = newFogData;
-    }
-    
-    function processNewFog(isClearing, newFogPoints)
-    {
-        // For clearing, our "fill" will be fully transparent. Otherwise, it'll be black.
+        // For clearing, we'll use a composite operation to clear out fog. Otherwise, we'll
+        // be drawing the fog on top of the image.
         var fillStyle;
         if (isClearing)
         {
@@ -436,6 +410,28 @@ $(document).ready(function(){
         newFogContext.fill();
         newFogContext.globalCompositeOperation = 'source-over';
         
+        setNewFogImage();
+    }
+    
+    function processFogOrRevealAllMessage(messageDataView) {
+        // Next byte is the flag indicating whether to fog all or reveal all.
+        var fogAll = (messageDataView.getInt8(0) == 1);
+                
+        if (fogAll)
+        {
+            newFogContext.fillStyle = StaticAssets.NewFogColor;
+            newFogContext.fillRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
+        }
+        else
+        {
+            newFogContext.clearRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
+        }
+        
+        setNewFogImage();
+    }
+    
+    function setNewFogImage()
+    {
         var newFogData = newFogCanvas.toDataURL();
         var newFogImage = new Image();
         newFogImage.onload = function(){
@@ -443,7 +439,7 @@ $(document).ready(function(){
             ClientState.NeedsRedraw = true;
         };
         newFogImage.src = newFogData;
-    };
+    }
     
     function processUseFogAlphaEffectMessage(messageDataView) {
         // Next byte is the flag indicating whether to use the effect or not.
