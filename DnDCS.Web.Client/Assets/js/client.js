@@ -6,8 +6,6 @@ $(document).ready(function(){
     var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
-    var blackoutImagePath = "/Assets/images/BlackoutImage.png";
-    
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
     // if the C# version updates?
     var SOCKET_ACTIONS = {
@@ -66,9 +64,20 @@ $(document).ready(function(){
 	// A Queue of Messages that have been received which must be processed.
 	var messageQueue = [];
 	var messageIdCounter = new Number();
+    
+    // The client's visible canvas
     var clientCanvas = $('#clientCanvas')[0];
     var clientContext = clientCanvas.getContext("2d");
-	var blackoutImage;
+    
+    // A backing canvas used when Fog-related messages are processed.
+    var newFogCanvas = document.createElement('canvas');
+    var newFogContext = newFogCanvas.getContext("2d");
+    
+    // Static assets loaded after a connection is established.
+    var StaticAssets = {
+        BlackoutImagePath : "/Assets/images/BlackoutImage.png",
+        BlackoutImage : null,
+    };
     
     function validateConnectValues(host, port) {
         // TODO: Add some real validation to the values. Port must
@@ -123,12 +132,12 @@ $(document).ready(function(){
                 $('#initializingValues').fadeIn(function() {                
                     // Set all the assets we need to load, which should also be checked in the below
                     // connectInitWait interval.
-                    blackoutImage = new Image();
-                    blackoutImage.src = document.URL.substring(0, document.URL.lastIndexOf("/")) + blackoutImagePath;
+                    StaticAssets.BlackoutImage = new Image();
+                    StaticAssets.BlackoutImage.src = document.URL.substring(0, document.URL.lastIndexOf("/")) + StaticAssets.BlackoutImagePath;
                     
                     // Check all the assets being loaded before starting the actual application.
                     var connectInitWait = window.setInterval(function() {
-                        if (blackoutImage == null)
+                        if (StaticAssets.BlackoutImage == null)
                             return;
                                                 
                         $('#connectedServerInfo').fadeOut();
@@ -345,6 +354,10 @@ $(document).ready(function(){
 			ClientState.Fog = testImg;
 			ClientState.FogWidth = fogWidth;
 			ClientState.FogHeight = fogHeight;
+            
+            newFogCanvas.width = fogWidth;
+            newFogCanvas.height = fogHeight;
+            
 			// TODO: Validate width/height in some way?
             
             ClientState.NeedsRedraw = true;
@@ -358,14 +371,23 @@ $(document).ready(function(){
     function processFogOrRevealAllMessage(messageDataView) {
         // Next byte is the flag indicating whether to fog all or reveal all.
         var fogAll = (messageDataView.getInt8(0) == 1);
+                
         if (fogAll)
         {
-            // TODO: Push out a Fog Update that fogs everything.
+            newFogContext.fillStyle = "black";
+            newFogContext.fillRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
         }
         else
         {
-            // TODO: Push out a Fog Update that clears everything.
+            newFogContext.clearRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
         }
+        var newFogData = newFogCanvas.toDataURL();
+        var newFogImage = new Image();
+        newFogImage.onload = function(){
+            ClientState.Fog = newFogImage;
+            ClientState.NeedsRedraw = true;
+        };
+        newFogImage.src = newFogData;
     }
     
     function processUseFogAlphaEffectMessage(messageDataView) {
@@ -430,9 +452,9 @@ $(document).ready(function(){
         {
             clientContext.fillStyle = "black";
             clientContext.fillRect(0, 0, clientCanvas.width, clientCanvas.height);
-            clientContext.drawImage(blackoutImage, 
-                                    clientCanvas.width / 2 - blackoutImage.width / 2, 
-                                    clientCanvas.height / 2 - blackoutImage.height / 2);
+            clientContext.drawImage(StaticAssets.BlackoutImage, 
+                                    clientCanvas.width / 2 - StaticAssets.BlackoutImage.width / 2, 
+                                    clientCanvas.height / 2 - StaticAssets.BlackoutImage.height / 2);
             return;
         }
         
