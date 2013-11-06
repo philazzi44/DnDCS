@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using SuperWebSocket;
 using System.Linq;
+using System.Net.Sockets;
 
 namespace DnDCS.Libs.ClientSockets
 {
@@ -17,8 +18,8 @@ namespace DnDCS.Libs.ClientSockets
 
         public override void Send(byte[] bytes)
         {
-            //var bytesAsString = string.Concat(bytes.Select(b => b.ToString("x2")));
-            //socket.Send(bytesAsString);
+            if (!socket.Connected)
+                throw new SocketException((int)SocketError.ConnectionAborted);
             socket.Send(bytes, 0, bytes.Length);
         }
 

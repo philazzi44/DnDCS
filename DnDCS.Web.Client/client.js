@@ -2,8 +2,8 @@ $(document).ready(function(){
 
     // TODO: Should these really be hardcoded like this?
     // var defaultServer = "pazzi.parse3.local";
-    var defaultServer = "172.30.3.11";
-    // var defaultServer = "desktop-win7";
+    // var defaultServer = "172.30.3.11";
+    var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
@@ -273,13 +273,13 @@ $(document).ready(function(){
 		var imgSlice = messageDataView.buffer.slice(8);
         var imgByteArray = new Uint8Array(imgSlice);
         
+        // This call explodes as a stack overflow, but the For Loop below works instead.
+        // var imgBinary = String.fromCharCode.apply(window, imgByteArray);
+        
         var imgBinary = '';
         for (var i = 0; i < imgByteArray.length; i++) {
             imgBinary += String.fromCharCode(imgByteArray[i]);
-        }
-        
-        // This call explodes as a stack overflow, but the For Loop above works instead.
-        // var imgBinary = String.fromCharCode.apply(window, imgByteArray);
+        }        
         var imgBase64 = btoa(imgBinary);
         
 		var testImg = new Image();
