@@ -38,9 +38,10 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="client.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
+    <Content Include="Assets\images\BlackoutImage.png" />
+    <Content Include="Assets\images\ClientIcon.png" />
+    <Content Include="Assets\js\client.js" />
+    <Content Include="Assets\js\jquery-2.0.3.min.js" />
     <Content Include="index.html">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
@@ -50,6 +51,9 @@
   </ItemGroup>
   <ItemGroup>
     <Reference Include="System" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Assets\js\jquery-2.0.3.min.map" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

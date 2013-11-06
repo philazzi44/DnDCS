@@ -237,7 +237,7 @@ namespace DnDCS.Win.Libs
             if (this.LoadedMap == null)
                 return;
             // If we're currently dealing with drawing New Fog, we'll suck all Mouse Double Click events into oblivion.
-            if (newFogUpdatePoints.Count > 0)
+            if (newFogUpdatePoints.Count > 2)
                 return;
 
             // If we only want Left or Right, then comment one of these out.
@@ -331,7 +331,7 @@ namespace DnDCS.Win.Libs
             // Anything this override cannot handle will delegate to the base implementation.
             if (base.LoadedMap == null || 
                 IsZoomFactorInProgress || 
-                newFogUpdatePoints.Count < 2
+                newFogUpdatePoints.Count == 0
                 || e.Button != System.Windows.Forms.MouseButtons.Left)
             {
                 base.HandleMouseUp(e);
