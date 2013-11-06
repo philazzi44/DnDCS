@@ -77,6 +77,11 @@ $(document).ready(function(){
     var StaticAssets = {
         BlackoutImagePath : "/Assets/images/BlackoutImage.png",
         BlackoutImage : null,
+        
+        NewFogColor : "black",
+        // While it would seem logical to assign this as being 100% Alpha, we're using Compositing
+        // to properly "overwrite" the destination image, so any color is fine.
+        NewFogClearColor : "white",
     };
     
     function validateConnectValues(host, port) {
@@ -355,8 +360,11 @@ $(document).ready(function(){
 			ClientState.FogWidth = fogWidth;
 			ClientState.FogHeight = fogHeight;
             
+            // We draw the newly obtained fog into the NewFog Context so we can
+            // properly add/remove areas to it as new fog is received.
             newFogCanvas.width = fogWidth;
             newFogCanvas.height = fogHeight;
+            newFogContext.drawImage(testImg, 0, 0);
             
 			// TODO: Validate width/height in some way?
             
@@ -366,6 +374,20 @@ $(document).ready(function(){
     }
     
     function processFogUpdateMessage(messageDataView) {
+        // Next byte is the flag indicating whether to fog or clear.
+        var isClearing = (messageDataView.getInt8(0) == 1);
+        
+        var newFogPoints = [];
+        // Subsequent bytes are a series of X (Int32) and Y (Int32) value pairs
+        for (var i = 1; i < messageDataView.buffer.byteLength; i += 8)
+        {
+            var newFogPointX = messageDataView.getInt32(i, true);
+            var newFogPointY = messageDataView.getInt32(i + 4, true);
+            
+            newFogPoints.push({x : newFogPointX, y : newFogPointY});
+        }
+        
+        processNewFog(isClearing, newFogPoints);
     }
     
     function processFogOrRevealAllMessage(messageDataView) {
@@ -374,7 +396,7 @@ $(document).ready(function(){
                 
         if (fogAll)
         {
-            newFogContext.fillStyle = "black";
+            newFogContext.fillStyle = StaticAssets.NewFogColor;
             newFogContext.fillRect(0, 0, ClientState.FogWidth, ClientState.FogHeight);
         }
         else
@@ -389,6 +411,39 @@ $(document).ready(function(){
         };
         newFogImage.src = newFogData;
     }
+    
+    function processNewFog(isClearing, newFogPoints)
+    {
+        // For clearing, our "fill" will be fully transparent. Otherwise, it'll be black.
+        var fillStyle;
+        if (isClearing)
+        {
+            fillStyle = StaticAssets.NewFogClearColor;
+            newFogContext.globalCompositeOperation = 'destination-out';
+        }
+        else
+        {
+            fillStyle = StaticAssets.NewFogColor;
+        }
+        
+        newFogContext.beginPath();
+        newFogContext.moveTo(newFogPoints[0].x, newFogPoints[0].y);
+        for (var i = 1; i < newFogPoints.length; i++) {
+            newFogContext.lineTo(newFogPoints[i].x, newFogPoints[i].y);
+        }
+        newFogContext.closePath();
+        newFogContext.fillStyle = fillStyle;
+        newFogContext.fill();
+        newFogContext.globalCompositeOperation = 'source-over';
+        
+        var newFogData = newFogCanvas.toDataURL();
+        var newFogImage = new Image();
+        newFogImage.onload = function(){
+            ClientState.Fog = newFogImage;
+            ClientState.NeedsRedraw = true;
+        };
+        newFogImage.src = newFogData;
+    };
     
     function processUseFogAlphaEffectMessage(messageDataView) {
         // Next byte is the flag indicating whether to use the effect or not.
