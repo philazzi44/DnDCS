@@ -1,8 +1,9 @@
 $(document).ready(function(){
 
     // TODO: Should these really be hardcoded like this?
-    var defaultServer = "pazzi.parse3.local";
-    var defaultServer = "desktop-win7";
+    // var defaultServer = "pazzi.parse3.local";
+    var defaultServer = "172.30.3.11";
+    // var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
@@ -24,21 +25,21 @@ $(document).ready(function(){
         Exit : {value: 13, name: "Exit"}        
     };
     
+	// Constant values.
     var MESSAGE_INDEXES = {
         MessageSize : 0,
         SocketAction : 4,
         Remainder : 5,
     };
     
-    
-    $('#host').val(defaultServer);
-    $('#port').val(defaultPort);
-    
+	// The current state of the Client instance.
     var ClientState = {
         IsConnecting : false,
         IsConnected : false,
         IsClosed : false,
         IsErrored : false,
+        
+        NeedsRedraw : false,
         
         AcknowledgedReceived : false,
         IsBlackoutOn : false,
@@ -53,12 +54,18 @@ $(document).ready(function(){
         },
         
         Map : null,
+		MapWidth : 0,
+		MapHeight : 0,
         Fog : null,
+		FogWidth : 0,
+		FogHeight : 0,
     };
     
 	// A Queue of Messages that have been received which must be processed.
 	var messageQueue = [];
 	var messageIdCounter = new Number();
+    var clientCanvas = $('#clientCanvas')[0];
+    var clientContext = clientCanvas.getContext("2d");
 	
     function validateConnectValues(host, port) {
         // TODO: Add some real validation to the values. Port must
@@ -81,7 +88,7 @@ $(document).ready(function(){
         $('#connectValues').hide();
         $('#connectingValues').show();
         
-        var msg = 'Connecting to ' + $('#host').val() + ":" + $('#port').val() + "...";
+        var msg = 'Connecting to ' + host + ":" + port + "...";
         document.title = msg;
         $('#connectingServerInfo').text(msg);
         
@@ -124,6 +131,7 @@ $(document).ready(function(){
     }
     
     function onConnectionError(e){
+        console.log(e.data);
         ClientState.IsErrored = true;
         
         if (ClientState.IsConnecting)
@@ -254,11 +262,13 @@ $(document).ready(function(){
 		
 		if (onSliceCallback != null)
 		    onSliceCallback(new DataView(messageDataView.buffer.slice(MESSAGE_INDEXES.Remainder)));
+        
+        ClientState.NeedsRedraw = true;
     }
     
     function processMapMessage(messageDataView) {
-		var width = messageDataView.getInt32(0, true);
-		var height = messageDataView.getInt32(4, true);
+		mapWidth = messageDataView.getInt32(0, true);
+		mapHeight = messageDataView.getInt32(4, true);
 		
 		var imgSlice = messageDataView.buffer.slice(8);
         var imgByteArray = new Uint8Array(imgSlice);
@@ -272,15 +282,48 @@ $(document).ready(function(){
         // var imgBinary = String.fromCharCode.apply(window, imgByteArray);
         var imgBase64 = btoa(imgBinary);
         
-        testImg.width = width;
-        testImg.height = height;
+		var testImg = new Image();
+		testImg.onload = function() {
+			ClientState.Map = testImg;
+			ClientState.MapWidth = mapWidth;
+			ClientState.MapHeight = mapHeight;
+			// TODO: Validate width/height in some way?
+            
+            ClientState.NeedsRedraw = true;
+		};
 		testImg.src = "data:image/png;base64," + imgBase64;
     }
 	
-    function processCenterMapMessage(messageDataView) {
+    function processCenterMapMessage(messageDataView)
+    {    
     }
     
     function processFogMessage(messageDataView) {
+		fogWidth = messageDataView.getInt32(0, true);
+		fogHeight = messageDataView.getInt32(4, true);
+		
+		var imgSlice = messageDataView.buffer.slice(8);
+        var imgByteArray = new Uint8Array(imgSlice);
+        
+        var imgBinary = '';
+        for (var i = 0; i < imgByteArray.length; i++) {
+            imgBinary += String.fromCharCode(imgByteArray[i]);
+        }
+        
+        // This call explodes as a stack overflow, but the For Loop above works instead.
+        // var imgBinary = String.fromCharCode.apply(window, imgByteArray);
+        var imgBase64 = btoa(imgBinary);
+        
+		var testImg = new Image();
+		testImg.onload = function() {
+			ClientState.Fog = testImg;
+			ClientState.FogWidth = fogWidth;
+			ClientState.FogHeight = fogHeight;
+			// TODO: Validate width/height in some way?
+            
+            ClientState.NeedsRedraw = true;
+		};
+		testImg.src = "data:image/png;base64," + imgBase64;
     }
     
     function processFogUpdateMessage(messageDataView) {
@@ -348,6 +391,19 @@ $(document).ready(function(){
         // event when the server socket has actually closed.
     }
     
+    // Redraws the client based on the new values.
+	function drawClient() {
+        if (!ClientState.NeedsRedraw)
+            return;
+            
+        ClientState.NeedsRedraw = false;
+        
+        clientContext.clearRect(0, 0, clientCanvas.width, clientCanvas.height);
+        
+        if (ClientState.Map != null)
+            clientContext.drawImage(ClientState.Map, 0, 0);
+	}
+	
     function getMessageSize(messageDataView) {
         return messageDataView.getInt32(MESSAGE_INDEXES.MessageSize, true);
     }
@@ -367,5 +423,12 @@ $(document).ready(function(){
     function log(messageId, message) {
 		var now = new Date();
         console.log(now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds() + ":" + now.getMilliseconds() + " - " + messageId + " - " + message);
-    }    
+    }
+    
+    
+	// Initialization logic
+    $('#host').val(defaultServer);
+    $('#port').val(defaultPort);
+    // Start a 30FPS timer to perform the update/draw operations.
+    var drawClientTimer = window.setInterval(drawClient, 33);
 });
