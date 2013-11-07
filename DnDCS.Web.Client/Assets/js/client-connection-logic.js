@@ -197,7 +197,7 @@ function processMessage(messageId, messageDataView) {
             onSliceCallback = processGridSizeMessage;
             break;
         case SOCKET_ACTIONS.GridColor.value:
-            onSliceCallback = processGridSizeMessage;
+            onSliceCallback = processGridColorMessage;
             break;
         case SOCKET_ACTIONS.BlackoutOn.value:
             processBlackoutOnMessage();
@@ -317,7 +317,7 @@ function processFogMessage(messageDataView) {
 
 function processFogUpdateMessage(messageDataView) {
     // Next byte is the flag indicating whether to fog or clear.
-    var isClearing = (messageDataView.getInt8(0) == 1);
+    var isClearing = (messageDataView.getUint8(0) == 1);
     
     var newFogPoints = [];
     // Subsequent bytes are a series of X (Int32) and Y (Int32) value pairs
@@ -357,7 +357,7 @@ function processFogUpdateMessage(messageDataView) {
 
 function processFogOrRevealAllMessage(messageDataView) {
     // Next byte is the flag indicating whether to fog all or reveal all.
-    var fogAll = (messageDataView.getInt8(0) == 1);
+    var fogAll = (messageDataView.getUint8(0) == 1);
             
     if (fogAll)
     {
@@ -385,12 +385,12 @@ function setNewFogImage()
 
 function processUseFogAlphaEffectMessage(messageDataView) {
     // Next byte is the flag indicating whether to use the effect or not.
-    ClientState.UseFogAlphaEffect = (messageDataView.getInt8(0) == 1);
+    ClientState.UseFogAlphaEffect = (messageDataView.getUint8(0) == 1);
 }
 
 function processGridSizeMessage(messageDataView) {
     // Next byte is the flag indicating whether to use the effect or not.
-    var showGrid = (messageDataView.getInt8(0) == 1);
+    var showGrid = (messageDataView.getUint8(0) == 1);
     
     // Next Int32 is the actual grid size to use (only relevant when showing the grid)
     if (showGrid)
@@ -406,17 +406,12 @@ function processGridSizeMessage(messageDataView) {
 
 function processGridColorMessage(messageDataView) {
     // Next 4 bytes are the ARGB values for the color.
-    var a = messageDataView.getInt8(0);
-    var r = messageDataView.getInt8(1);
-    var g = messageDataView.getInt8(2);
-    var b = messageDataView.getInt8(3);
+    var a = messageDataView.getUint8(0);
+    var r = messageDataView.getUint8(1);
+    var g = messageDataView.getUint8(2);
+    var b = messageDataView.getUint8(3);
     
-    ClientState.GridColor = {
-        A : a,
-        R : r,
-        G : g,
-        B : b
-    };
+    ClientState.GridColor = "rgba(" + r + "," + g + "," + b + "," + a + ")";
 }
 
 function processBlackoutOnMessage() {
@@ -437,7 +432,7 @@ function getMessageSize(messageDataView) {
 }
 
 function getSocketAction(messageDataView) {
-    var socketActionByte = messageDataView.getInt8(MESSAGE_INDEXES.SocketAction);
+    var socketActionByte = messageDataView.getUint8(MESSAGE_INDEXES.SocketAction);
     
     for (var socketAction in SOCKET_ACTIONS)
     {

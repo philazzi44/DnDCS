@@ -46,12 +46,7 @@ var ClientState = {
     ShowGrid : false,
     UseFogAlphaEffect : false,
     GridSize : 0,
-    GridColor : {
-        A : 255,
-        R : 0,
-        G : 255,
-        B : 255
-    },
+    GridColor : "rgba(0,255,255,255)",
     
     Map : null,
     MapWidth : 0,

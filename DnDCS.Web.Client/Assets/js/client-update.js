@@ -34,16 +34,14 @@ function clientCanvas_MouseUp(e) {
     disableDragScroll();
 }
 
-function enableDragScroll(e)
-{
+function enableDragScroll(e) {
     ClientState.IsDragScrolling = true;
     ClientState.LastMouseLocationX = e.clientX - clientCanvasX;
     ClientState.LastMouseLocationY = e.clientY - clientCanvasY;
     ClientState.NeedsRedraw = true;
 }
 
-function disableDragScroll()
-{
+function disableDragScroll() {
     ClientState.IsDragScrolling = false;
     ClientState.NeedsRedraw = true;
 }
