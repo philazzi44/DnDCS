@@ -245,7 +245,16 @@ function processMapMessage(messageDataView) {
 }
 
 function processCenterMapMessage(messageDataView)
-{    
+{
+    // The point that came in is raw on the map...
+    var centerMapX = messageDataView.getInt32(0, true);
+    var centerMapY = messageDataView.getInt32(4, true);
+    
+    // TODO: When zooming is supported, account for it here.
+    var scrollX = centerMapX - clientCanvasWidth / 2;
+    var scrollY = centerMapY - clientCanvasHeight / 2;
+    
+    setScroll(scrollX, scrollY);
 }
 
 function processFogMessage(messageDataView) {

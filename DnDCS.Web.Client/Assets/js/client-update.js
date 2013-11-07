@@ -20,8 +20,7 @@ function clientCanvas_MouseMove(e) {
     var deltaX = ClientState.LastMouseLocationX - newMouseLocationX;
     var deltaY = ClientState.LastMouseLocationY - newMouseLocationY;
     
-    ClientState.ScrollPositionX = Math.min(ClientState.MapWidth - clientCanvasWidth, Math.max(0, ClientState.ScrollPositionX + deltaX));
-    ClientState.ScrollPositionY = Math.min(ClientState.MapHeight - clientCanvasHeight, Math.max(0, ClientState.ScrollPositionY + deltaY));
+    setScroll(ClientState.ScrollPositionX + deltaX, ClientState.ScrollPositionY + deltaY);
           
     ClientState.LastMouseLocationX = newMouseLocationX;
     ClientState.LastMouseLocationY = newMouseLocationY;
