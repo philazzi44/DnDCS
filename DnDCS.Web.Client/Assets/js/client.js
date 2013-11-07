@@ -1,9 +1,9 @@
 $(document).ready(function(){
 
     // TODO: Should these really be hardcoded like this?
-    // var defaultServer = "pazzi.parse3.local";
+    var defaultServer = "pazzi.parse3.local";
     // var defaultServer = "172.30.3.11";
-    var defaultServer = "desktop-win7";
+    // var defaultServer = "desktop-win7";
     var defaultPort = "11001";
     
     // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
@@ -59,15 +59,25 @@ $(document).ready(function(){
         Fog : null,
 		FogWidth : 0,
 		FogHeight : 0,
+        
+        IsDragScrolling : false,
+        LastMouseLocationX : 0,
+        LastMouseLocationY : 0,
+        ScrollPositionX : 0,
+        ScrollPositionY : 0,
     };
     
 	// A Queue of Messages that have been received which must be processed.
 	var messageQueue = [];
 	var messageIdCounter = new Number();
     
-    // The client's visible canvas
+    // The client's visible canvas. Values are set after a connection is established.
     var clientCanvas = $('#clientCanvas')[0];
-    var clientContext = clientCanvas.getContext("2d");
+    var clientCanvasX;
+    var clientCanvasY;
+    var clientCanvasWidth;
+    var clientCanvasHeight;
+    var clientContext;
     
     // A backing canvas used when Fog-related messages are processed.
     var newFogCanvas = document.createElement('canvas');
@@ -147,8 +157,15 @@ $(document).ready(function(){
                                                 
                         $('#connectedServerInfo').fadeOut();
                         $('#initializingValues').fadeOut(function() {
-                            // Stop the connection initialization interval and instead start the 30FPS Draw Loop.
+                            // Stop the connection initialization interval and instead start the 30FPS Draw Loop after init.
                             window.clearInterval(connectInitWait);
+                                                        
+                            clientCanvasX = clientCanvas.getBoundingClientRect().left;
+                            clientCanvasY = clientCanvas.getBoundingClientRect().top;
+                            clientCanvasWidth = clientCanvas.getBoundingClientRect().right - clientCanvas.getBoundingClientRect().left;
+                            clientCanvasHeight = clientCanvas.getBoundingClientRect().bottom - clientCanvas.getBoundingClientRect().top;
+                            clientContext = clientCanvas.getContext("2d");
+    
                             window.setInterval(drawClient, 33);
                             ClientState.NeedsRedraw = true;
                             $('#clientValues').fadeIn("slow");
@@ -164,6 +181,7 @@ $(document).ready(function(){
         ClientState.IsClosed = true;
         
         $('#connectedValues').fadeOut();
+        $('#clientValues').fadeOut();
             
         // If we're already Errored, then the Error message is being shown.
         if (!ClientState.IsErrored)
@@ -355,19 +373,42 @@ $(document).ready(function(){
         var imgBase64 = btoa(imgBinary);
         
 		var testImg = new Image();
-		testImg.onload = function() {
-			ClientState.Fog = testImg;
-			ClientState.FogWidth = fogWidth;
-			ClientState.FogHeight = fogHeight;
-            
+		testImg.onload = function() {            
             // We draw the newly obtained fog into the NewFog Context so we can
             // properly add/remove areas to it as new fog is received.
+			// TODO: Validate width/height in some way?
             newFogCanvas.width = fogWidth;
             newFogCanvas.height = fogHeight;
             newFogContext.drawImage(testImg, 0, 0);
-            
-			// TODO: Validate width/height in some way?
-            
+            var newFogImageData = newFogContext.getImageData(0, 0, fogWidth, fogHeight);
+            for (var i = 0; i < fogHeight; i++)
+            {
+                for (var j = 0; j < fogWidth; j++)
+                {
+                    // Make anything that's non-black fully transparent white. The Server needs the data to be 'white' because it uses it as a Mask. The Win Forms Client uses the same
+                    // logic as the server. Therefore, unfortunatel,y we're forced to do a crazy loop to manually apply the mask.
+                    var r = newFogImageData.data[((i*(fogWidth*4)) + (j*4))];
+                    var g = newFogImageData.data[((i*(fogWidth*4)) + (j*4)) + 1];
+                    var b = newFogImageData.data[((i*(fogWidth*4)) + (j*4)) + 2];
+                    if (r != 0 || g != 0 || b != 0)
+                    {
+                        newFogImageData.data[((i*(fogWidth*4)) + (j*4))] = 255;
+                        newFogImageData.data[((i*(fogWidth*4)) + (j*4) + 1)] = 255;
+                        newFogImageData.data[((i*(fogWidth*4)) + (j*4) + 2)] = 255;
+                        newFogImageData.data[((i*(fogWidth*4)) + (j*4) + 3)] = 0;
+                    }
+                }
+            }
+            newFogContext.putImageData(newFogImageData, 0, 0);
+                        
+            var testImg2 = new Image();
+            testImg2.onload = function() {
+                ClientState.Fog = testImg2;
+                ClientState.FogWidth = fogWidth;
+                ClientState.FogHeight = fogHeight;
+            };
+            testImg2.src = newFogCanvas.toDataURL();
+                        
             ClientState.NeedsRedraw = true;
 		};
 		testImg.src = "data:image/png;base64," + imgBase64;
@@ -490,6 +531,57 @@ $(document).ready(function(){
         // event when the server socket has actually closed.
     }
     
+    function onMouseDown(e) {
+        if (e.button != 0)
+            return;
+        enableDragScroll(e);
+    }
+    
+    function onMouseMove(e) {
+        if (!ClientState.IsDragScrolling)
+            return;
+        if (e.button != 1 && e.which != 1)
+        {
+            // If we had the Scroll logic set set but our button is no longer pressed, then we'll stop the drag altogether.
+            disableDragScroll();
+            return;
+        }
+            
+        var newMouseLocationX = e.clientX - clientCanvasX;
+        var newMouseLocationY = e.clientY - clientCanvasY;
+        
+        var deltaX = ClientState.LastMouseLocationX - newMouseLocationX;
+        var deltaY = ClientState.LastMouseLocationY - newMouseLocationY;
+        
+        ClientState.ScrollPositionX = Math.min(ClientState.MapWidth - clientCanvasWidth, Math.max(0, ClientState.ScrollPositionX + deltaX));
+        ClientState.ScrollPositionY = Math.min(ClientState.MapHeight - clientCanvasHeight, Math.max(0, ClientState.ScrollPositionY + deltaY));
+              
+        ClientState.LastMouseLocationX = newMouseLocationX;
+        ClientState.LastMouseLocationY = newMouseLocationY;
+        
+        ClientState.NeedsRedraw = true;
+    }
+    
+    function onMouseUp(e) {
+        if (e.button != 0)
+            return;
+        disableDragScroll();
+    }
+    
+    function enableDragScroll(e)
+    {
+        ClientState.IsDragScrolling = true;
+        ClientState.LastMouseLocationX = e.clientX - clientCanvasX;
+        ClientState.LastMouseLocationY = e.clientY - clientCanvasY;
+        ClientState.NeedsRedraw = true;
+    }
+    
+    function disableDragScroll()
+    {
+        ClientState.IsDragScrolling = false;
+        ClientState.NeedsRedraw = true;
+    }
+    
     // Redraws the client based on the new values.
 	function drawClient() {
         if (!ClientState.NeedsRedraw)
@@ -509,11 +601,36 @@ $(document).ready(function(){
             return;
         }
         
-        if (ClientState.Map != null)
-            clientContext.drawImage(ClientState.Map, 0, 0);
+        clientContext.save();
+        {
+            clientContext.translate(-ClientState.ScrollPositionX, -ClientState.ScrollPositionY);
             
-        if (ClientState.Fog != null)
-            clientContext.drawImage(ClientState.Fog, 0, 0);
+            if (ClientState.Map != null)
+            {
+                // Because our Context instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                // take from the Map Image starting at the Translated Location and go the full width of our client view only. Note that we
+                // explicitly Min/Max the values to prevent trying to source from off the image.
+                clientContext.drawImage(ClientState.Map, 0, 0);
+            }
+                
+            if (ClientState.Fog != null)
+            {
+                // Because our Context instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we
+                // explicitly Min/Max the values to prevent trying to source from off the image.
+                clientContext.drawImage(ClientState.Fog, 0, 0);
+            }
+            
+            if (ClientState.ShowGrid)
+            {
+                // Because our Context instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
+                // start at the Translated location, and go the full width of our client view only. Note that because our scroll
+                // may be in between two grid lines, we'll need to pull back (or go forward) one full step in all directions to ensure
+                // the client view is fully grid lined. The end result is that we'll only draw as many grid lines as we need, starting 
+                // and ending just beyond what the user can actually see.
+            }
+        }   
+        clientContext.restore();
 	}
 	
     function getMessageSize(messageDataView) {
@@ -540,4 +657,8 @@ $(document).ready(function(){
     // One-time initialization logic
     $('#host').val(defaultServer);
     $('#port').val(defaultPort);
+    
+    clientCanvas.addEventListener('mousedown', onMouseDown);
+    clientCanvas.addEventListener('mousemove', onMouseMove);
+    clientCanvas.addEventListener('mouseup', onMouseUp);
 });
