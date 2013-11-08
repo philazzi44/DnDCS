@@ -13,18 +13,23 @@ function drawClient() {
         clientContext.drawImage(StaticAssets.BlackoutImage, 
                                 clientCanvas.width / 2 - StaticAssets.BlackoutImage.width / 2, 
                                 clientCanvas.height / 2 - StaticAssets.BlackoutImage.height / 2);
-        return;
+    }
+    else
+    {    
+        clientContext.save();
+        {
+            clientContext.translate(-ClientState.ScrollPositionX, -ClientState.ScrollPositionY);
+            if (ClientState.ZoomFactor != 1.0)
+                clientContext.scale(ClientState.ZoomFactor, ClientState.ZoomFactor);
+            
+            drawClient_Map();
+            drawClient_Grid();
+            drawClient_Fog();
+        }   
+        clientContext.restore();
     }
     
-    clientContext.save();
-    {
-        clientContext.translate(-ClientState.ScrollPositionX, -ClientState.ScrollPositionY);
-        
-        drawClient_Map();
-        drawClient_Grid();
-        drawClient_Fog();
-    }   
-    clientContext.restore();
+    drawClient_ZoomFactor();
 }
 
 function drawClient_Map() {
@@ -113,5 +118,36 @@ function drawClient_Fog() {
         clientContext.drawImage(ClientState.Fog,
                                 sourceX, sourceY, sourceWidth, sourceHeight, 
                                 destinationX, destinationY, destinationWidth, destinationHeight);
+    }
+}
+
+function drawClient_ZoomFactor() {
+    if (ClientState.IsZoomFactorInProgress)
+    {
+        clientContext.save();
+        {
+            clientContext.font = StaticAssets.ZoomMessageFont;
+            clientContext.fillStyle = StaticAssets.ZoomMessageColor;
+            
+            var zoomMsgs = [];
+            zoomMsgs.push("Zoom: " + ClientState.VariableZoomFactor + "x");
+            zoomMsgs.push(StaticAssets.ZoomInstructionMessage1);
+            zoomMsgs.push(StaticAssets.ZoomInstructionMessage2);
+            
+            for (var i = 0; i < zoomMsgs.length; i++)
+            {
+                // Draw each line one after the other, separating them by the height of the message, centered on the screen.
+                var msgSize = clientContext.measureText(zoomMsgs[i]);
+                msgSize.height = StaticAssets.ZoomMessageHeight;
+                var x = (clientCanvasWidth / 2.0) - (msgSize.width / 2.0);
+                var y = (clientCanvasHeight / 2.0) - (msgSize.height / 2.0) + msgSize.height * i;
+                
+                if (ClientState.IsBlackoutOn)
+                    y += StaticAssets.BlackoutImage.height;
+
+                clientContext.fillText(zoomMsgs[i], x, y);
+            }
+        }
+        clientContext.restore();
     }
 }

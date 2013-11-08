@@ -17,8 +17,8 @@ namespace DnDCS.Libs
         public static readonly string ServerFogDataFolder;
         public static readonly int MinimumGridSize;
         public static readonly int MaximumGridSize;
-        public static readonly float MaximumGridZoomFactor;
-        public static readonly float MinimumGridZoomFactor;
+        public static readonly float MaximumZoomFactor;
+        public static readonly float MinimumZoomFactor;
         public static readonly bool LogPings;
         public static readonly int FogSaveInterval;
 
@@ -49,9 +49,9 @@ namespace DnDCS.Libs
             MaximumGridSize = int.TryParse(ConfigurationManager.AppSettings["MaximumGridSize"], out maximumGridSize) ? maximumGridSize : 256;
             
             float minimumGridZoomFactor;
-            MinimumGridZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MinimumGridZoomFactor"], out minimumGridZoomFactor) ? minimumGridZoomFactor : 0.2f;
+            MinimumZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MinimumZoomFactor"], out minimumGridZoomFactor) ? minimumGridZoomFactor : 0.2f;
             float maximumGridZoomFactor;
-            MaximumGridZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MaximumGridZoomFactor"], out maximumGridZoomFactor) ? maximumGridZoomFactor : 10.0f;
+            MaximumZoomFactor = float.TryParse(ConfigurationManager.AppSettings["MaximumZoomFactor"], out maximumGridZoomFactor) ? maximumGridZoomFactor : 10.0f;
 
             bool logPings;
             LogPings = bool.TryParse(ConfigurationManager.AppSettings["LogPings"], out logPings) ? LogPings : false;

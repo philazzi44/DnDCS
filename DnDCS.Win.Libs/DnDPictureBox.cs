@@ -574,9 +574,9 @@ namespace DnDCS.Win.Libs
                 return;
 
             if (zoomIn)
-                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MaximumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Min(variableZoomFactor + ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MaximumZoomFactor), 1);
             else
-                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MinimumGridZoomFactor), 1);
+                variableZoomFactor = (float)Math.Round(Math.Max(variableZoomFactor - ((doubleFactor) ? DnDMapConstants.ZoomLargeStep : DnDMapConstants.ZoomStep), ConfigValues.MinimumZoomFactor), 1);
 
             IsZoomFactorInProgress = true;
 
@@ -620,9 +620,9 @@ namespace DnDCS.Win.Libs
             // Scroll up/down
             int newValue;
             if (isUp)
-                newValue = this.ScrollPosition.Y - (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.Y - (int)((distance ?? (int)(this.Height * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             else
-                newValue = this.ScrollPosition.Y + (int)((distance ?? (int)(this.Width * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
+                newValue = this.ScrollPosition.Y + (int)((distance ?? (int)(this.Height * DnDMapConstants.ScrollWheelStepScrollPercent)) * factor);
             SetScroll(null, newValue);
         }
 

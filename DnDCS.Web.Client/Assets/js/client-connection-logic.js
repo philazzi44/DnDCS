@@ -55,8 +55,13 @@ function onConnectionOpened(e){
                         clientContext = clientCanvas.getContext("2d");
 
                         clientCanvas.addEventListener('mousedown', clientCanvas_MouseDown);
+                        clientCanvas.addEventListener('click', clientCanvas_MouseLeftClick);
                         clientCanvas.addEventListener('mousemove', clientCanvas_MouseMove);
                         clientCanvas.addEventListener('mouseup', clientCanvas_MouseUp);
+                        clientCanvas.addEventListener('mousewheel', clientCanvas_MouseWheel);
+                        window.addEventListener('keydown', window_KeyDown);
+                        window.addEventListener('keyup', window_KeyUp);
+                        clientCanvas.oncontextmenu = clientCanvas_MouseRightClick;
     
                         window.setInterval(drawClient, 33);
                         ClientState.NeedsRedraw = true;
@@ -249,10 +254,10 @@ function processCenterMapMessage(messageDataView)
     // The point that came in is raw on the map...
     var centerMapX = messageDataView.getInt32(0, true);
     var centerMapY = messageDataView.getInt32(4, true);
-    
-    // TODO: When zooming is supported, account for it here.
-    var scrollX = centerMapX - clientCanvasWidth / 2;
-    var scrollY = centerMapY - clientCanvasHeight / 2;
+
+    // We also need to account for the client's zoom factor.
+    var scrollX = (centerMapX * ClientState.ZoomFactor) - clientCanvasWidth / 2;
+    var scrollY = (centerMapY * ClientState.ZoomFactor) - clientCanvasHeight / 2;
     
     setScroll(scrollX, scrollY);
 }

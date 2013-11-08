@@ -60,6 +60,11 @@ var ClientState = {
     LastMouseLocationY : 0,
     ScrollPositionX : 0,
     ScrollPositionY : 0,
+    KeyboardScrollAccel : 1.0,
+    
+    ZoomFactor : 1.0,
+    VariableZoomFactor : 1.0,
+    IsZoomFactorInProgress : false,
 };
 
 // A Queue of Messages that have been received which must be processed.
@@ -87,4 +92,22 @@ var StaticAssets = {
     // While it would seem logical to assign this as being 100% Alpha, we're using Compositing
     // to properly "overwrite" the destination image, so any color is fine.
     NewFogClearColor : "white",
+    
+    ScrollWheelStepScrollPercent : 0.05,
+    
+    KeyboardScrollAccelStep : 0.5,
+    KeyboardScrollAccelDefault : 1.0,
+    
+    ZoomMessageFont : "24px sans-serif",
+    // Since nothing can tell us the height of a text given a font, we'll simply guess based on the Font we assign.
+    ZoomMessageHeight : 25,
+    ZoomMessageColor : "aqua",
+    
+    ZoomInstructionMessage1 : "Press Enter or Left Click to commit the zoom factor.",
+    ZoomInstructionMessage2 : "Press Escape or Right Click to cancel.",    
+    
+    MinimumZoomFactor : 0.2,
+    ZoomStep : 0.1,
+    ZoomLargeStep : 0.2,
+    MaximumZoomFactor : 10.0,
 };
