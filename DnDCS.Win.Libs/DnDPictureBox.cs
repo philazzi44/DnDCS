@@ -716,22 +716,22 @@ namespace DnDCS.Win.Libs
 
         protected void PaintMap(Graphics g)
         {
-            if (this.LoadedMap != null)
-            {
-                var sourceX = Math.Max(0, this.ScrollPosition.X);
-                var sourceY = Math.Max(0, this.ScrollPosition.Y);
-                var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
-                var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
-                var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
+            if (this.LoadedMap == null)
+                return;
 
-                var destinationX = 0;
-                var destinationY = 0;
-                var destinationWidth = this.VisibleSize.Width;
-                var destinationHeight = this.VisibleSize.Height;
-                var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+            var sourceX = Math.Max(0, this.ScrollPosition.X);
+            var sourceY = Math.Max(0, this.ScrollPosition.Y);
+            var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
+            var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
+            var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
 
-                g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
-            }
+            var destinationX = 0;
+            var destinationY = 0;
+            var destinationWidth = this.VisibleSize.Width;
+            var destinationHeight = this.VisibleSize.Height;
+            var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+
+            g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
         }
 
         protected void PaintGrid(Graphics g)
@@ -779,40 +779,40 @@ namespace DnDCS.Win.Libs
 
         protected void PaintFog(Graphics g)
         {
-            if (Fog != null)
-            {
-                var sourceX = Math.Max(0, this.ScrollPosition.X);
-                var sourceY = Math.Max(0, this.ScrollPosition.Y);
-                var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
-                var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
+            if (Fog == null)
+                return;
 
-                var destinationX = 0;
-                var destinationY = 0;
-                var destinationWidth = this.VisibleSize.Width;
-                var destinationHeight = this.VisibleSize.Height;
-                var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+            var sourceX = Math.Max(0, this.ScrollPosition.X);
+            var sourceY = Math.Max(0, this.ScrollPosition.Y);
+            var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
+            var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
 
-                g.DrawImage(Fog, destination, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
-            }
+            var destinationX = 0;
+            var destinationY = 0;
+            var destinationWidth = this.VisibleSize.Width;
+            var destinationHeight = this.VisibleSize.Height;
+            var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+
+            g.DrawImage(Fog, destination, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
         }
-        
+
         protected void PaintZoomFactorText(Graphics g)
         {
-            if (IsZoomFactorInProgress)
+            if (!IsZoomFactorInProgress)
+                return;
+
+            var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
+
+            var zoomMsgs = new[] { string.Format("Zoom: {0}x", variableZoomFactor) }.Concat(ZoomInstructionMessages).ToArray();
+            for (var i = 0; i < zoomMsgs.Length; i++)
             {
-                var font = this.zoomFactorFont ?? System.Drawing.SystemFonts.DefaultFont;
+                // Draw each line one after the other, separating them by the height of the message, centered on the screen.
+                var msgSize = g.MeasureString(zoomMsgs[i], font);
+                var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
+                var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
+                y += ZoomFactorTextYOffset;
 
-                var zoomMsgs = new[] { string.Format("Zoom: {0}x", variableZoomFactor) }.Concat(ZoomInstructionMessages).ToArray();
-                for (var i = 0; i < zoomMsgs.Length; i++)
-                {
-                    // Draw each line one after the other, separating them by the height of the message, centered on the screen.
-                    var msgSize = g.MeasureString(zoomMsgs[i], font);
-                    var x = (this.Width / 2.0f) - (msgSize.Width / 2.0f);
-                    var y = (this.Height / 2.0f) - (msgSize.Height / 2.0f) + msgSize.Height * i;
-                    y += ZoomFactorTextYOffset;
-
-                    g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
-                }
+                g.DrawString(zoomMsgs[i], font, Brushes.Aqua, x, y);
             }
         }
 
