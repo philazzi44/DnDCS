@@ -365,38 +365,32 @@ namespace DnDCS.Win.Libs
 
         protected override void PaintAll(Graphics g)
         {
-            using (var transformedGraphics = TranslateAndZoom(g))
-            {
-                PaintMap(transformedGraphics);
-                PaintGrid(transformedGraphics);
-                PaintFog(transformedGraphics);
-            }
-
+            PaintMap(g);
+            PaintGrid(g);
+            PaintFog(g);
             PaintNewFog(g);
             PaintCenterMapOverlayIcon(g);
             PaintZoomFactorText(g);
         }
 
-        private void PaintNewFog(Graphics graphics)
+        private void PaintNewFog(Graphics g)
         {
             if (newFogUpdatePoints.Count >= 3)
             {
-                using (var g = Translate(graphics))
-                {
-                    g.Graphics.FillPolygon((isNewFogClearing) ? DnDMapConstants.NEW_FOG_CLEAR_BRUSH : DnDMapConstants.NEW_FOG_BRUSH, newFogUpdatePoints.ToArray());
-                }
+                g.TranslateTransform(-this.ScrollPosition.X, -this.ScrollPosition.Y);
+                g.FillPolygon((isNewFogClearing) ? DnDMapConstants.NEW_FOG_CLEAR_BRUSH : DnDMapConstants.NEW_FOG_BRUSH, newFogUpdatePoints.ToArray());
+                g.ResetTransform();
             }
         }
 
-        private void PaintCenterMapOverlayIcon(Graphics graphics)
+        private void PaintCenterMapOverlayIcon(Graphics g)
         {
             if (centerMapImage != null && lastCenterMapPoint.HasValue)
             {
                 // Draw it at the location, so that the bottom/center is at the centered point.
-                using (var g = Translate(graphics))
-                {
-                    g.Graphics.DrawImage(centerMapImage, lastCenterMapPoint.Value.Translate(-(centerMapImage.Width / 2), -centerMapImage.Height));
-                }
+                g.TranslateTransform(-this.ScrollPosition.X, -this.ScrollPosition.Y);
+                g.DrawImage(centerMapImage, lastCenterMapPoint.Value.Translate(-(centerMapImage.Width / 2), -centerMapImage.Height));
+                g.ResetTransform();
             }
         }
 

@@ -109,12 +109,9 @@ namespace DnDCS.Win.Libs
             }
             else
             {
-                using (var transformedGraphics = TranslateAndZoom(g))
-                {
-                    PaintMap(transformedGraphics);
-                    PaintGrid(transformedGraphics);
-                    PaintFog(transformedGraphics);
-                }
+                PaintMap(g);
+                PaintGrid(g);
+                PaintFog(g);
             }
             PaintZoomFactorText(g);
         }

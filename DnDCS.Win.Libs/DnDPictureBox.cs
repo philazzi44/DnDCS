@@ -81,6 +81,9 @@ namespace DnDCS.Win.Libs
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected float AssignedZoomFactor { get { return this.assignedZoomFactor; } private set { this.assignedZoomFactor = value; } }
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        protected float InverseZoomFactor { get { return 1.0f / this.AssignedZoomFactor; } }
         private float variableZoomFactor = 1.0f;
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -644,15 +647,15 @@ namespace DnDCS.Win.Libs
 
             // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
             // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
-            if (this.LogicalMapWidth < this.Width)
+            if (this.LogicalMapWidth < this.VisibleSize.Width)
                 desiredX = 0;
             else
-                desiredX = Math.Min(desiredX.Value, this.LogicalMapWidth - this.Width);
+                desiredX = Math.Min(desiredX.Value, (int)((this.LogicalMapWidth - this.VisibleSize.Width) * this.InverseZoomFactor));
 
-            if (this.LogicalMapHeight < this.Height)
+            if (this.LogicalMapHeight < this.VisibleSize.Height)
                 desiredY = 0;
             else
-                desiredY = Math.Min(desiredY.Value, this.LogicalMapHeight - this.Height);
+                desiredY = Math.Min(desiredY.Value, (int)((this.LogicalMapHeight - this.VisibleSize.Height) * this.InverseZoomFactor));
 
             this.ScrollPosition = new Point(desiredX.Value, desiredY.Value);
 
@@ -698,71 +701,68 @@ namespace DnDCS.Win.Libs
 
         protected virtual void PaintAll(Graphics graphics)
         {
+            // TODO: This is what Flipped View used to do.
+            //if (isFlippedView)
+            //{
+            //    // TODO: Better approach would be to figure out the necessary transform matrix we need to apply (and where in the transform sets it needs to sit)
+            //    // this.Graphics.MultiplyTransform(new Matrix(-1, 0, 0, 1, 0, 0));
+            //    this.Graphics.TranslateTransform((int)(fullSize.Width * zoom / 2), (int)(fullSize.Height * zoom / 2));
+            //    this.Graphics.RotateTransform(180);
+            //    this.Graphics.TranslateTransform(-(int)(fullSize.Width * zoom / 2), -(int)(fullSize.Height * zoom / 2));
+            //}
+
             throw new NotImplementedException("Must be overridden.");
         }
 
-        protected void PaintMap(TransformedGraphics g)
+        protected void PaintMap(Graphics g)
         {
             if (this.LoadedMap != null)
             {
-                // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
-                // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
-                // to source from off the image.
                 var sourceX = Math.Max(0, this.ScrollPosition.X);
                 var sourceY = Math.Max(0, this.ScrollPosition.Y);
-                var sourceWidth = Math.Min(this.LoadedMap.Width - sourceX, this.VisibleSize.Width);
-                var sourceHeight = Math.Min(this.LoadedMap.Height - sourceY, this.VisibleSize.Height);
+                var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
+                var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
                 var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
 
-                var destinationX = Math.Max(0, this.ScrollPosition.X);
-                var destinationY = Math.Max(0, this.ScrollPosition.Y);
-                var destinationWidth = Math.Min(this.LoadedMap.Width - sourceX, this.VisibleSize.Width);
-                var destinationHeight = Math.Min(this.LoadedMap.Height - sourceY, this.VisibleSize.Height);
+                var destinationX = 0;
+                var destinationY = 0;
+                var destinationWidth = this.VisibleSize.Width;
+                var destinationHeight = this.VisibleSize.Height;
                 var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
 
-                g.Graphics.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
+                g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
             }
         }
 
-        protected void PaintGrid(TransformedGraphics g)
+        protected void PaintGrid(Graphics g)
         {
             if (!gridSize.HasValue)
                 return;
 
-            // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
-            // start at the Translated location, and go the full width of our client view only. Note that because our scroll
-            // may be in between two grid lines, we'll need to pull back (or go forward) one full step in all directions to ensure
-            // the client view is fully grid lined. The end result is that we'll only draw as many grid lines as we need, starting 
-            // and ending just beyond what the user can actually see.
-            var startX = this.ScrollPosition.X;
-            startX = startX - (startX % gridSize.Value);
-            var endX = this.ScrollPosition.X + this.VisibleSize.Width;
-            endX = endX + (gridSize.Value - (endX % gridSize.Value));
+            // To take into account the Zooming, we'll force our Grid Size to be the zoomed in/out amount.
+            var logicalGridSize = (int)(gridSize.Value * this.AssignedZoomFactor);
 
-            var startY = this.ScrollPosition.Y;
-            startY = startY - (startY % gridSize.Value);
-            var endY = this.ScrollPosition.Y + this.VisibleSize.Height;
-            endY = endY + (gridSize.Value - (endY % gridSize.Value));
+            // Our starting points will be however much of the grid (backwards) we're cutting off based on how much has been scrolled.
+            // Our ending points will be the full size of what is visible to the user (full canvas, or the full map that fits on the larger canvas).
+            var startX = -((this.ScrollPosition.X * this.AssignedZoomFactor) % logicalGridSize);
+            var endX = Math.Min(this.LogicalMapWidth, this.VisibleSize.Width);
 
-            // Constrain our start/end to within the map itself.
-            startX = Math.Max(0, Math.Min(startX, this.LoadedMapSize.Width));
-            startY = Math.Max(0, Math.Min(startY, this.LoadedMapSize.Height));
-            endX = Math.Min(endX, this.LoadedMapSize.Width);
-            endY = Math.Min(endY, this.LoadedMapSize.Height);
+            var startY = -((this.ScrollPosition.Y * this.AssignedZoomFactor) % logicalGridSize);
+            var endY = Math.Min(this.LogicalMapHeight, this.VisibleSize.Height);
 
             var x = startX;
             var y = startY;
-            while (x < endX || y < endY)
+            while (x <= endX || y <= endY)
             {
-                if (x < endX)
+                if (x <= endX)
                 {
-                    g.Graphics.DrawLine(gridPen, x, startY, x, endY);
-                    x += gridSize.Value;
+                    g.DrawLine(gridPen, x, startY, x, endY);
+                    x += logicalGridSize;
                 }
-                if (y < endY)
+                if (y <= endY)
                 {
-                    g.Graphics.DrawLine(gridPen, startX, y, endX, y);
-                    y += gridSize.Value;
+                    g.DrawLine(gridPen, startX, y, endX, y);
+                    y += logicalGridSize;
                 }
             }
 
@@ -777,37 +777,25 @@ namespace DnDCS.Win.Libs
             //}
         }
 
-        protected void PaintFog(TransformedGraphics g)
+        protected void PaintFog(Graphics g)
         {
             if (Fog != null)
             {
-                // Because our Graphics instance is already translated, (0, 0) may be somewhere off screen (further top/left), so we'll
-                // take from the Fog Image starting at the Translated Location and go the full width of our client view only. Note that we explicitly Min/Max the values to prevent trying
-                // to source from off the image.
                 var sourceX = Math.Max(0, this.ScrollPosition.X);
                 var sourceY = Math.Max(0, this.ScrollPosition.Y);
-                var sourceWidth = Math.Min(this.Fog.Width - sourceX, this.VisibleSize.Width);
-                var sourceHeight = Math.Min(this.Fog.Height - sourceY, this.VisibleSize.Height);
+                var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
+                var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
 
-                var destinationX = Math.Max(0, this.ScrollPosition.X);
-                var destinationY = Math.Max(0, this.ScrollPosition.Y);
-                var destinationWidth = Math.Min(this.Fog.Width - sourceX, this.VisibleSize.Width);
-                var destinationHeight = Math.Min(this.Fog.Height - sourceY, this.VisibleSize.Height);
+                var destinationX = 0;
+                var destinationY = 0;
+                var destinationWidth = this.VisibleSize.Width;
+                var destinationHeight = this.VisibleSize.Height;
+                var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
 
-                g.Graphics.DrawImage(Fog, new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight), sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
+                g.DrawImage(Fog, destination, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
             }
         }
-
-        protected TransformedGraphics Translate(Graphics g)
-        {
-            return g.TranslateAndZoom(this.ScrollPosition, this.LoadedMapSize, 1.0f, this.IsFlippedView);
-        }
-
-        protected TransformedGraphics TranslateAndZoom(Graphics g)
-        {
-            return g.TranslateAndZoom(this.ScrollPosition, this.LoadedMapSize, AssignedZoomFactor, this.IsFlippedView);
-        }
-
+        
         protected void PaintZoomFactorText(Graphics g)
         {
             if (IsZoomFactorInProgress)

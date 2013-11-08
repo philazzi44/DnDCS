@@ -86,10 +86,5 @@ namespace DnDCS.Win.Libs
 
             connection.WriteFog(fog.Width, fog.Height, fog.ToBytes());
         }
-
-        public static TransformedGraphics TranslateAndZoom(this Graphics g, Point scroll, Size fullSize, float zoom, bool isFlippedView)
-        {
-            return new TransformedGraphics(g, scroll, fullSize, zoom, isFlippedView);
-        }
     }
 }

@@ -69,7 +69,7 @@ namespace DnDCS.Win.Client
             {
                 fullScreenMenuItem = new MenuItem("Full Screen", OnFullScreen_Click) { Checked = false },
                 new MenuItem("-"),
-                new MenuItem("Flip View", OnFlipView_Click) { Checked = false },
+                new MenuItem("Flip View (Sorry, broken)", OnFlipView_Click) { Checked = false, Enabled = false },
                 new MenuItem("-"),
                 new MenuItem("Reconnect", OnReconnect_Click),
                 new MenuItem("-"),
