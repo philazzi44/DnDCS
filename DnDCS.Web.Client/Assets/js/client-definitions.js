@@ -1,9 +1,3 @@
-// TODO: Should these really be hardcoded like this?
-var defaultServer = "pazzi.parse3.local";
-// var defaultServer = "172.30.3.11";
-// var defaultServer = "desktop-win7";
-var defaultPort = "11001";
-
 // TODO: Definitely should be defined elsewhere, maybe in a way that we don't have to keep it updated
 // if the C# version updates?
 var SOCKET_ACTIONS = {
@@ -63,6 +57,7 @@ var ClientState = {
     KeyboardScrollAccel : 1.0,
     
     ZoomFactor : 1.0,
+    InverseZoomFactor : 1.0,
     VariableZoomFactor : 1.0,
     IsZoomFactorInProgress : false,
 };
@@ -85,6 +80,9 @@ var newFogContext = newFogCanvas.getContext("2d");
 
 // Static assets loaded after a connection is established.
 var StaticAssets = {
+    DefaultServer : "localhost",
+    DefaultPort : "11001",
+
     BlackoutImagePath : "/Assets/images/BlackoutImage.png",
     BlackoutImage : null,
     

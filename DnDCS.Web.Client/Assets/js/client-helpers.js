@@ -55,17 +55,17 @@ function scrollUpOrDown(isUp, distance, factor)
     setScroll(null, newValue);
 }
 
-function setScroll(x, y) {
-    if (x == undefined || x == null)
-        x = ClientState.ScrollPositionX;
-    if (y == undefined || y == null)
-        y = ClientState.ScrollPositionY;
+function setScroll(desiredX, desiredY) {
+    if (desiredX == undefined || desiredX == null)
+        desiredX = ClientState.ScrollPositionX;
+    if (desiredY == undefined || desiredY == null)
+        desiredY = ClientState.ScrollPositionY;
         
     // Do not allow negative scrolling in any way.
-    if (x < 0)
-        x = 0;
-    if (y < 0)
-        y = 0;
+    if (desiredX < 0)
+        desiredX = 0;
+    if (desiredY < 0)
+        desiredY = 0;
               
     var logicalMapWidth = ClientState.MapWidth * ClientState.ZoomFactor;
     var logicalMapHeight = ClientState.MapHeight * ClientState.ZoomFactor;
@@ -73,17 +73,19 @@ function setScroll(x, y) {
     // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
     // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
     if (logicalMapWidth < clientCanvasWidth)
-        x = 0;
+        desiredX = 0;
     else
-        x = Math.min(x, logicalMapWidth - clientCanvasWidth);
+        desiredX = Math.min(desiredX, ((logicalMapWidth - clientCanvasWidth) * ClientState.InverseZoomFactor));
 
     if (logicalMapHeight < clientCanvasHeight)
-        y = 0;
+        desiredY = 0;
     else
-        y = Math.min(y, logicalMapHeight - clientCanvasHeight);
-                
-    ClientState.ScrollPositionX = x;
-    ClientState.ScrollPositionY = y;
+        desiredY = Math.min(desiredY, ((logicalMapHeight - clientCanvasHeight) * ClientState.InverseZoomFactor));
+
+    desiredX = Math.floor(desiredX);
+    desiredY = Math.floor(desiredY);
+    ClientState.ScrollPositionX = desiredX;
+    ClientState.ScrollPositionY = desiredY;
     ClientState.NeedsRedraw = true;
 }
 
@@ -109,6 +111,7 @@ function commitOrRollBackZoom(commit)
     if (commit)
     {
         ClientState.ZoomFactor = ClientState.VariableZoomFactor;
+        ClientState.InverseZoomFactor = 1.0 / ClientState.ZoomFactor;
         // This will validate that the current scroll values aren't too large for the new zoom factor.
         setScroll();
     }

@@ -28,7 +28,7 @@ function clientCanvas_MouseMove(e) {
         // If we need to cause a minimum-threshold for dragging, we can put it here.
         var moveThreshold = 0;
         
-        if (e.button == 0 || e.which == 1)
+        if (e.button == 0 && e.which == 1)
         {
             var newMouseLocationX = e.clientX - clientCanvasX;
             var newMouseLocationY = e.clientY - clientCanvasY;
