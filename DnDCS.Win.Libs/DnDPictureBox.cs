@@ -330,9 +330,9 @@ namespace DnDCS.Win.Libs
                     y = this.LoadedMapSize.Height - y;
                 }
 
-                // We also need to account for the client's zoom factor.
-                x = (int)(x * AssignedZoomFactor) - this.Width / 2;
-                y = (int)(y * AssignedZoomFactor) - this.Height / 2;
+                // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
+                x = (int)(((x * AssignedZoomFactor) - (this.VisibleSize.Width / 2.0d)) * this.InverseZoomFactor);
+                y = (int)(((y * AssignedZoomFactor) - (this.VisibleSize.Height / 2.0d)) * this.InverseZoomFactor);
 
                 SetScroll(x, y);
             }));

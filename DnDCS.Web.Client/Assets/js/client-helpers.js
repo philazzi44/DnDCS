@@ -67,8 +67,8 @@ function setScroll(desiredX, desiredY) {
     if (desiredY < 0)
         desiredY = 0;
               
-    var logicalMapWidth = ClientState.MapWidth * ClientState.ZoomFactor;
-    var logicalMapHeight = ClientState.MapHeight * ClientState.ZoomFactor;
+    var logicalMapWidth = ClientState.MapWidth * ClientState.AssignedZoomFactor;
+    var logicalMapHeight = ClientState.MapHeight * ClientState.AssignedZoomFactor;
 
     // If the map we are showing is smaller than the width/height, then no X/Y scrolling is allowed at all.
     // Otherwise, enforce that the value is at most the amount that would be needed to show the full map given the current size of the visible area.
@@ -110,14 +110,14 @@ function commitOrRollBackZoom(commit)
     ClientState.IsZoomFactorInProgress = false;
     if (commit)
     {
-        ClientState.ZoomFactor = ClientState.VariableZoomFactor;
-        ClientState.InverseZoomFactor = 1.0 / ClientState.ZoomFactor;
+        ClientState.AssignedZoomFactor = ClientState.VariableZoomFactor;
+        ClientState.InverseZoomFactor = 1.0 / ClientState.AssignedZoomFactor;
         // This will validate that the current scroll values aren't too large for the new zoom factor.
         setScroll();
     }
     else
     {
-        ClientState.VariableZoomFactor = ClientState.ZoomFactor;
+        ClientState.VariableZoomFactor = ClientState.AssignedZoomFactor;
     }
     ClientState.NeedsRedraw = true;
 }

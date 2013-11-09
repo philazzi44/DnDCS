@@ -18,8 +18,8 @@ function drawClient() {
     {    
         // clientContext.save();
         {
-            // if (ClientState.ZoomFactor != 1.0)
-                // clientContext.scale(ClientState.ZoomFactor, ClientState.ZoomFactor);
+            // if (ClientState.AssignedZoomFactor != 1.0)
+                // clientContext.scale(ClientState.AssignedZoomFactor, ClientState.AssignedZoomFactor);
             
             drawClient_Map();
             drawClient_Grid();
@@ -54,16 +54,16 @@ function drawClient_Grid() {
         return;
     
     // To take into account the Zooming, we'll force our Grid Size to be the zoomed in/out amount.
-    var logicalGridSize = Math.round(ClientState.GridSize * ClientState.ZoomFactor);
-    var logicalMapWidth = Math.round(ClientState.MapWidth * ClientState.ZoomFactor);
-    var logicalMapHeight = Math.round(ClientState.MapHeight * ClientState.ZoomFactor);
+    var logicalGridSize = Math.round(ClientState.GridSize * ClientState.AssignedZoomFactor);
+    var logicalMapWidth = Math.round(ClientState.MapWidth * ClientState.AssignedZoomFactor);
+    var logicalMapHeight = Math.round(ClientState.MapHeight * ClientState.AssignedZoomFactor);
 
     // Our starting points will be however much of the grid (backwards) we're cutting off based on how much has been scrolled.
     // Our ending points will be the full size of what is visible to the user (full canvas, or the full map that fits on the larger canvas).
-    var startX = -((ClientState.ScrollPositionX * ClientState.ZoomFactor) % logicalGridSize);
+    var startX = -((ClientState.ScrollPositionX * ClientState.AssignedZoomFactor) % logicalGridSize);
     var endX = Math.min(logicalMapWidth, clientCanvasWidth);
 
-    var startY = -((ClientState.ScrollPositionY * ClientState.ZoomFactor) % logicalGridSize);
+    var startY = -((ClientState.ScrollPositionY * ClientState.AssignedZoomFactor) % logicalGridSize);
     var endY = Math.min(logicalMapHeight, clientCanvasHeight);
 
     clientContext.save();

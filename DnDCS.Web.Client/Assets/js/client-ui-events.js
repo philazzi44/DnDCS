@@ -7,11 +7,9 @@ function btnConnect_Click() {
     ClientState.Host = host;
     ClientState.Port = port;
     
-    var connectingMessage = 'Connecting to ' + ClientState.Host + ":" + ClientState.Port + "...";
-    document.title = connectingMessage;
+    document.title = 'Connecting to ' + ClientState.Host + ":" + ClientState.Port + "...";
     
     $('#connectValues').fadeOut(function() {        
-        $('#connectingServerInfo').text(connectingMessage);            
         $('#connectingValues').fadeIn(function() {
             tryConnect();
         });

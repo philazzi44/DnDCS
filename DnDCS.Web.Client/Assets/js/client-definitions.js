@@ -56,7 +56,7 @@ var ClientState = {
     ScrollPositionY : 0,
     KeyboardScrollAccel : 1.0,
     
-    ZoomFactor : 1.0,
+    AssignedZoomFactor : 1.0,
     InverseZoomFactor : 1.0,
     VariableZoomFactor : 1.0,
     IsZoomFactorInProgress : false,

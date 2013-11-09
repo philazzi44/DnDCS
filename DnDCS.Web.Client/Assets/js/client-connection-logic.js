@@ -25,52 +25,50 @@ function onConnectionOpened(e){
     ClientState.IsConnecting = false;
     ClientState.IsConnected = true;
         
-    var connectedMessage = 'Connected to ' + ClientState.Host + ":" + ClientState.Port;
-    document.title = connectedMessage;
-        
-    $('#connectingValues').fadeOut(function() {
-        $('#connectedServerInfo').text(connectedMessage);
-        $('#connectedValues').fadeIn(function() {
-            $('#initializingValues').fadeIn(function() {                
-                // Set all the assets we need to load, which should also be checked in the below
-                // connectInitWait interval.
-                StaticAssets.BlackoutImage = new Image();
-                StaticAssets.BlackoutImage.src = document.URL.substring(0, document.URL.lastIndexOf("/")) + StaticAssets.BlackoutImagePath;
-                
-                // Check all the assets being loaded before starting the actual application.
-                var connectInitWait = window.setInterval(function() {
-                    if (StaticAssets.BlackoutImage == null)
-                        return;
-                                            
-                    $('#connectedServerInfo').fadeOut();
-                    $('#initializingValues').fadeOut(function() {
-                        // Stop the connection initialization interval and instead start the 30FPS Draw Loop after init.
-                        window.clearInterval(connectInitWait);
+    document.title = 'Connected to ' + ClientState.Host + ":" + ClientState.Port;
 
-                        clientCanvas = $('#clientCanvas')[0];                        
-                        clientCanvasX = clientCanvas.getBoundingClientRect().left;
-                        clientCanvasY = clientCanvas.getBoundingClientRect().top;
-                        clientCanvasWidth = clientCanvas.getBoundingClientRect().right - clientCanvas.getBoundingClientRect().left;
-                        clientCanvasHeight = clientCanvas.getBoundingClientRect().bottom - clientCanvas.getBoundingClientRect().top;
-                        clientContext = clientCanvas.getContext("2d");
-
-                        clientCanvas.addEventListener('mousedown', clientCanvas_MouseDown);
-                        clientCanvas.addEventListener('click', clientCanvas_MouseLeftClick);
-                        clientCanvas.addEventListener('mousemove', clientCanvas_MouseMove);
-                        clientCanvas.addEventListener('mouseup', clientCanvas_MouseUp);
-                        clientCanvas.addEventListener('mousewheel', clientCanvas_MouseWheel);
-                        window.addEventListener('keydown', window_KeyDown);
-                        window.addEventListener('keyup', window_KeyUp);
-                        clientCanvas.oncontextmenu = clientCanvas_MouseRightClick;
+    clientCanvas = $('#clientCanvas')[0];                        
+    clientCanvasX = clientCanvas.getBoundingClientRect().left;
+    clientCanvasY = clientCanvas.getBoundingClientRect().top;
+    clientCanvasWidth = clientCanvas.getBoundingClientRect().right - clientCanvas.getBoundingClientRect().left;
+    clientCanvasHeight = clientCanvas.getBoundingClientRect().bottom - clientCanvas.getBoundingClientRect().top;
+    clientContext = clientCanvas.getContext("2d");
+            
+    // Set all the assets we need to load, which should also be checked in the below
+    // connectInitWait interval.
+    var blackoutImage = new Image();
+    blackoutImage.onload = function() { StaticAssets.BlackoutImage = blackoutImage; }
+    blackoutImage.src = document.URL.substring(0, document.URL.lastIndexOf("/")) + StaticAssets.BlackoutImagePath;
     
-                        window.setInterval(drawClient, 33);
-                        ClientState.NeedsRedraw = true;
-                        $('#clientValues').fadeIn("slow");
-                    });
-                }, 33);
-            });
+    // Check all the static assets and the bigger pieces of connection data being loaded before starting the actual application.
+    var connectInitWait = window.setInterval(function() {
+        if (StaticAssets.BlackoutImage == null)
+            return;
+        if (ClientState.Map == null)
+            return;
+        if (ClientState.Fog == null)
+            return;
+                                
+        $('#connectingValues').fadeOut(function() {
+            // Stop the connection initialization interval that kept checking to see if we were initialized.
+            window.clearInterval(connectInitWait);
+
+            // Add all events for the canvas that the user interacts with.
+            clientCanvas.addEventListener('mousedown', clientCanvas_MouseDown);
+            clientCanvas.addEventListener('click', clientCanvas_MouseLeftClick);
+            clientCanvas.addEventListener('mousemove', clientCanvas_MouseMove);
+            clientCanvas.addEventListener('mouseup', clientCanvas_MouseUp);
+            clientCanvas.addEventListener('mousewheel', clientCanvas_MouseWheel);
+            window.addEventListener('keydown', window_KeyDown);
+            window.addEventListener('keyup', window_KeyUp);
+            clientCanvas.oncontextmenu = clientCanvas_MouseRightClick;
+
+            // Start the 30FPS Draw Loop now and show the canvas to the user.
+            window.setInterval(drawClient, 33);
+            ClientState.NeedsRedraw = true;
+            $('#connectedValues').fadeIn("slow");
         });
-    });
+    }, 33);
 }
     
 function onConnectionClosed(e){
@@ -78,7 +76,6 @@ function onConnectionClosed(e){
     ClientState.IsClosed = true;
     
     $('#connectedValues').fadeOut();
-    $('#clientValues').fadeOut();
         
     // If we're already Errored, then the Error message is being shown.
     if (!ClientState.IsErrored)
@@ -255,10 +252,13 @@ function processCenterMapMessage(messageDataView)
     var centerMapX = messageDataView.getInt32(0, true);
     var centerMapY = messageDataView.getInt32(4, true);
 
-    // We also need to account for the client's zoom factor.
-    var scrollX = (centerMapX * ClientState.ZoomFactor) - clientCanvasWidth / 2;
-    var scrollY = (centerMapY * ClientState.ZoomFactor) - clientCanvasHeight / 2;
+    var x = centerMapX;
+    var y = centerMapY;
     
+    // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
+    var scrollX = Math.floor(((centerMapX * ClientState.AssignedZoomFactor) - (clientCanvasWidth / 2.0)) * ClientState.InverseZoomFactor);
+    var scrollY = Math.floor(((centerMapY * ClientState.AssignedZoomFactor) - (clientCanvasHeight / 2.0)) * ClientState.InverseZoomFactor);
+
     setScroll(scrollX, scrollY);
 }
 
@@ -292,7 +292,7 @@ function processFogMessage(messageDataView) {
             for (var j = 0; j < fogWidth; j++)
             {
                 // Make anything that's non-black fully transparent white. The Server needs the data to be 'white' because it uses it as a Mask. The Win Forms Client uses the same
-                // logic as the server. Therefore, unfortunatel,y we're forced to do a crazy loop to manually apply the mask.
+                // logic as the server. Therefore, unfortunately, we're forced to do a crazy loop to manually apply the mask.
                 var r = newFogImageData.data[((i*(fogWidth*4)) + (j*4))];
                 var g = newFogImageData.data[((i*(fogWidth*4)) + (j*4)) + 1];
                 var b = newFogImageData.data[((i*(fogWidth*4)) + (j*4)) + 2];
