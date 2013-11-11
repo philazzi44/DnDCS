@@ -41,20 +41,22 @@ Added support for saving the Fog Reveals that were done on the Server for later 
 Beta functionality for a neat Fog Effect that gradients the edges’ Alpha value. Kudos to Sparks for implementing this
 It’s beta because it currently doesn’t work as expected with odd-shaped, or very small, polygons, and doesn’t feel right when things overlap a bit. We can try it, but there’s a menu option to turn it off.
 
-1.4 - 11/10/2013
+v1.4 - 11/10/2013
 
+- Compiled to “Any CPU” again, from a change to only run on x64 when it used to crash x86.
 - Enabled Load Image button in Server on startup
-- Client scroll "threshold" dropped to 0
-- Server "Center Map" now supports double Right Click as well as existing double Left Click
-- Client now supports manual "Reconnect" option, to recover from random socket closures
+- Client scroll "threshold" dropped to 0, so it shouldn’t “stutter” anymore when trying to scroll a tiny bit
+- Server "Center Map" now supports double Right Click as well as existing double Left Click – double right click means we won’t have any mini-pixel reveals
+- Client now supports manual "Reconnect" option, to recover from random socket closures – never figured out why the socket disconnects… Client is watching for the disconnect and should give a popup when it happens, so this is just a stopgap
 - Client's F11 now properly un-fullscreens
-- Changed Saved FogData from Point[] to PNG. Oops, not backwards compatible!
-- Added a fuckin awesome menu that doesn't play nice with Windows Forms lols. Requires XNA prereq installed. 100% for fun.
-- Performance tweaks geared towards large images
-- Broke "Flipped View" option on client, sorry
+- Changed Saved FogData from X/Y Point data to PNG – saves memory/time in real-world usage. Oops, not backwards compatible!
+- Fancy menu - I thought XNA might give us some performance boosts a while ago so started implementing it there, including a cool menu, but then performance in the Win Forms version got good enough so all we have is the cool menu. Requires XNA prereq installed (in Prereq folder)
+- Regular win.exe can be run as-is, if you want to ignore the menu.
+- Performance tweaks during re-draws geared towards large images
+- Broke "Flipped View" option on client, forgot to fix it, sorry
 - Web Client beta
 
-v1.5 - ??
+v1.5 - ?? (roadmap)
 
 - Flipped View fixes in Win Forms Client
 - Flipped View added to Web Client
