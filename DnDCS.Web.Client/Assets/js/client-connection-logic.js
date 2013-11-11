@@ -27,11 +27,6 @@ function onConnectionOpened(e){
         
     document.title = 'Connected to ' + ClientState.Host + ":" + ClientState.Port;
 
-    clientCanvas = $('#clientCanvas')[0];                        
-    clientCanvasX = clientCanvas.getBoundingClientRect().left;
-    clientCanvasY = clientCanvas.getBoundingClientRect().top;
-    clientCanvasWidth = clientCanvas.getBoundingClientRect().right - clientCanvas.getBoundingClientRect().left;
-    clientCanvasHeight = clientCanvas.getBoundingClientRect().bottom - clientCanvas.getBoundingClientRect().top;
     clientContext = clientCanvas.getContext("2d");
             
     // Set all the assets we need to load, which should also be checked in the below

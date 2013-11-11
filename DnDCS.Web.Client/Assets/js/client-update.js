@@ -30,8 +30,9 @@ function clientCanvas_MouseMove(e) {
         
         if (e.button == 0 && e.which == 1)
         {
-            var newMouseLocationX = e.clientX - clientCanvasX;
-            var newMouseLocationY = e.clientY - clientCanvasY;
+            var bounding = clientCanvas.getBoundingClientRect();
+            var newMouseLocationX = e.clientX - bounding.left;
+            var newMouseLocationY = e.clientY - bounding.top;
             
             // Scroll based on the amount of movement.
             var diffY = Math.abs(newMouseLocationY - ClientState.LastMouseLocationY);
@@ -184,9 +185,11 @@ function enableDragScroll(e) {
     if (ClientState.IsZoomFactorInProgress)
         return;
     
+    var bounding = clientCanvas.getBoundingClientRect();
+            
     ClientState.IsDragScrolling = true;
-    ClientState.LastMouseLocationX = e.clientX - clientCanvasX;
-    ClientState.LastMouseLocationY = e.clientY - clientCanvasY;
+    ClientState.LastMouseLocationX = e.clientX - bounding.left;
+    ClientState.LastMouseLocationY = e.clientY - bounding.top;
     ClientState.NeedsRedraw = true;
 }
 

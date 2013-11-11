@@ -68,8 +68,6 @@ var messageIdCounter = new Number();
 
 // The client's visible canvas. Values are set after a connection is established.
 var clientCanvas;
-var clientCanvasX;
-var clientCanvasY;
 var clientCanvasWidth;
 var clientCanvasHeight;
 var clientContext;
