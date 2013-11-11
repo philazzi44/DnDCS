@@ -40,3 +40,22 @@ Added support for saving the Fog Reveals that were done on the Server for later 
   Trial run for this. May change how it’s done in a way that’s not backwards compatible. Sorry.
 Beta functionality for a neat Fog Effect that gradients the edges’ Alpha value. Kudos to Sparks for implementing this
 It’s beta because it currently doesn’t work as expected with odd-shaped, or very small, polygons, and doesn’t feel right when things overlap a bit. We can try it, but there’s a menu option to turn it off.
+
+1.4 - 11/10/2013
+
+- Enabled Load Image button in Server on startup
+- Client scroll "threshold" dropped to 0
+- Server "Center Map" now supports double Right Click as well as existing double Left Click
+- Client now supports manual "Reconnect" option, to recover from random socket closures
+- Client's F11 now properly un-fullscreens
+- Changed Saved FogData from Point[] to PNG. Oops, not backwards compatible!
+- Added a fuckin awesome menu that doesn't play nice with Windows Forms lols. Requires XNA prereq installed. 100% for fun.
+- Performance tweaks geared towards large images
+- Broke "Flipped View" option on client, sorry
+- Web Client beta
+
+v1.5 - ??
+
+- Flipped View fixes in Win Forms Client
+- Flipped View added to Web Client
+- Web Client Released
