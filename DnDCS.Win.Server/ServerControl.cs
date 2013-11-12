@@ -36,14 +36,12 @@ namespace DnDCS.Win.Server
         {
             InitializeComponent();
         }
-        
+
         private void ServerControl_Load(object sender, EventArgs e)
         {
             initialParentFormText = this.ParentForm.Text;
 
             this.Disposed += new EventHandler(ServerControl_Disposed);
-
-            this.ParentForm.Text = initialParentFormText + " (0 clients connected)";
 
             this.ctlDnDMap.AllowZoom = false;
             this.ctlDnDMap.PerformCenterMap += new Action<SimplePoint>(ctlDnDMap_PerformCenterMap);
@@ -68,6 +66,8 @@ namespace DnDCS.Win.Server
             connection.OnClientCountChanged += new Action<int>(connection_OnClientCountChanged);
             connection.OnSocketEvent += new Action<ServerEvent>(connection_OnSocketEvent);
 
+            this.SetIPStringOnTitle();
+
             this.ctlControlPanel.Connection = connection;
             this.ctlControlPanel.DnDMapControl = this.ctlDnDMap;
             this.ctlControlPanel.LoadImageMenuItem = this.loadImage;
@@ -78,12 +78,6 @@ namespace DnDCS.Win.Server
             saveFogTimer = new Timer();
             saveFogTimer.Interval = ConfigValues.FogSaveInterval;
             saveFogTimer.Tick += new EventHandler(saveFogTimer_Tick);
-        }
-
-        private void ctlDnDMap_TryToggleFullScreen(Keys keyCode)
-        {
-            if (keyCode == Keys.F11 || (keyCode == Keys.Escape && this.fullScreenMenuItem.Checked))
-                this.fullScreenMenuItem.PerformClick();
         }
 
         private void ServerControl_Disposed(object sender, EventArgs e)
@@ -98,6 +92,19 @@ namespace DnDCS.Win.Server
 
         #region Connection Logic and Callbacks
 
+        private void SetIPStringOnTitle()
+        {
+            var ipStrings = new[]
+                                {
+                                    string.Format("{0}:{1} ({2} connected)", connection.ServerIP,
+                                                  connection.NetSocketPort, connection.NetClientsCount),
+                                    string.Format("{0}:{1} ({2} connected)", connection.ServerIP,
+                                                  connection.WebSocketPort, connection.WebClientsCount),
+                                };
+
+            this.ParentForm.Text = initialParentFormText + " on " + string.Join(", ", ipStrings);
+        }
+
         private void connection_OnClientConnected()
         {
             if (connection.IsStopping)
@@ -111,7 +118,7 @@ namespace DnDCS.Win.Server
                 return;
             this.BeginInvoke(new Action(() =>
             {
-                this.ParentForm.Text = initialParentFormText + string.Format(" ({0} client{1} connected)", count, (count == 1) ? string.Empty : "s");
+                this.SetIPStringOnTitle();
             }));
         }
 
@@ -239,6 +246,12 @@ namespace DnDCS.Win.Server
 
             var goFullScreen = (menuItem.Checked = !menuItem.Checked);
             ToggleFullScreen(goFullScreen);
+        }
+
+        private void ctlDnDMap_TryToggleFullScreen(Keys keyCode)
+        {
+            if (keyCode == Keys.F11 || (keyCode == Keys.Escape && this.fullScreenMenuItem.Checked))
+                this.fullScreenMenuItem.PerformClick();
         }
 
         private void OnExit_Click(object sender, EventArgs e)

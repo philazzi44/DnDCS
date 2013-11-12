@@ -17,8 +17,6 @@ namespace DnDCS.Libs
         private readonly Thread serverNetSocketListenerThread;
         private readonly Timer socketPollTimer;
 
-        private readonly int netSocketPort;
-        private readonly int webSocketPort;
         private Socket netSocketServer;
         private WebSocketServer webSocketServer;
         private readonly List<ClientSocket> clients = new List<ClientSocket>();
@@ -28,12 +26,28 @@ namespace DnDCS.Libs
         public event Action<ServerEvent> OnSocketEvent;
         public event Action<int> OnClientCountChanged;
 
-        public int ClientsCount { get; private set; }
+        public int ClientsCount { get { return NetClientsCount + WebClientsCount; } }
+        public int NetClientsCount { get; private set; }
+        public int WebClientsCount { get; private set; }
+
+        public IPAddress ServerIPAddress
+        {
+            get
+            {
+                // Dns.GetHostName returns the name of the host running the application.
+                var ipHostInfo = Dns.Resolve(Dns.GetHostName());
+                return ipHostInfo.AddressList[0];
+            }
+        }
+
+        public string ServerIP { get { return ServerIPAddress.ToString(); } }
+        public int NetSocketPort { get; private set; }
+        public int WebSocketPort { get; private set; }
 
         public ServerSocketConnection(int netSocketPort, int webSocketPort)
         {
-            this.netSocketPort = netSocketPort;
-            this.webSocketPort = webSocketPort;
+            this.NetSocketPort = netSocketPort;
+            this.WebSocketPort = webSocketPort;
 
             try
             {
@@ -62,10 +76,7 @@ namespace DnDCS.Libs
         private void CreateServerNetSocket()
         {
             // Establish the local endpoint for the socket.
-            // Dns.GetHostName returns the name of the host running the application.
-            var ipHostInfo = Dns.Resolve(Dns.GetHostName());
-            var ipAddress = ipHostInfo.AddressList[0];
-            var localEndPoint = new IPEndPoint(ipAddress, netSocketPort);
+            var localEndPoint = new IPEndPoint(this.ServerIPAddress, this.NetSocketPort);
 
             netSocketServer = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 
@@ -89,7 +100,7 @@ namespace DnDCS.Libs
                         if (IsStopping)
                             throw new InvalidOperationException(CreateLogMessage(Constants.ServerNetSocketString, "Server has been closed after a new connection was established."));
                         clients.Add(newClient);
-                        ClientsCount++;
+                        NetClientsCount++;
                         if (OnClientCountChanged != null)
                             OnClientCountChanged(ClientsCount);
                     }
@@ -151,7 +162,7 @@ namespace DnDCS.Libs
             {
                 Name = Constants.ServerWebSocketString,
                 Ip = "Any",
-                Port = this.webSocketPort,
+                Port = this.WebSocketPort,
                 Mode = SocketMode.Tcp
             };
 
@@ -187,7 +198,7 @@ namespace DnDCS.Libs
                 lock (clients)
                 {
                     clients.Add(newClient);
-                    ClientsCount++;
+                    WebClientsCount++;
                     if (OnClientCountChanged != null)
                         OnClientCountChanged(ClientsCount);
                 }
@@ -352,7 +363,10 @@ namespace DnDCS.Libs
                             // Remove the element from the list and repeat the index, since the subsequent items would shift down.
                             SafeCloseClient(client);
                             clients.RemoveAt(c);
-                            ClientsCount--;
+                            if (client is ClientNetSocket)
+                                NetClientsCount--;
+                            else if (client is ClientWebSocket)
+                                WebClientsCount--;
 
                             if (OnClientCountChanged != null)
                                 OnClientCountChanged(ClientsCount);
@@ -415,7 +429,10 @@ namespace DnDCS.Libs
                     clients.ForEach(client =>
                         {
                             SafeCloseClient(client);
-                            ClientsCount--;
+                            if (client is ClientNetSocket)
+                                NetClientsCount--;
+                            else if (client is ClientWebSocket)
+                                WebClientsCount--;
                             
                             if (OnClientCountChanged != null)
                                 OnClientCountChanged(ClientsCount);
