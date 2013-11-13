@@ -197,7 +197,7 @@ namespace DnDCS.Win.Server
                 var result = loadImage.ShowDialog(this);
                 if (result == DialogResult.OK && loadImage.LoadedImageUrl != this.mapUrl)
                 {
-                    var log = string.Format("Loaded image url '{0}'.", loadImage.LoadedImageUrl);
+                    var log = string.Format("Loaded image url '{0}'", loadImage.LoadedImageUrl);
                     Logger.LogInfo(log);
                     this.ctlControlPanel.AppendToUILog(log);
                     SetMapImage(loadImage.LoadedImageUrl, loadImage.LoadedImage);

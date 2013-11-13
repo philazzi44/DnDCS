@@ -9,8 +9,10 @@ namespace DnDCS.Libs.ServerEvents
     {
         public enum SocketEventType
         {
-            ClientConnected,
-            ClientDisconnected,
+            NetClientConnected,
+            WebClientConnected,
+            NetClientDisconnected,
+            WebClientDisconnected,
             DataSent,
         }
 
@@ -22,10 +24,14 @@ namespace DnDCS.Libs.ServerEvents
             {
                 switch (_eventType)
                 {
-                    case SocketEventType.ClientConnected:
-                        return "Client Connected";
-                    case SocketEventType.ClientDisconnected:
-                        return "Client Disconnected";
+                    case SocketEventType.NetClientConnected:
+                        return "Net Client Connected";
+                    case SocketEventType.WebClientConnected:
+                        return "Web Client Connected";
+                    case SocketEventType.NetClientDisconnected:
+                        return "Net Client Disconnected";
+                    case SocketEventType.WebClientDisconnected:
+                        return "Web Client Disconnected";
                     case SocketEventType.DataSent:
                         return "Data Sent";
                     default:
@@ -37,15 +43,38 @@ namespace DnDCS.Libs.ServerEvents
         private readonly string _address;
         private readonly string _description;
 
-        public ServerEvent(SocketEventType eventType, string description = null)
+        private DnDCS.Libs.SimpleObjects.SocketConstants.SocketAction? _socketAction;
+
+        private ServerEvent()
         {
             _time = DateTime.Now;
-            _eventType = eventType;
+        }
+
+        private ServerEvent(string description = null) : this()
+        {
             _description = description;
+        }
+
+        private ServerEvent(SocketEventType eventType, string description = null)
+            : this(description)
+        {
+            _eventType = eventType;
+        }
+
+        private ServerEvent(DnDCS.Libs.SimpleObjects.SocketConstants.SocketAction socketAction)
+            : this(SocketEventType.DataSent)
+        {
+            _socketAction = socketAction;
         }
 
         public ServerEvent(string address, SocketEventType eventType, string description = null)
             : this(eventType, description)
+        {
+            _address = address;
+        }
+
+        public ServerEvent(string address, DnDCS.Libs.SimpleObjects.SocketConstants.SocketAction socketAction)
+            : this(socketAction)
         {
             _address = address;
         }
@@ -63,16 +92,28 @@ namespace DnDCS.Libs.ServerEvents
             }
         }
 
+        public ServerEvent(ClientSocket client, DnDCS.Libs.SimpleObjects.SocketConstants.SocketAction socketAction)
+            : this(socketAction)
+        {
+            try
+            {
+                _address = client.Address;
+            }
+            catch
+            {
+                _address = "Unknown";
+            }
+        }
+
         public override string ToString()
         {
-            if (string.IsNullOrWhiteSpace(_address))
-            {
-                return string.IsNullOrWhiteSpace(_description) ? string.Format("{0} @ {1}", EventTypeString, _time) :
-                                                                string.Format("{0} @ {1} [{2}]", EventTypeString, _time, _description);
-            }
+            var eventTypeOrSocketActionString = (_socketAction.HasValue) ? _socketAction.ToString() : EventTypeString;
+            var descriptionString = (string.IsNullOrWhiteSpace(_description)) ? string.Empty : string.Format("[{0}]", _description);
 
-            return string.IsNullOrWhiteSpace(_description) ? string.Format("{0} @ {1} ({2})", EventTypeString, _time, _address) :
-                                                            string.Format("{0} @ {1} ({2}) [{3}]", EventTypeString, _time, _address, _description);
+            if (string.IsNullOrWhiteSpace(_address))
+                return string.Format("{0} @ {1} {2}", eventTypeOrSocketActionString, _time.ToString("hh:mm:ss:ffffff"), descriptionString).Trim();
+            else
+                return string.Format("{0} @ {1} ({2}) {3}", eventTypeOrSocketActionString, _time.ToString("hh:mm:ss:ffffff"), _address, descriptionString).Trim();
         }
     }
 }

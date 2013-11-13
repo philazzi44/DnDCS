@@ -107,7 +107,7 @@ namespace DnDCS.Libs
                     if (OnClientConnected != null)
                         OnClientConnected();
                     if (OnSocketEvent != null)
-                        OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.ClientConnected));
+                        OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.NetClientConnected));
                 }
                 catch (ThreadInterruptedException e)
                 {
@@ -205,7 +205,7 @@ namespace DnDCS.Libs
                 if (OnClientConnected != null)
                     OnClientConnected();
                 if (OnSocketEvent != null)
-                    OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.ClientConnected));
+                    OnSocketEvent(new ServerEvent(newClient, ServerEvent.SocketEventType.WebClientConnected));
             }
             catch (Exception e)
             {
@@ -347,7 +347,7 @@ namespace DnDCS.Libs
                             LogSocketObject(socketObject, string.Format("Server Socket - Writing to '{0}'.", client.Address));
                             client.Send(sendBytes);
                             if (raiseSocketEvent && OnSocketEvent != null)
-                                OnSocketEvent(new ServerEvent(client, ServerEvent.SocketEventType.DataSent, socketObject.Action.ToString()));
+                                OnSocketEvent(new ServerEvent(client, socketObject.Action));
                         }
                         catch (Exception e)
                         {
@@ -405,7 +405,7 @@ namespace DnDCS.Libs
                 client.Dispose();
 
                 if (OnSocketEvent != null)
-                    OnSocketEvent(new ServerEvent(address, ServerEvent.SocketEventType.ClientDisconnected));
+                    OnSocketEvent(new ServerEvent(address, (client is ClientNetSocket) ? ServerEvent.SocketEventType.NetClientDisconnected : ServerEvent.SocketEventType.WebClientDisconnected));
             }
             catch
             {

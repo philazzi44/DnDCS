@@ -263,7 +263,9 @@ namespace DnDCS.Win.Libs
 
         private void tboLog_TextChanged(object sender, EventArgs e)
         {
-            this.btnClearLog.Enabled = (this.tboLog.TextLength > 0);
+            var enable = (this.tboLog.TextLength > 0);
+            this.btnCopyLog.Enabled = enable;
+            this.btnClearLog.Enabled = enable;
         }
 
         private void gbxGridSize_VisibleChanged(object sender, EventArgs e)
