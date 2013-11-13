@@ -592,9 +592,13 @@ namespace DnDCS.Win.Libs
             IsZoomFactorInProgress = false;
             if (commit)
             {
+                // The ScrollPosition we have is in real map coordinates, so we add the appropriate amount of Width as per how much the map is actually showing.
+                var oldCenterMap = this.ScrollPosition.Translate((int)(this.VisibleSize.Width / 2 * this.InverseZoomFactor), (int)(this.VisibleSize.Height / 2 * this.InverseZoomFactor));
+
                 AssignedZoomFactor = variableZoomFactor;
-                // This will validate that the current scroll values aren't too large for the new zoom factor.
-                SetScroll(null, null);
+
+                // This will attempt to re-center on the center we had, and will adjust as needed to fit the new zoom factor.
+                this.SetCenterMap(oldCenterMap.ToSimplePoint());
             }
             else
             {

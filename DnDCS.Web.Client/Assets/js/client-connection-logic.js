@@ -247,14 +247,7 @@ function processCenterMapMessage(messageDataView)
     var centerMapX = messageDataView.getInt32(0, true);
     var centerMapY = messageDataView.getInt32(4, true);
 
-    var x = centerMapX;
-    var y = centerMapY;
-    
-    // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
-    var scrollX = Math.floor(((centerMapX * ClientState.AssignedZoomFactor) - (clientCanvasWidth / 2.0)) * ClientState.InverseZoomFactor);
-    var scrollY = Math.floor(((centerMapY * ClientState.AssignedZoomFactor) - (clientCanvasHeight / 2.0)) * ClientState.InverseZoomFactor);
-
-    setScroll(scrollX, scrollY);
+    setCenterMap(centerMapX, centerMapY);
 }
 
 function processFogMessage(messageDataView) {

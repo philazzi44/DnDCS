@@ -89,6 +89,16 @@ function setScroll(desiredX, desiredY) {
     ClientState.NeedsRedraw = true;
 }
 
+function setCenterMap(centerMapX, centerMapY)
+{
+    // The point that came in is raw on the map...
+    // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
+    var scrollX = Math.floor(((centerMapX * ClientState.AssignedZoomFactor) - (clientCanvasWidth / 2.0)) * ClientState.InverseZoomFactor);
+    var scrollY = Math.floor(((centerMapY * ClientState.AssignedZoomFactor) - (clientCanvasHeight / 2.0)) * ClientState.InverseZoomFactor);
+
+    setScroll(scrollX, scrollY);
+}
+
 function zoomInOrOut(zoomIn, doubleFactor)
 {
     var step = StaticAssets.ZoomStep;
@@ -110,10 +120,17 @@ function commitOrRollBackZoom(commit)
     ClientState.IsZoomFactorInProgress = false;
     if (commit)
     {
+        // The ScrollPosition we have is in real map coordinates, so we add the appropriate amount of Width as per how much the map is actually showing.
+        var oldCenterMapX = ClientState.ScrollPositionX;
+        oldCenterMapX += (clientCanvasWidth / 2 * ClientState.InverseZoomFactor);
+        var oldCenterMapY = ClientState.ScrollPositionY;
+        oldCenterMapY += (clientCanvasHeight / 2 * ClientState.InverseZoomFactor);
+
         ClientState.AssignedZoomFactor = ClientState.VariableZoomFactor;
         ClientState.InverseZoomFactor = 1.0 / ClientState.AssignedZoomFactor;
-        // This will validate that the current scroll values aren't too large for the new zoom factor.
-        setScroll();
+        
+        // This will attempt to re-center on the center we had, and will adjust as needed to fit the new zoom factor.
+        setCenterMap(oldCenterMapX, oldCenterMapY);
     }
     else
     {
