@@ -48,6 +48,7 @@
             this.btnClearLog = new System.Windows.Forms.Button();
             this.flpAllControls = new System.Windows.Forms.FlowLayoutPanel();
             this.ctlMiniMap = new DnDCS.Win.Libs.DnDMiniMap();
+            this.btnCopyLog = new System.Windows.Forms.Button();
             this.flpTop.SuspendLayout();
             this.gbxCommands.SuspendLayout();
             this.gbxGridSize.SuspendLayout();
@@ -240,6 +241,7 @@
             this.gbxLog.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.gbxLog.Controls.Add(this.tboLog);
+            this.gbxLog.Controls.Add(this.btnCopyLog);
             this.gbxLog.Controls.Add(this.btnClearLog);
             this.gbxLog.Location = new System.Drawing.Point(1, 295);
             this.gbxLog.Margin = new System.Windows.Forms.Padding(1, 3, 1, 3);
@@ -301,6 +303,19 @@
             this.ctlMiniMap.TabIndex = 0;
             this.ctlMiniMap.TabStop = false;
             // 
+            // btnCopyLog
+            // 
+            this.btnCopyLog.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnCopyLog.BackgroundImage = ((System.Drawing.Image)(resources.GetObject("btnCopyLog.BackgroundImage")));
+            this.btnCopyLog.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Stretch;
+            this.btnCopyLog.Location = new System.Drawing.Point(39, 10);
+            this.btnCopyLog.Name = "btnCopyLog";
+            this.btnCopyLog.Size = new System.Drawing.Size(26, 26);
+            this.btnCopyLog.TabIndex = 0;
+            this.btnCopyLog.TabStop = false;
+            this.btnCopyLog.UseVisualStyleBackColor = true;
+            this.btnCopyLog.Click += new System.EventHandler(this.btnCopyLog_Click);
+            // 
             // DnDServerControlPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -344,5 +359,6 @@
         private System.Windows.Forms.RichTextBox tboLog;
         private System.Windows.Forms.Button btnClearLog;
         private System.Windows.Forms.FlowLayoutPanel flpAllControls;
+        private System.Windows.Forms.Button btnCopyLog;
     }
 }

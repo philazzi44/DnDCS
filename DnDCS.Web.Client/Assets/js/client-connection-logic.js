@@ -75,7 +75,7 @@ function onConnectionClosed(e){
     // If we're already Errored, then the Error message is being shown.
     if (!ClientState.IsErrored)
     {
-        document.title = 'Connected to ' + ClientState.Host + ":" + ClientState.Port + " has been closed";
+        document.title = 'Disconnected from ' + ClientState.Host + ":" + ClientState.Port;
 
         $('#disconnectedValues').fadeIn();
     }
@@ -95,7 +95,7 @@ function onConnectionError(e){
     }
     else
     {
-        document.title = 'Connection to ' + ClientState.Host + ":" + ClientState.Port + " has errored";
+        document.title = 'Error from ' + ClientState.Host + ":" + ClientState.Port;
 
         $('#connectedValues').fadeOut();
         $('#errorValues').fadeIn();

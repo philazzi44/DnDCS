@@ -246,6 +246,15 @@ namespace DnDCS.Win.Libs
             Persistence.SaveServerData(serverData);
             this.DnDMapControl.SetGridSize(chkShowGrid.Checked, (int)nudGridSize.Value);
         }
+        
+        private void btnCopyLog_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                System.Windows.Forms.Clipboard.SetText(tboLog.Text.Replace("\n", "\r\n"));
+            }
+            catch { }
+        }
 
         private void btnClearLog_Click(object sender, EventArgs e)
         {

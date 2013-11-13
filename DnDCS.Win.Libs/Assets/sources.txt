@@ -54,3 +54,6 @@ http://findicons.com/icon/98929/button_minus_red?id=372398
 
 CenterMapOverlayIcon.png
 http://findicons.com/icon/28541/bulbgrey
+
+CopyLogIcon.png
+http://findicons.com/icon/51053/copy?id=342917
