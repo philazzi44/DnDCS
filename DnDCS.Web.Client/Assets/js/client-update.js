@@ -146,9 +146,13 @@ function window_KeyDown(e) {
             break;
             
         default: 
-            // Z key - Not switching because of ambiguity in case.
+            // Not switching on these because of ambiguity in case.
+            // Z key - Toggle Zoom
+            // F key - Toggle Flip
             if (String.fromCharCode(e.keyCode).toUpperCase() == "Z")
                 tryEnableZoom();
+            if (String.fromCharCode(e.keyCode).toUpperCase() == "F")
+                toggleFlip();
             break;
     }    
 }
@@ -178,6 +182,12 @@ function tryEnableZoom() {
         ClientState.NeedsRedraw = true;
     }
 }
+
+function toggleFlip() {
+    ClientState.IsFlippedView = !ClientState.IsFlippedView;
+    ClientState.NeedsRedraw = true;
+}
+
 function enableDragScroll(e) {
     if (ClientState.IsDragScrolling)
         return;

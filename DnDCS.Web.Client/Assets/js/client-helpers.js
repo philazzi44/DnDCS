@@ -5,6 +5,9 @@ function log(messageId, message) {
 
 function scrollLeftOrRight(isLeft, distance, factor)
 {
+    if (ClientState.IsFlippedView)
+        isLeft = !isLeft;
+        
     if (distance == undefined)
         distance = null;
     if (factor == undefined)

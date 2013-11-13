@@ -60,6 +60,8 @@ var ClientState = {
     InverseZoomFactor : 1.0,
     VariableZoomFactor : 1.0,
     IsZoomFactorInProgress : false,
+    
+    IsFlippedView : false,
 };
 
 // A Queue of Messages that have been received which must be processed.

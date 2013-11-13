@@ -16,16 +16,21 @@ function drawClient() {
     }
     else
     {    
-        // clientContext.save();
+        if (ClientState.IsFlippedView)
         {
-            // if (ClientState.AssignedZoomFactor != 1.0)
-                // clientContext.scale(ClientState.AssignedZoomFactor, ClientState.AssignedZoomFactor);
-            
-            drawClient_Map();
-            drawClient_Grid();
-            drawClient_Fog();
+            clientContext.save();        
+            clientContext.translate(clientCanvasWidth, 0);
+            clientContext.scale(-1, 1);
+        }
+        
+        drawClient_Map();
+        drawClient_Grid();
+        drawClient_Fog();
+        
+        if (ClientState.IsFlippedView)
+        {
+            clientContext.restore();
         }   
-        // clientContext.restore();
     }
     
     drawClient_ZoomFactor();
