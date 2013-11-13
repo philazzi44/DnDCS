@@ -15,7 +15,7 @@ namespace DnDCS.Libs
     public class ServerSocketConnection
     {
         private readonly Thread serverNetSocketListenerThread;
-        private readonly Timer socketPollTimer;
+        private Timer socketPollTimer;
 
         private Socket netSocketServer;
         private WebSocketServer webSocketServer;
@@ -44,31 +44,47 @@ namespace DnDCS.Libs
         public int NetSocketPort { get; private set; }
         public int WebSocketPort { get; private set; }
 
+        private Queue<BaseSocketObject> writeQueue = new Queue<BaseSocketObject>();
+        private readonly AutoResetEvent writeQueueEvent = new AutoResetEvent(false);
+        private readonly Thread writeQueueThread;
+
         public ServerSocketConnection(int netSocketPort, int webSocketPort)
         {
             this.NetSocketPort = netSocketPort;
             this.WebSocketPort = webSocketPort;
 
-            try
+            this.serverNetSocketListenerThread = new Thread(NetStart)
+                                                    {
+                                                        IsBackground = true,
+                                                        Name = Constants.ServerNetSocketString
+                                                    };
+
+            this.writeQueueThread = new Thread(WriteStart)
             {
-                CreateServerNetSocket();
-                CreateServerWebSocket();
-            }
-            catch (Exception e)
+                IsBackground = true,
+                Name = Constants.ServerWriteQueueThreadName
+            };
+
+            ThreadPool.QueueUserWorkItem(new WaitCallback(state =>
             {
-                Logger.LogError(CreateLogMessage(Constants.ServerSocketsString, "An error occurred on the server."), e);
-                this.Stop();
-                return;
-            }
+                try
+                {
+                    CreateServerNetSocket();
+                    CreateServerWebSocket();
+                }
+                catch (Exception e)
+                {
+                    Logger.LogError(CreateLogMessage(Constants.ServerSocketsString, "An error occurred on the server."), e);
+                    this.Stop();
+                    return;
+                }
 
-            serverNetSocketListenerThread = new Thread(NetStart);
-            serverNetSocketListenerThread.IsBackground = true;
-            serverNetSocketListenerThread.Name = Constants.ServerNetSocketString;
+                this.serverNetSocketListenerThread.Start();
+                this.webSocketServer.Start();
+                this.writeQueueThread.Start();
 
-            serverNetSocketListenerThread.Start();
-            this.webSocketServer.Start();
-
-            socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
+                socketPollTimer = new Timer(PollTimerCallback, null, ConfigValues.PingInterval, ConfigValues.PingInterval);
+            }));
         }
 
         #region Net Logic
@@ -256,7 +272,7 @@ namespace DnDCS.Libs
                 return;
 
             if (mapImageBytes != null && mapImageBytes.Length > 0)
-                Write(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageWidth, mapImageHeight, mapImageBytes));
+                EnqueueWrite(new ImageSocketObject(SocketConstants.SocketAction.Map, mapImageWidth, mapImageHeight, mapImageBytes));
         }
 
         public void WriteCenterMap(SimplePoint point)
@@ -264,7 +280,7 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new CenterMapSocketObject(point));
+            EnqueueWrite(new CenterMapSocketObject(point));
         }
 
         public void WriteFog(int fogImageWidth, int fogImageHeight, byte[] fogImageBytes)
@@ -273,7 +289,7 @@ namespace DnDCS.Libs
                 return;
 
             if (fogImageBytes != null && fogImageBytes.Length > 0)
-                Write(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageWidth, fogImageHeight, fogImageBytes));
+                EnqueueWrite(new ImageSocketObject(SocketConstants.SocketAction.Fog, fogImageWidth, fogImageHeight, fogImageBytes));
         }
 
         public void WriteFogUpdate(FogUpdate fogUpdate)
@@ -282,7 +298,7 @@ namespace DnDCS.Libs
                 return;
 
             if (fogUpdate != null && fogUpdate.Length != 0)
-                Write(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
+                EnqueueWrite(new FogUpdateSocketObject(SocketConstants.SocketAction.FogUpdate, fogUpdate));
         }
 
         public void WriteFogOrRevealAll(bool fogAll)
@@ -290,7 +306,7 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new FogOrRevealAllSocketObject(SocketConstants.SocketAction.FogOrRevealAll, fogAll));
+            EnqueueWrite(new FogOrRevealAllSocketObject(SocketConstants.SocketAction.FogOrRevealAll, fogAll));
         }
 
         public void WriteUseFogAlphaEffect(bool useFogAlphaEffect)
@@ -298,7 +314,7 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new UseFogAlphaEffectSocketObject(useFogAlphaEffect));
+            EnqueueWrite(new UseFogAlphaEffectSocketObject(useFogAlphaEffect));
         }
 
         public void WriteGridSize(bool showGrid, int gridSize)
@@ -306,7 +322,7 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new GridSizeSocketObject(showGrid, gridSize));
+            EnqueueWrite(new GridSizeSocketObject(showGrid, gridSize));
         }
 
         public void WriteGridColor(SimpleColor color)
@@ -314,7 +330,7 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color.A, color.R, color.G, color.B));
+            EnqueueWrite(new ColorSocketObject(SocketConstants.SocketAction.GridColor, color.A, color.R, color.G, color.B));
         }
 
         public void WriteBlackout(bool isBlackoutOn)
@@ -322,10 +338,52 @@ namespace DnDCS.Libs
             if (ClientsCount == 0)
                 return;
 
-            Write(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
+            EnqueueWrite(new BaseSocketObject((isBlackoutOn) ? SocketConstants.SocketAction.BlackoutOn : SocketConstants.SocketAction.BlackoutOff));
+        }
+        
+        /// <summary> Adds the Socket Object to the Write Queue and notifies the Write thread. </summary>
+        private void EnqueueWrite(BaseSocketObject socketObject)
+        {
+            lock (this.writeQueue)
+            {
+                this.writeQueue.Enqueue(socketObject);
+                this.writeQueueEvent.Set();
+            }
         }
 
-        private void Write(BaseSocketObject socketObject, bool raiseSocketEvent = true)
+        /// <summary> Threaded callback that will churn through the Write Queue and send the items out. </summary>
+        private void WriteStart()
+        {
+                while (!this.IsStopping)
+                {
+                    try
+                    {
+                        // Safely dequeue an item, if any exists
+                        BaseSocketObject socketObject = null;
+                        lock (this.writeQueue)
+                        {
+                            if (this.writeQueue.Any())
+                            {
+                                socketObject = this.writeQueue.Dequeue();
+                            }
+                        }
+
+                        // If an item was dequeued, send it.
+                        // Otherwise, wait until one is enqueue.
+                        // If one was enqueue after we checked if one was available to dequeue, then the event will already be Set so the WaitOne will return immediately.
+                        if (socketObject != null)
+                            Write(socketObject);
+                        else
+                            this.writeQueueEvent.WaitOne();
+                    }
+                    catch
+                    {
+                    }
+                }
+        }
+
+        /// <summary> Writes the Socket Object to the clients, if any are connected. Consumes all exceptions. </summary>
+        private void Write(BaseSocketObject socketObject)
         {
             if (ClientsCount == 0)
                 return;
@@ -339,15 +397,25 @@ namespace DnDCS.Libs
                 LogSocketObject(socketObject, string.Format("Server Socket - Writing {0} total bytes.", sendBytes.Length));
                 lock (clients)
                 {
-                    for (int c = 0; c < clients.Count; c++)
+                    for (var c = 0; c < clients.Count; c++)
                     {
                         var client = clients[c];
                         try
                         {
                             LogSocketObject(socketObject, string.Format("Server Socket - Writing to '{0}'.", client.Address));
                             client.Send(sendBytes);
-                            if (raiseSocketEvent && OnSocketEvent != null)
-                                OnSocketEvent(new ServerEvent(client, socketObject.Action));
+                            if (OnSocketEvent != null)
+                            {
+                                switch (socketObject.Action)
+                                {
+                                    // Pings never raise up the event, otherwise we'd be flooded with events.
+                                    case SocketConstants.SocketAction.Ping:
+                                        break;
+                                    default:
+                                        OnSocketEvent(new ServerEvent(client, socketObject.Action));
+                                        break;
+                                }
+                            }
                         }
                         catch (Exception e)
                         {
@@ -387,7 +455,7 @@ namespace DnDCS.Libs
 
         private void PollTimerCallback(object state)
         {
-            Write(SimpleObjects.SocketConstants.PingSocketObject, false);
+            EnqueueWrite(SimpleObjects.SocketConstants.PingSocketObject);
         }
 
         private void LogSocketObject(BaseSocketObject socketObject, string message)
@@ -461,6 +529,12 @@ namespace DnDCS.Libs
 
             if (socketPollTimer != null)
                 socketPollTimer.Dispose();
+
+            if (this.writeQueueEvent != null)
+            {
+                this.writeQueueEvent.Set();
+                writeQueueEvent.Dispose();
+            }
 
             Logger.LogDebug("Server Sockets - Stopped.");
         }

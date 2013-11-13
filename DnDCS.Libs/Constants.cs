@@ -10,6 +10,7 @@
 
         public const string ServerSocketsString = "Server Sockets";
         public const string ServerNetSocketString = "Server Net Socket";
+        public const string ServerWriteQueueThreadName = "Write Queue Thread";
         public const string ServerWebSocketString = "Server Web Socket";
 
     }

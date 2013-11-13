@@ -115,6 +115,14 @@ namespace DnDCS.Win.Libs
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         protected bool SuppressScroll { get; set; }
+        /// <summary>
+        ///     Bool is true indicating whether we are fading out (prior to setting the new center), false for fading back in (after setting the new center).
+        ///     Float indicates the percentage of fade (0.0 is no fade, 1.0 is full fade).
+        /// </summary>
+        private Tuple<bool, float> centerMapFadingValues;
+        /// <summary> The fade goes from 0.0 to 1.0, so a 0.2 step size means that much every Interval on centerMapFadingTimer (which is 50), so 5 steps (250ms) fade out and then repeated to fade in. </summary>
+        private const float centerMapStepSize = 0.2f;
+        private readonly Timer centerMapFadingTimer = new Timer() { Interval = 50 };
 
         // Flipped View Values
         [Browsable(false)]
@@ -172,7 +180,10 @@ namespace DnDCS.Win.Libs
             // This timer is used to re-enable High Quality Graphics, which are disabled when a scroll action is performed (for performance reasons).
             scrollHighQualityTimer.Interval = DnDMapConstants.OnScrollHighQualityTimerInterval;
             scrollHighQualityTimer.Tick += new EventHandler(scrollHighQualityTimer_Tick);
-            
+
+            // This timer is used to produce a nice fadeout/fadein effect when CenterMap is performed.
+            this.centerMapFadingTimer.Tick += new EventHandler(centerMapFadingTimer_Tick);
+
             isInitialized = true;
         }
 
@@ -293,7 +304,12 @@ namespace DnDCS.Win.Libs
             RefreshAll();
         }
 
-        public void SetCenterMap(SimplePoint centerMap)
+        public virtual void SetCenterMap(SimplePoint centerMap)
+        {
+            this.SetCenterMap(centerMap, false);
+        }
+
+        protected void SetCenterMap(SimplePoint centerMap, bool animate)
         {
             // Take the point that we want to show, and center it on the client's UI.
             this.BeginInvoke(new Action(() =>
@@ -306,8 +322,74 @@ namespace DnDCS.Win.Libs
                 x = (int)(((x * AssignedZoomFactor) - (this.VisibleSize.Width / 2.0d)) * this.InverseZoomFactor);
                 y = (int)(((y * AssignedZoomFactor) - (this.VisibleSize.Height / 2.0d)) * this.InverseZoomFactor);
 
-                SetScroll(x, y);
+                if (!animate)
+                {
+                    SetScroll(x, y);
+                    return;
+                }
+
+                // If we're already doing a Center Map fade, we're going to simply pop out the old values. It may glitch a bit to the end user, but the end result will be fine.
+                // Our timer will go from True/0.0 to True/1.0, then flip to False/1.0 down to False/0.0
+                this.centerMapFadingTimer.Tag = new SimplePoint(x, y);
+                this.centerMapFadingValues = new Tuple<bool, float>(true, 0.0f);
+                this.centerMapFadingTimer.Start();
             }));
+        }
+
+        private void centerMapFadingTimer_Tick(object sender, EventArgs e)
+        {
+            // If our timer has stopped, we shouldn't even be here.
+            if (!((Timer)sender).Enabled)
+                return;
+            if (this.centerMapFadingValues == null)
+            {
+                ((Timer)sender).Stop();
+                return;
+            }
+
+            try
+            {
+                if (this.centerMapFadingValues.Item1)
+                {
+                    // Fading out
+                    if (this.centerMapFadingValues.Item2 < 1.0f)
+                    {
+                        // Still fading out
+                        this.centerMapFadingValues = new Tuple<bool, float>(true, Math.Min(1.0f, this.centerMapFadingValues.Item2 + centerMapStepSize));
+                    }
+                    else
+                    {
+                        // We've reached 100% fade out, so we'll actually set the new center and flip the direction now.
+                        var centerMap = this.centerMapFadingTimer.Tag as SimplePoint;
+                        if (centerMap != null)
+                            SetScroll(centerMap.X, centerMap.Y);
+                        this.centerMapFadingValues = new Tuple<bool, float>(false, 1.0f);
+                    }
+                }
+                else
+                {
+                    // Fading back in
+                    if (this.centerMapFadingValues.Item2 > 0.0f)
+                    {
+                        // Still fading in
+                        this.centerMapFadingValues = new Tuple<bool, float>(false, Math.Max(0.0f, this.centerMapFadingValues.Item2 - centerMapStepSize));
+                    }
+                    else
+                    {
+                        // Full faded in now, stop the timer
+                        this.centerMapFadingTimer.Stop();
+                        this.centerMapFadingValues = null;
+                    }
+                }
+            }
+            catch
+            {
+                // If any errors happen, we'll just stop the animation altogether, and hopefully it was after the Center Map action was already done.
+                this.centerMapFadingValues = null;
+                this.centerMapFadingTimer.Stop();
+            }
+
+            RefreshAll();
         }
 
         #endregion Setters
@@ -671,6 +753,12 @@ namespace DnDCS.Win.Libs
                 }
 
                 PaintAll(e.Graphics);
+
+                if (this.centerMapFadingValues != null)
+                {
+                    using (var brush = new SolidBrush(Color.FromArgb((int)(255 * this.centerMapFadingValues.Item2), Color.Black)))
+                        e.Graphics.FillRectangle(brush, 0, 0, this.VisibleSize.Width, this.VisibleSize.Height);
+                }
             }
             catch (Exception e1)
             {

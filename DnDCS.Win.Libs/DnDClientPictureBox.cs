@@ -82,6 +82,11 @@ namespace DnDCS.Win.Libs
             RefreshAll();
         }
 
+        public override void SetCenterMap(SimplePoint centerMap)
+        {
+            base.SetCenterMap(centerMap, true);
+        }
+
         #endregion Setters
 
         #region Fog Actions

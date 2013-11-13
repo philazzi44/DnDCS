@@ -55,7 +55,10 @@ namespace DnDCS.Win.Server
 
                 var result = openFile.ShowDialog(this);
                 if (result == DialogResult.OK)
+                {
+                    lboHistory.SelectedIndex = -1;
                     tboUrl.Text = openFile.FileName;
+                }
             }
         }
 
