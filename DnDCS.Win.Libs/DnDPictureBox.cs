@@ -117,30 +117,9 @@ namespace DnDCS.Win.Libs
         protected bool SuppressScroll { get; set; }
 
         // Flipped View Values
-        private bool isFlippedView;
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool IsFlippedView
-        {
-            get { return isFlippedView; }
-            set
-            {
-                if (value == isFlippedView)
-                    return;
-
-                isFlippedView = value;
-                if (value)
-                {
-                    // Going from Unflipped to Flipped, so we can simply reverse the coordinates.
-                    SetScroll(this.LoadedMapSize.Width - ScrollPosition.X, this.LoadedMapSize.Height - ScrollPosition.Y);
-                }
-                else
-                {
-                    // Going from Flipped to Unflipped, which means we actually want to reverse the bottom-right of our ScrollPosition, which will become our new Top-Left coordinate.
-                    SetScroll(this.LoadedMapSize.Width - (ScrollPosition.X + this.Width), this.LoadedMapSize.Height - (ScrollPosition.Y + this.Height));
-                }
-            }
-        }
+        public bool IsFlippedView { get; set; }
 
         // Paint Values
         [Browsable(false)]
@@ -322,13 +301,6 @@ namespace DnDCS.Win.Libs
                 // The point that came in is raw on the map...
                 var x = centerMap.X;
                 var y = centerMap.Y;
-
-                // If the view is Flipped, then we also need to flip the centering point so it's where it actually is on our map.
-                if (IsFlippedView)
-                {
-                    x = this.LoadedMapSize.Width - x;
-                    y = this.LoadedMapSize.Height - y;
-                }
 
                 // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
                 x = (int)(((x * AssignedZoomFactor) - (this.VisibleSize.Width / 2.0d)) * this.InverseZoomFactor);
@@ -613,6 +585,9 @@ namespace DnDCS.Win.Libs
 
         private void ScrollLeftOrRight(bool isLeft, int? distance = null, double factor = 1.0)
         {
+            if (this.IsFlippedView)
+                isLeft = !isLeft;
+
             // Scroll left/right
             int newValue;
             if (isLeft)
@@ -705,16 +680,6 @@ namespace DnDCS.Win.Libs
 
         protected virtual void PaintAll(Graphics graphics)
         {
-            // TODO: This is what Flipped View used to do.
-            //if (isFlippedView)
-            //{
-            //    // TODO: Better approach would be to figure out the necessary transform matrix we need to apply (and where in the transform sets it needs to sit)
-            //    // this.Graphics.MultiplyTransform(new Matrix(-1, 0, 0, 1, 0, 0));
-            //    this.Graphics.TranslateTransform((int)(fullSize.Width * zoom / 2), (int)(fullSize.Height * zoom / 2));
-            //    this.Graphics.RotateTransform(180);
-            //    this.Graphics.TranslateTransform(-(int)(fullSize.Width * zoom / 2), -(int)(fullSize.Height * zoom / 2));
-            //}
-
             throw new NotImplementedException("Must be overridden.");
         }
 
@@ -729,17 +694,31 @@ namespace DnDCS.Win.Libs
             var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
             var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
 
-            var destinationX = 0;
-            var destinationY = 0;
-            var destinationWidth = this.VisibleSize.Width;
-            var destinationHeight = this.VisibleSize.Height;
-            var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+            if (this.IsFlippedView)
+            {
+                var destination = new Point[] { new Point(this.VisibleSize.Width, 0),
+                                                new Point(0, 0),
+                                                new Point(this.VisibleSize.Width, this.VisibleSize.Height)
+                                              };
 
-            g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
+                g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
+            }
+            else
+            {
+                var destinationX = 0;
+                var destinationY = 0;
+                var destinationWidth = this.VisibleSize.Width;
+                var destinationHeight = this.VisibleSize.Height;
+                var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+
+                g.DrawImage(this.LoadedMap, destination, source, GraphicsUnit.Pixel);
+            }
         }
 
         protected void PaintGrid(Graphics g)
         {
+            // TODO: This doesn't support flipping yet.
+
             if (!gridSize.HasValue)
                 return;
 
@@ -754,19 +733,44 @@ namespace DnDCS.Win.Libs
             var startY = -((this.ScrollPosition.Y * this.AssignedZoomFactor) % logicalGridSize);
             var endY = Math.Min(this.LogicalMapHeight, this.VisibleSize.Height);
 
-            var x = startX;
-            var y = startY;
-            while (x <= endX || y <= endY)
+            if (this.IsFlippedView)
             {
-                if (x <= endX)
+                // If we're flipped, then we'll draw the lines backwards (horizontally), starting a bit beyond the right of our image and coming down to 0.
+                startX = endX + Math.Abs(startX);
+                endX = 0;
+
+                var x = startX;
+                var y = startY;
+                while (x >= endX || y <= endY)
                 {
-                    g.DrawLine(gridPen, x, startY, x, endY);
-                    x += logicalGridSize;
+                    if (x >= endX)
+                    {
+                        g.DrawLine(gridPen, x, startY, x, endY);
+                        x -= logicalGridSize;
+                    }
+                    if (y <= endY)
+                    {
+                        g.DrawLine(gridPen, startX, y, endX, y);
+                        y += logicalGridSize;
+                    }
                 }
-                if (y <= endY)
+            }
+            else
+            {
+                var x = startX;
+                var y = startY;
+                while (x <= endX || y <= endY)
                 {
-                    g.DrawLine(gridPen, startX, y, endX, y);
-                    y += logicalGridSize;
+                    if (x <= endX)
+                    {
+                        g.DrawLine(gridPen, x, startY, x, endY);
+                        x += logicalGridSize;
+                    }
+                    if (y <= endY)
+                    {
+                        g.DrawLine(gridPen, startX, y, endX, y);
+                        y += logicalGridSize;
+                    }
                 }
             }
 
@@ -790,14 +794,27 @@ namespace DnDCS.Win.Libs
             var sourceY = Math.Max(0, this.ScrollPosition.Y);
             var sourceWidth = (int)(this.VisibleSize.Width * this.InverseZoomFactor);
             var sourceHeight = (int)(this.VisibleSize.Height * this.InverseZoomFactor);
+            var source = new Rectangle(sourceX, sourceY, sourceWidth, sourceHeight);
 
-            var destinationX = 0;
-            var destinationY = 0;
-            var destinationWidth = this.VisibleSize.Width;
-            var destinationHeight = this.VisibleSize.Height;
-            var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+            if (this.IsFlippedView)
+            {
+                var destination = new Point[] { new Point(this.VisibleSize.Width, 0),
+                                                new Point(0, 0),
+                                                new Point(this.VisibleSize.Width, this.VisibleSize.Height)
+                                              };
 
-            g.DrawImage(Fog, destination, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
+                g.DrawImage(Fog, destination, source, GraphicsUnit.Pixel, this.FogAttributes);
+            }
+            else
+            {
+                var destinationX = 0;
+                var destinationY = 0;
+                var destinationWidth = this.VisibleSize.Width;
+                var destinationHeight = this.VisibleSize.Height;
+                var destination = new Rectangle(destinationX, destinationY, destinationWidth, destinationHeight);
+
+                g.DrawImage(Fog, destination, sourceX, sourceY, sourceWidth, sourceHeight, GraphicsUnit.Pixel, this.FogAttributes);
+            }
         }
 
         protected void PaintZoomFactorText(Graphics g)
