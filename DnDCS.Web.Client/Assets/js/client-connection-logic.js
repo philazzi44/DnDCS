@@ -74,7 +74,11 @@ function onConnectionClosed(e){
         
     // If we're already Errored, then the Error message is being shown.
     if (!ClientState.IsErrored)
+    {
+        document.title = 'Connected to ' + ClientState.Host + ":" + ClientState.Port + " has been closed";
+
         $('#disconnectedValues').fadeIn();
+    }
 }
 
 function onConnectionError(e){
@@ -83,12 +87,16 @@ function onConnectionError(e){
     
     if (ClientState.IsConnecting)
     {
+        document.title = 'Failed to connect to ' + ClientState.Host + ":" + ClientState.Port;
+
         ClientState.IsConnecting = false;
         $('#connectingValues').fadeOut();
         $('#serverNotFoundValues').fadeIn();
     }
     else
     {
+        document.title = 'Connection to ' + ClientState.Host + ":" + ClientState.Port + " has errored";
+
         $('#connectedValues').fadeOut();
         $('#errorValues').fadeIn();
     }
