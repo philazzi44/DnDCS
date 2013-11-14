@@ -31,6 +31,17 @@ function drawClient() {
         {
             clientContext.restore();
         }   
+        
+        if (ClientState.CenterMapFadingCurrentFadeFactor != null)
+        {
+            clientContext.save();
+            {
+                var rgba = "rgba(0,0,0," + ClientState.CenterMapFadingCurrentFadeFactor + ")";
+                clientContext.fillStyle = rgba;
+                clientContext.fillRect(0, 0, clientCanvasWidth, clientCanvasHeight);
+            }
+            clientContext.restore();
+        }
     }
     
     drawClient_ZoomFactor();

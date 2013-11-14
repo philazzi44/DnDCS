@@ -62,6 +62,12 @@ var ClientState = {
     IsZoomFactorInProgress : false,
     
     IsFlippedView : false,
+    
+    CenterMapFadingID : null,
+    CenterMapFadingCurrentFadeOut : null,
+    CenterMapFadingCurrentFadeFactor : null,
+    CenterMapFadingFinalX : null,
+    CenterMapFadingFinalY : null,
 };
 
 // A Queue of Messages that have been received which must be processed.
@@ -108,4 +114,9 @@ var StaticAssets = {
     ZoomStep : 0.1,
     ZoomLargeStep : 0.2,
     MaximumZoomFactor : 10.0,
+    
+    // The fade goes from 0.0 to 1.0, so a 0.2 step size means that much every Interval on centerMapFadingTimer 
+    // (which is 50), so 5 steps (250ms) fade out and then repeated to fade in.
+    CenterMapStepSize : 0.2,
+    CenterMapTimeout : 50,
 };

@@ -99,9 +99,82 @@ function setCenterMap(centerMapX, centerMapY)
     var scrollX = Math.floor(((centerMapX * ClientState.AssignedZoomFactor) - (clientCanvasWidth / 2.0)) * ClientState.InverseZoomFactor);
     var scrollY = Math.floor(((centerMapY * ClientState.AssignedZoomFactor) - (clientCanvasHeight / 2.0)) * ClientState.InverseZoomFactor);
 
-    setScroll(scrollX, scrollY);
+    // If we're already doing a Center Map fade, we're going to pop out the old values and kill off
+    // that timeout, starting a new one.
+    // It may glitch a bit to the end user, jumping from a fade % back to 0%, but the end result will be fine.
+    // Our fade factor will go from True/0.0 to True/1.0, then flip to False/1.0 down to False/0.0
+    ClientState.CenterMapFadingFinalX = scrollX;
+    ClientState.CenterMapFadingFinalY = scrollY;
+    ClientState.CenterMapFadingCurrentFadeOut = true;
+    ClientState.CenterMapFadingCurrentFadeFactor = 0.0;
+    
+    // We capture the ID in the function, and pass it in for every call. If another SetCenterMap gets called,
+    // the IDs won't match and the time-out will not be queued again.
+    // DO NOT INLINE THE VAR (fadingID) BELOW OR THE VALUE WON'T BE CAPTURED BY THE FUNC
+    var fadingID = new Date();
+    ClientState.CenterMapFadingID = fadingID;
+    window.setTimeout(function() {centerMapFadingTimeout_Tick(fadingID);}, StaticAssets.CenterMapTimeout);
 }
 
+function centerMapFadingTimeout_Tick(fadingID)
+{
+    // If our timer has short circuited (by the ID being null or different) or our values are lost, we shouldn't even be here.
+    if (ClientState.CenterMapFadingID == null ||
+        ClientState.CenterMapFadingID != fadingID ||
+        ClientState.CenterMapFadingCurrentFadeOut == null || 
+        ClientState.CenterMapFadingCurrentFadeFactor == null || 
+        ClientState.CenterMapFadingFinalX == null ||
+        ClientState.CenterMapFadingFinalY == null)
+    {
+        return;
+    }
+
+    var repeatTimeout = true;
+    if (ClientState.CenterMapFadingCurrentFadeOut)
+    {
+        // Fading out
+        if (ClientState.CenterMapFadingCurrentFadeFactor < 1.0)
+        {
+            // Still fading out
+            ClientState.CenterMapFadingCurrentFadeFactor = Number(Math.min(1.0, ClientState.CenterMapFadingCurrentFadeFactor + StaticAssets.CenterMapStepSize).toFixed(1));
+        }
+        else
+        {
+            // We've reached 100% fade out, so we'll actually set the new center and flip the direction now.
+            var centerMapX = ClientState.CenterMapFadingFinalX;
+            var centerMapY = ClientState.CenterMapFadingFinalY;
+            if (centerMapX != null && centerMapY != null)
+                setScroll(centerMapX, centerMapY);
+            ClientState.CenterMapFadingCurrentFadeOut = false;
+            ClientState.CenterMapFadingCurrentFadeFactor = 1.0;
+        }
+    }
+    else
+    {
+        // Fading back in
+        if (ClientState.CenterMapFadingCurrentFadeFactor > 0.0)
+        {
+            // Still fading in
+            ClientState.CenterMapFadingCurrentFadeFactor = Number(Math.max(0.0, ClientState.CenterMapFadingCurrentFadeFactor - StaticAssets.CenterMapStepSize).toFixed(1));
+        }
+        else
+        {
+            // Full faded in now, stop the timer from repeating.
+            repeatTimeout = false;
+            ClientState.CenterMapFadingID = null;
+            ClientState.CenterMapFadingCurrentFadeOut = null;
+            ClientState.CenterMapFadingCurrentFadeFactor = null;
+            ClientState.CenterMapFadingFinalX = null;
+            ClientState.CenterMapFadingFinalY = null;
+        }
+    }
+
+    if (repeatTimeout)
+        window.setTimeout(function() {centerMapFadingTimeout_Tick(fadingID);}, StaticAssets.CenterMapTimeout);
+    
+    ClientState.NeedsRedraw = true;
+}
+        
 function zoomInOrOut(zoomIn, doubleFactor)
 {
     var step = StaticAssets.ZoomStep;
