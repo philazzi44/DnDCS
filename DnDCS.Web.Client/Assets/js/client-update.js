@@ -15,24 +15,47 @@ function clientCanvas_MouseRightClick(e) {
 }
 
 function clientCanvas_MouseDown(e) {
-    if (ClientState.IsZoomFactorInProgress)
+    handleCursorDown(e.button, e.clientX, e.clientY);
+}
+
+function clientCanvas_TouchStart(e) {
+    if (e.touches.length < 1)
         return;
         
-    if (e.button == 0)
-        enableDragScroll(e);
+    // Button of 0 signifies left click.
+    handleCursorDown(0, e.touches[0].clientX, e.touches[0].clientY);
+}
+
+function handleCursorDown(button, clientX, clientY) {
+    if (ClientState.IsZoomFactorInProgress)
+        return;
+    if (button == 0)
+        enableDragScroll(clientX, clientY);
 }
 
 function clientCanvas_MouseMove(e) {
+    handleCursorMove(e.button, e.which, e.clientX, e.clientY);
+}
+
+function clientCanvas_TouchMove(e) {
+    if (e.touches.length < 1)
+        return;
+        
+    // Button of 0 and Which of 1 signifies left click.
+    handleCursorMove(0, 1, e.touches[0].clientX, e.touches[0].clientY);
+}
+
+function handleCursorMove(button, which, cursorX, cursorY) {
     if (ClientState.IsDragScrolling)
     {
         // If we need to cause a minimum-threshold for dragging, we can put it here.
         var moveThreshold = 0;
         
-        if (e.button == 0 && e.which == 1)
+        if (button == 0 && which == 1)
         {
             var bounding = clientCanvas.getBoundingClientRect();
-            var newMouseLocationX = e.clientX - bounding.left;
-            var newMouseLocationY = e.clientY - bounding.top;
+            var newMouseLocationX = cursorX - bounding.left;
+            var newMouseLocationY = cursorY - bounding.top;
             
             // Scroll based on the amount of movement.
             var diffY = Math.abs(newMouseLocationY - ClientState.LastMouseLocationY);
@@ -65,7 +88,16 @@ function clientCanvas_MouseMove(e) {
 }
 
 function clientCanvas_MouseUp(e) {
-    if (e.button == 0)
+    handleCursorUp(e.button);
+}
+
+function clientCanvas_TouchEnd(e) {
+    // Button of 0 signifies left click.
+    handleCursorUp(0);
+}
+
+function handleCursorUp(button) {
+    if (button == 0)
         disableDragScroll();
 }
 
@@ -188,7 +220,7 @@ function toggleFlip() {
     ClientState.NeedsRedraw = true;
 }
 
-function enableDragScroll(e) {
+function enableDragScroll(clientX, clientY) {
     if (ClientState.IsDragScrolling)
         return;
     // Never allow scrolling while we're in the middle of a zoom.
@@ -198,8 +230,8 @@ function enableDragScroll(e) {
     var bounding = clientCanvas.getBoundingClientRect();
             
     ClientState.IsDragScrolling = true;
-    ClientState.LastMouseLocationX = e.clientX - bounding.left;
-    ClientState.LastMouseLocationY = e.clientY - bounding.top;
+    ClientState.LastMouseLocationX = clientX - bounding.left;
+    ClientState.LastMouseLocationY = clientY - bounding.top;
     ClientState.NeedsRedraw = true;
 }
 

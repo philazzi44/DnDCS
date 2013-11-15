@@ -50,10 +50,13 @@ function onConnectionOpened(e){
 
             // Add all events for the canvas that the user interacts with.
             clientCanvas.addEventListener('mousedown', clientCanvas_MouseDown);
+            clientCanvas.addEventListener('touchstart', clientCanvas_TouchStart);
             clientCanvas.addEventListener('click', clientCanvas_MouseLeftClick);
             clientCanvas.addEventListener('mousemove', clientCanvas_MouseMove);
+            clientCanvas.addEventListener('touchmove', clientCanvas_TouchMove);
             clientCanvas.addEventListener('mouseup', clientCanvas_MouseUp);
-            clientCanvas.addEventListener('mousewheel', clientCanvas_MouseWheel);
+            clientCanvas.addEventListener('touchend', clientCanvas_TouchEnd);
+            clientCanvas.addEventListener('mousewheel', clientCanvas_MouseWheel);            
             window.addEventListener('keydown', window_KeyDown);
             window.addEventListener('keyup', window_KeyUp);
             clientCanvas.oncontextmenu = clientCanvas_MouseRightClick;
