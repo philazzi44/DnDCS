@@ -1,18 +1,34 @@
+function tryHandleSizeChanged() {
+    if (clientCanvasWidth != window.innerWidth)
+    {
+        clientCanvasWidth = clientCanvas.width = window.innerWidth;
+        ClientState.NeedsRedraw = true;
+    }
+    if (clientCanvasHeight != window.innerHeight)
+    {
+        clientCanvasHeight = clientCanvas.height = window.innerHeight;
+        ClientState.NeedsRedraw = true;
+    }
+}
+
 // Redraws the client based on the new values.
 function drawClient() {
+    
+    tryHandleSizeChanged();
+    
     if (!ClientState.NeedsRedraw)
-        return;        
+        return;
     ClientState.NeedsRedraw = false;
     
-    clientContext.clearRect(0, 0, clientCanvas.width, clientCanvas.height);
+    clientContext.clearRect(0, 0, clientCanvasWidth, clientCanvasHeight);
     
     if (ClientState.IsBlackoutOn)
     {
         clientContext.fillStyle = "black";
-        clientContext.fillRect(0, 0, clientCanvas.width, clientCanvas.height);
+        clientContext.fillRect(0, 0, clientCanvasWidth, clientCanvasHeight);
         clientContext.drawImage(StaticAssets.BlackoutImage, 
-                                clientCanvas.width / 2 - StaticAssets.BlackoutImage.width / 2, 
-                                clientCanvas.height / 2 - StaticAssets.BlackoutImage.height / 2);
+                                clientCanvasWidth / 2 - StaticAssets.BlackoutImage.width / 2, 
+                                clientCanvasHeight / 2 - StaticAssets.BlackoutImage.height / 2);
     }
     else
     {    

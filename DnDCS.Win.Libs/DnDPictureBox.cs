@@ -652,7 +652,7 @@ namespace DnDCS.Win.Libs
                 AssignedZoomFactor = variableZoomFactor;
 
                 // This will attempt to re-center on the center we had, and will adjust as needed to fit the new zoom factor.
-                this.SetCenterMap(oldCenterMap.ToSimplePoint());
+                this.SetCenterMap(oldCenterMap.ToSimplePoint(), false);
             }
             else
             {

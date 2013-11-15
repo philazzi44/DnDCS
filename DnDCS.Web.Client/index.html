@@ -4,6 +4,7 @@
 <head>
 	<title>Client</title>
     <link rel="icon" type="image/png" href="Assets/images/ClientIcon.png">
+    <link rel="stylesheet" type="text/css" href="Assets/css/index.css"></script>
     <script type="text/javascript" src="Assets/js/jquery-2.0.3.min.js"></script>
     <script type="text/javascript" src="Assets/js/client-definitions.js"></script>
     <script type="text/javascript" src="Assets/js/client-helpers.js"></script>
@@ -37,8 +38,9 @@
     <div id="connectingValues" style="display:none;">
         <img src="Assets/images/Initializing.gif">
     </div>
-    <div id="connectedValues" style="top:0px;left:0px;position:absolute">
-        <canvas id="clientCanvas"  width="640" height="480"></canvas>
+    <!-- This div will be hidden at runtime, but we need it to appear on the screen to properly get the dimensions during init. -->
+    <div id="connectedValues">
+        <canvas id="clientCanvas" width="640" height="480"></canvas>
     </div>
 	<div id="serverNotFoundValues" style="display:none;">
 		The server was not found. Client application must be refreshed.

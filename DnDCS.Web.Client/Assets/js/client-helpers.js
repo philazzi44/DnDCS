@@ -92,28 +92,38 @@ function setScroll(desiredX, desiredY) {
     ClientState.NeedsRedraw = true;
 }
 
-function setCenterMap(centerMapX, centerMapY)
+function setCenterMap(centerMapX, centerMapY, animate)
 {
+    if (animate == undefined)
+        animate = true;
+        
     // The point that came in is raw on the map...
     // We also need to account for the client's zoom factor (gives us the X/Y of a Zoomed map), to which we then "unzoom" the X/Y back to the raw map location for scroll purposes.
     var scrollX = Math.floor(((centerMapX * ClientState.AssignedZoomFactor) - (clientCanvasWidth / 2.0)) * ClientState.InverseZoomFactor);
     var scrollY = Math.floor(((centerMapY * ClientState.AssignedZoomFactor) - (clientCanvasHeight / 2.0)) * ClientState.InverseZoomFactor);
 
-    // If we're already doing a Center Map fade, we're going to pop out the old values and kill off
-    // that timeout, starting a new one.
-    // It may glitch a bit to the end user, jumping from a fade % back to 0%, but the end result will be fine.
-    // Our fade factor will go from True/0.0 to True/1.0, then flip to False/1.0 down to False/0.0
-    ClientState.CenterMapFadingFinalX = scrollX;
-    ClientState.CenterMapFadingFinalY = scrollY;
-    ClientState.CenterMapFadingCurrentFadeOut = true;
-    ClientState.CenterMapFadingCurrentFadeFactor = 0.0;
-    
-    // We capture the ID in the function, and pass it in for every call. If another SetCenterMap gets called,
-    // the IDs won't match and the time-out will not be queued again.
-    // DO NOT INLINE THE VAR (fadingID) BELOW OR THE VALUE WON'T BE CAPTURED BY THE FUNC
-    var fadingID = new Date();
-    ClientState.CenterMapFadingID = fadingID;
-    window.setTimeout(function() {centerMapFadingTimeout_Tick(fadingID);}, StaticAssets.CenterMapTimeout);
+    if (animate)
+    {
+        // If we're already doing a Center Map fade, we're going to pop out the old values and kill off
+        // that timeout, starting a new one.
+        // It may glitch a bit to the end user, jumping from a fade % back to 0%, but the end result will be fine.
+        // Our fade factor will go from True/0.0 to True/1.0, then flip to False/1.0 down to False/0.0
+        ClientState.CenterMapFadingFinalX = scrollX;
+        ClientState.CenterMapFadingFinalY = scrollY;
+        ClientState.CenterMapFadingCurrentFadeOut = true;
+        ClientState.CenterMapFadingCurrentFadeFactor = 0.0;
+        
+        // We capture the ID in the function, and pass it in for every call. If another SetCenterMap gets called,
+        // the IDs won't match and the time-out will not be queued again.
+        // DO NOT INLINE THE VAR (fadingID) BELOW OR THE VALUE WON'T BE CAPTURED BY THE FUNC
+        var fadingID = new Date();
+        ClientState.CenterMapFadingID = fadingID;
+        window.setTimeout(function() {centerMapFadingTimeout_Tick(fadingID);}, StaticAssets.CenterMapTimeout);
+    }
+    else
+    {
+        setScroll(scrollX, scrollY);
+    }
 }
 
 function centerMapFadingTimeout_Tick(fadingID)
@@ -206,7 +216,7 @@ function commitOrRollBackZoom(commit)
         ClientState.InverseZoomFactor = 1.0 / ClientState.AssignedZoomFactor;
         
         // This will attempt to re-center on the center we had, and will adjust as needed to fit the new zoom factor.
-        setCenterMap(oldCenterMapX, oldCenterMapY);
+        setCenterMap(oldCenterMapX, oldCenterMapY, false);
     }
     else
     {
