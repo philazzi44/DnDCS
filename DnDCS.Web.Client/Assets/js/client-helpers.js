@@ -222,5 +222,7 @@ function commitOrRollBackZoom(commit)
     {
         ClientState.VariableZoomFactor = ClientState.AssignedZoomFactor;
     }
+    
+    ClientState.VariableZoomFactor_LastTouchClick = null;
     ClientState.NeedsRedraw = true;
 }

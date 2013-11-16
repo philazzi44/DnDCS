@@ -1,16 +1,50 @@
 function clientCanvas_MouseLeftClick(e) {
-    if (ClientState.IsZoomFactorInProgress && (e.button == 0 || e.button == 2)) {
-        commitOrRollBackZoom(e.button == 0);
-    }
-    else if (!ClientState.IsZoomFactorInProgress && e.button == 2)
+    if (ClientState.IsTouchScreen)
     {
-        tryEnableZoom();
+        // Left click on a touch device will commit the zoom only. Note that the event will fire upon release of the zoom, so we need to ignore the first one that
+        // happens by watching the zoom value changing.
+        if (ClientState.IsZoomFactorInProgress && (e.button == 0))
+        {
+            // if (ClientState.VariableZoomFactor == ClientState.VariableZoomFactor_LastTouchClick)
+            // {
+                commitOrRollBackZoom(e.button == 0);
+                
+            // }
+            // else
+            // {
+                // // Next time a left click occurs, we'll commit the zoom.
+                // ClientState.VariableZoomFactor_LastTouchClick = ClientState.VariableZoomFactor;
+            // }
+        }            
+    }
+    else
+    {
+        // Left click on a desktop will commit the zoom, or enable zooming (if it's the right click being pushed in)
+        if (ClientState.IsZoomFactorInProgress && (e.button == 0 || e.button == 2)) {
+            commitOrRollBackZoom(e.button == 0);
+        }
+        else if (!ClientState.IsZoomFactorInProgress && e.button == 2)
+        {
+            tryEnableZoom();
+        }
     }
 }
 
-// This is actually wired up to the Context Menu of the Canvas, but we're simulating it.
+// This is actually wired up to the Context Menu of the Canvas, but we're hijacking it and pretending it's a Right Click.
 function clientCanvas_MouseRightClick(e) {
-    clientCanvas_MouseLeftClick(e);
+    if (ClientState.IsTouchScreen)
+    {
+        // Start, or roll back the zoom when a Right Click is detected.
+        if (ClientState.IsZoomFactorInProgress)
+            commitOrRollBackZoom(false);
+        else
+            tryEnableZoom();
+    }
+    else
+    {
+        // For desktop app, all right clicks are treated as a left click.
+        clientCanvas_MouseLeftClick(e);
+    }
     return false;    
 }
 
@@ -21,16 +55,15 @@ function clientCanvas_MouseDown(e) {
 function clientCanvas_TouchStart(e) {
     if (e.touches.length < 1)
         return;
-        
+    
     // Button of 0 signifies left click.
     handleCursorDown(0, e.touches[0].clientX, e.touches[0].clientY);
 }
 
 function handleCursorDown(button, clientX, clientY) {
-    if (ClientState.IsZoomFactorInProgress)
-        return;
-    if (button == 0)
+    if (!ClientState.IsZoomFactorInProgress && button == 0)
         enableDragScroll(clientX, clientY);
+    setLastMouseLocation(clientX, clientY)
 }
 
 function clientCanvas_MouseMove(e) {
@@ -42,47 +75,64 @@ function clientCanvas_TouchMove(e) {
         return;
         
     // Button of 0 and Which of 1 signifies left click.
+    e.preventDefault();
     handleCursorMove(0, 1, e.touches[0].clientX, e.touches[0].clientY);
 }
 
 function handleCursorMove(button, which, cursorX, cursorY) {
-    if (ClientState.IsDragScrolling)
+    // If we're zooming with a Touch device, then moving up/down causing the zoom to go up or down.
+    // If we're dragging, then we need to drag up/down/left/right as needed.
+    if (ClientState.IsDragScrolling || (ClientState.IsTouchScreen && ClientState.IsZoomFactorInProgress))
     {
         // If we need to cause a minimum-threshold for dragging, we can put it here.
         var moveThreshold = 0;
         
         if (button == 0 && which == 1)
         {
-            var bounding = clientCanvas.getBoundingClientRect();
-            var newMouseLocationX = cursorX - bounding.left;
-            var newMouseLocationY = cursorY - bounding.top;
+            var oldMouseLocationX = ClientState.LastMouseLocationX;
+            var oldMouseLocationY = ClientState.LastMouseLocationY;
+            setLastMouseLocation(cursorX, cursorY)
+            var newMouseLocationX = ClientState.LastMouseLocationX;
+            var newMouseLocationY = ClientState.LastMouseLocationY;
             
-            // Scroll based on the amount of movement.
-            var diffY = Math.abs(newMouseLocationY - ClientState.LastMouseLocationY);
-            if (diffY > moveThreshold) {
-                if (newMouseLocationY < ClientState.LastMouseLocationY)
-                    scrollUpOrDown(false, diffY);
-                else if (newMouseLocationY > ClientState.LastMouseLocationY)
-                    scrollUpOrDown(true, diffY);
-            }
+            // Scroll (or zoom) based on the amount of movement.
+            var diffY = Math.abs(newMouseLocationY - oldMouseLocationY);
+            var diffX = Math.abs(newMouseLocationX - oldMouseLocationX);
             
-            var diffX = Math.abs(newMouseLocationX - ClientState.LastMouseLocationX);
-            if (diffX > moveThreshold)
+            if (ClientState.IsTouchScreen && ClientState.IsZoomFactorInProgress)
             {
-                if (newMouseLocationX < ClientState.LastMouseLocationX)
-                    scrollLeftOrRight(false, diffX);
-                else if (newMouseLocationX > ClientState.LastMouseLocationX)
-                    scrollLeftOrRight(true, diffX);
+                if (diffY > moveThreshold) {
+                    if (newMouseLocationY < oldMouseLocationY)
+                        zoomInOrOut(true, false);
+                    else if (newMouseLocationY > oldMouseLocationY)
+                        zoomInOrOut(false, false);
+                }
             }
-
-            ClientState.LastMouseLocationX = newMouseLocationX;
-            ClientState.LastMouseLocationY = newMouseLocationY;            
+            else
+            {
+                if (diffY > moveThreshold) {
+                    if (newMouseLocationY < oldMouseLocationY)
+                        scrollUpOrDown(false, diffY);
+                    else if (newMouseLocationY > oldMouseLocationY)
+                        scrollUpOrDown(true, diffY);
+                }
+                
+                if (diffX > moveThreshold)
+                {
+                    if (newMouseLocationX < oldMouseLocationX)
+                        scrollLeftOrRight(false, diffX);
+                    else if (newMouseLocationX > oldMouseLocationX)
+                        scrollLeftOrRight(true, diffX);
+                }
+            }
+        
             ClientState.NeedsRedraw = true;
         }
         else
         {        
             // If we had the Scroll logic set set but our button is no longer pressed, then we'll stop the drag altogether.
             disableDragScroll();
+            setLastMouseLocation(clientX, clientY);
         }
     }
 }
@@ -211,6 +261,11 @@ function tryEnableZoom() {
     if (!ClientState.IsZoomFactorInProgress)
     {
         ClientState.IsZoomFactorInProgress = true;
+        
+        // When using a touch screen, the first flip of zooming must also keep track of the LastTouchClick value.
+        if (ClientState.IsTouchScreen)
+            ClientState.VariableZoomFactor_LastTouchClick = ClientState.VariableZoomFactor;
+    
         ClientState.NeedsRedraw = true;
     }
 }
@@ -227,11 +282,7 @@ function enableDragScroll(clientX, clientY) {
     if (ClientState.IsZoomFactorInProgress)
         return;
     
-    var bounding = clientCanvas.getBoundingClientRect();
-            
     ClientState.IsDragScrolling = true;
-    ClientState.LastMouseLocationX = clientX - bounding.left;
-    ClientState.LastMouseLocationY = clientY - bounding.top;
     ClientState.NeedsRedraw = true;
 }
 
@@ -240,4 +291,10 @@ function disableDragScroll() {
         return;
     ClientState.IsDragScrolling = false;
     ClientState.NeedsRedraw = true;
+}
+
+function setLastMouseLocation(clientX, clientY) {
+    var bounding = clientCanvas.getBoundingClientRect();
+    ClientState.LastMouseLocationX = clientX - bounding.left;
+    ClientState.LastMouseLocationY = clientY - bounding.top;
 }

@@ -33,6 +33,8 @@ var ClientState = {
     IsClosed : false,
     IsErrored : false,
     
+    IsTouchScreen : (window.ontouchstart !== undefined),
+    
     NeedsRedraw : false,
     
     AcknowledgedReceived : false,
@@ -59,8 +61,9 @@ var ClientState = {
     AssignedZoomFactor : 1.0,
     InverseZoomFactor : 1.0,
     VariableZoomFactor : 1.0,
+    VariableZoomFactor_LastTouchClick : 1.0,
     IsZoomFactorInProgress : false,
-    
+                
     IsFlippedView : false,
     
     CenterMapFadingID : null,
@@ -86,7 +89,7 @@ var newFogContext = newFogCanvas.getContext("2d");
 
 // Static assets loaded after a connection is established.
 var StaticAssets = {
-    DefaultServer : "localhost",
+    DefaultServer : "192.168.2.4",
     DefaultPort : "11001",
 
     BlackoutImagePath : "/Assets/images/BlackoutImage.png",
@@ -107,8 +110,8 @@ var StaticAssets = {
     ZoomMessageHeight : 25,
     ZoomMessageColor : "aqua",
     
-    ZoomInstructionMessage1 : "Press Enter or Left Click to commit the zoom factor.",
-    ZoomInstructionMessage2 : "Press Escape or Right Click to cancel.",    
+    ZoomInstructionMessage1 : (ClientState.IsTouchScreen) ? "Tap to commit the zoom factor." : "Press Enter or Left Click to commit the zoom factor.",
+    ZoomInstructionMessage2 : (ClientState.IsTouchScreen) ? "Long tap to cancel." : "Press Escape or Right Click to cancel.",    
     
     MinimumZoomFactor : 0.2,
     ZoomStep : 0.1,
